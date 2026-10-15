@@ -1,0 +1,15 @@
+-- Jalankan sebagai superuser (postgres) SEKALI sebelum migrate.
+-- Prinsip least-privilege: aplikasi TIDAK memakai superuser dan TIDAK bisa mengubah skema / menghapus audit log.
+CREATE ROLE ipad_owner LOGIN PASSWORD 'GANTI_PASSWORD_OWNER';
+CREATE ROLE ipad_app   LOGIN PASSWORD 'GANTI_PASSWORD_APP';
+CREATE DATABASE ipad_asset OWNER ipad_owner ENCODING 'UTF8' TEMPLATE template0;
+\c ipad_asset
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+CREATE EXTENSION IF NOT EXISTS citext;
+REVOKE ALL ON DATABASE ipad_asset FROM PUBLIC;
+GRANT CONNECT ON DATABASE ipad_asset TO ipad_app;
+REVOKE CREATE ON SCHEMA public FROM PUBLIC;
+GRANT USAGE ON SCHEMA public TO ipad_app;
+-- Hak default untuk tabel yang nanti dibuat ipad_owner lewat migrate
+ALTER DEFAULT PRIVILEGES FOR ROLE ipad_owner IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO ipad_app;
+ALTER DEFAULT PRIVILEGES FOR ROLE ipad_owner IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO ipad_app;

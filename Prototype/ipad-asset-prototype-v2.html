@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>iPad Asset Management – Prototype v0.2</title>
+<style>
+:root{--pri:#1f4e79;--pri2:#2e75b6;--bg:#f3f5f9;--txt:#1d2530;--mut:#6b7685;--ok:#2e8b57;--warn:#d98e04;--bad:#c0392b;--bd:#e1e5ec}
+*{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--txt);font-size:14px;display:flex;min-height:100vh}
+aside{width:230px;background:var(--pri);color:#fff;flex-shrink:0;display:flex;flex-direction:column}
+aside .brand{padding:18px 20px;border-bottom:1px solid rgba(255,255,255,.15)}aside .brand b{font-size:16px;display:block}aside .brand small{opacity:.7}
+aside button{background:none;border:0;color:#cfdcec;text-align:left;padding:13px 20px;font-size:14px;cursor:pointer;border-left:4px solid transparent;display:flex;justify-content:space-between}
+aside button:hover{background:rgba(255,255,255,.07)}aside button.active{background:rgba(255,255,255,.12);color:#fff;border-color:#9cc3ea;font-weight:600}
+aside .cnt{background:var(--bad);border-radius:10px;padding:0 7px;font-size:11px;color:#fff}
+aside .foot{margin-top:auto;padding:16px 20px;font-size:12px;border-top:1px solid rgba(255,255,255,.15)}
+aside select{width:100%;padding:6px;border-radius:6px;border:0;margin-top:6px}
+.wrap{flex:1;min-width:0}header{background:#fff;padding:14px 28px;border-bottom:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center}
+header h1{margin:0;font-size:20px}main{padding:24px 28px}
+.card{background:#fff;border-radius:10px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.06);margin-bottom:20px}.card h3{margin-top:0}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:20px}
+.kpi{background:#fff;border-radius:10px;padding:16px;border-left:5px solid var(--pri2);cursor:pointer}.kpi b{font-size:28px;display:block}.kpi span{color:var(--mut);font-size:13px}
+table{width:100%;border-collapse:collapse}th,td{padding:9px 10px;border-bottom:1px solid var(--bd);text-align:left;vertical-align:top}
+th{background:#f7f9fc;font-size:12px;text-transform:uppercase;color:var(--mut)}tr:hover td{background:#fafcff}
+.badge{padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;color:#fff;white-space:nowrap}
+.Pending,.Open{background:var(--warn)}.Setup,.Proses{background:var(--pri2)}.Available,.Approved,.Closed{background:var(--ok)}.Damaged,.Rejected{background:var(--bad)}.Loss{background:#555}.Repair{background:#8e44ad}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}.g2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+label{display:block;font-size:12px;color:var(--mut);margin-bottom:4px}.req::after{content:" *";color:var(--bad)}
+input,select,textarea{width:100%;padding:8px 10px;border:1px solid var(--bd);border-radius:6px;font-size:14px;font-family:inherit}
+.btn{background:var(--pri2);color:#fff;border:0;padding:9px 18px;border-radius:6px;cursor:pointer;font-size:14px}
+.btn.sec{background:#e8edf4;color:var(--txt)}.btn.ok{background:var(--ok)}.btn.bad{background:var(--bad)}.btn.sm{padding:5px 10px;font-size:12px}
+.tabs{display:flex;gap:6px;margin-bottom:18px}.tabs button{padding:10px 18px;border:1px solid var(--bd);background:#fff;border-radius:8px;cursor:pointer;font-size:14px}
+.tabs button.active{background:var(--pri2);color:#fff;border-color:var(--pri2)}
+.toolbar{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center}.toolbar input,.toolbar select{width:auto;min-width:150px}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:flex-start;justify-content:center;padding-top:40px;overflow:auto;z-index:9}
+.modal{background:#fff;border-radius:10px;padding:24px;width:min(900px,95%);margin-bottom:40px}.modal h2{margin-top:0}
+.st{font-weight:600;color:var(--pri);margin:18px 0 10px;border-bottom:1px solid var(--bd);padding-bottom:6px}
+.check{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:14px;color:var(--txt)}.check input{width:auto}
+.note{background:#fff4e5;border:1px solid #f5c26b;padding:10px;border-radius:6px;font-size:13px}.note.info{background:#eaf3fc;border-color:#9cc3ea}
+.hist{font-size:13px;border-left:3px solid var(--pri2);padding-left:10px;margin:6px 0}.hist small{color:var(--mut)}
+.bar{display:flex;align-items:center;gap:10px;margin:8px 0}.bar .b{height:18px;background:var(--pri2);border-radius:4px}
+.muted{color:var(--mut)}.toast{position:fixed;bottom:20px;right:20px;background:var(--ok);color:#fff;padding:12px 20px;border-radius:8px;display:none;z-index:10}
+.progress{background:#e8edf4;border-radius:8px;height:8px;width:80px;display:inline-block;vertical-align:middle}.progress i{display:block;height:8px;border-radius:8px;background:var(--ok)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}.chip{background:#eaf3fc;border:1px solid #9cc3ea;padding:4px 10px;border-radius:14px;font-size:13px}
+.chip b{cursor:pointer;color:var(--bad);margin-left:6px}.addrow{display:flex;gap:8px}.addrow input{flex:1}
+.cmp{display:grid;grid-template-columns:1fr 40px 1fr;align-items:center;gap:10px}.cmp .box{background:#f7f9fc;border:1px solid var(--bd);border-radius:8px;padding:12px}
+@media(max-width:800px){body{flex-direction:column}aside{width:100%}.g2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<aside>
+  <div class="brand"><b>📱 iPad Asset Mgmt</b><small>Hirose Indonesia · v0.2</small></div>
+  <div id="menu"></div>
+  <div class="foot">Login sebagai (simulasi):
+    <select id="role" onchange="setRole(this.value)"><option value="user">User Section</option><option value="admin" selected>IT Admin</option><option value="manager">Manager</option></select>
+    <button class="btn sec sm" style="margin-top:10px;width:100%" onclick="resetData()">Reset Data Demo</button>
+  </div>
+</aside>
+<div class="wrap"><header><h1 id="title"></h1><span class="muted" id="who"></span></header><main id="app"></main></div>
+<div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()"><div class="modal" id="modal"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ==================================================== DATA
+const today=()=>new Date().toISOString().slice(0,10);
+const uid=p=>p+Date.now().toString(36).toUpperCase().slice(-6);
+const DEF_SETTINGS={
+  lokasi:{Hirose:["AL","adm QA","QA","QC PI HRS","AL Measuring","Re-Inspect Hirose","Admin AL","Staff AL","Opt AL","Plating","Molding","Stamping","Admin PC","Purchasing"],SGP:["SGP","QC PI SGP"],Systech:["Systech","QC PI SYS"]},
+  models:["iPad (A16)","iPad 9th Generation","iPad 8th Generation","iPad 7th Generation","iPad 6th Generation","iPad Air 11-inch (M3)"],
+  capacities:["32GB","64GB","128GB","256GB"],
+  wifi:["HRS-IPad","HRS-IPad1","HRS-IPad2","HRS-IPad3","HRS-IPadMold","ipad-sgp"],
+  vendors:["iBox","DIGIPLUS","ISID","Hirose"],
+  problems:["Baterai","Port Charge","Layar","Machine","Tidak bisa login i-Reporter","Wi-Fi","Hilang","Lainnya"],
+  checklist:["Cek fisik & kelengkapan","Update iOS","Apple ID terpasang","Wi-Fi dikonfigurasi","Install i-Reporter & app wajib","Find My aktif","Restriction dikunci (Browser/App Store/Mail/Settings)","Test fungsi & serah terima"],
+  prefix:"iPad",
+  users:[{name:"Hanif Mutaz",email:"hanif.mutaz@hirose.co.id",role:"admin"},{name:"Tety Uci",email:"tety@hirose.co.id",role:"admin"},{name:"Liska",email:"liska@hirose.co.id",role:"user"},{name:"Manager AL",email:"mgr.al@hirose.co.id",role:"manager"}]
+};
+function seedDevices(s){
+  const full=s.checklist.map(()=>true);
+  const mk=(name,serial,lok,sec,model,cap,color,status,pic,arrival,from,price,x={})=>({id:serial,name,serial,lokasi:lok,section:sec,model,capacity:cap,color,status,pic,arrival,purchaseFrom:from,price,
+    checklist:status==="Pending"?[]:[...full],wifi:"",ip:"",conmasId:"",ireporterUser:"",history:[{ts:arrival,by:"Migrasi Excel",action:"Import dari iPad List.xlsx"}],...x});
+  return[
+    mk("iPad01","GCTV95DJHLFC","Hirose","adm QA","iPad 5th Generation","32GB","-","Available","Liska","2017-10-01","Hirose",null,{wifi:"HRS-IPad1",ireporterUser:"user01"}),
+    mk("iPad03","GCTVWDX9HLFC","Hirose","AL","iPad 5th Generation","32GB","-","Available","Tety","2018-02-09","Hirose",null,{wifi:"HRS-IPad1",ireporterUser:"user03"}),
+    mk("iPad21","DMPWM51WJF8K","Hirose","QA","iPad 6th Generation","32GB","-","Damaged","Tety","2018-09-05","ISID",null),
+    mk("iPad21","LV49DKM474","Hirose","AL","iPad 9th Generation","64GB","Space Gray","Available","Nurjanah","2022-08-05","iBox",null,{wifi:"HRS-IPad3",ireporterUser:"user21"}),
+    mk("iPad32","DMPX7G48JF8K","Hirose","Molding","iPad 6th Generation","32GB","-","Loss","Tety","2019-01-22","Hirose",null),
+    mk("iPad51","DMQYKEVYJF8K","SGP","SGP","iPad 6th Generation","32GB","-","Available","Tety","2019-10-10","Hirose",null,{wifi:"ipad-sgp",ip:"192.168.100.103",ireporterUser:"alsgp01"}),
+    mk("iPad85","PR22QKQW0X","Hirose","Stamping","iPad 9th Generation","64GB","Silver","Available","Nurjanah","2022-06-13","iBox",6099000,{wifi:"HRS-IPad1",ireporterUser:"user55"}),
+    mk("iPad88","W40KXHMV2F","Hirose","Molding","iPad 9th Generation","64GB","Silver","Available","Nurjanah","2022-07-12","iBox",6099000,{wifi:"HRS-IPadMold",ireporterUser:"user58"}),
+    mk("iPad93","W39TCTQPXP","Systech","Systech","iPad 9th Generation","64GB","Silver","Available","Nurjanah","2023-01-09","iBox",6299000,{wifi:"HRS-IPad3",ireporterUser:"alsystech01"}),
+    mk("iPad103","KGGFQKGQ6M","Hirose","Admin PC","iPad (A16)","128GB","Pink","Available","Siti","2025-07-17","iBox",6938000,{wifi:"HRS-IPad3"}),
+    mk("iPad108","L2DVX3YD4L","Hirose","Purchasing","iPad Air 11-inch (M3)","256GB","Blue","Available","Mu'taz","2026-04-06","DIGIPLUS",12499000,{wifi:"HRS-IPad3"}),
+    mk("iPad109","FXJ43G4WC1","Hirose","Admin AL","iPad (A16)","128GB","Blue","Available","Mu'taz","2026-07-01","iBox",7199000,{wifi:"HRS-IPad3",ireporterUser:"user03"}),
+    mk("iPad121","LFDQHVH2M7","Hirose","Opt AL","iPad (A16)","128GB","Silver","Available","Mu'taz","2026-09-14","iBox",null,{wifi:"HRS-IPad3",ireporterUser:"PDHRS08"}),
+    mk("(belum dinamai)","DEMO0000A16X","Hirose","Opt AL","iPad (A16)","128GB","Silver","Pending","Mu'taz",today(),"iBox",7199000,{history:[{ts:today(),by:"User – Mu'taz",action:"Registrasi iPad baru"}]}),
+  ];
+}
+function seed(){
+  const settings=JSON.parse(JSON.stringify(DEF_SETTINGS));
+  return{settings,devices:seedDevices(settings),
+    transfers:[{id:"MT-0001",deviceId:"PR22QKQW0X",from:{lokasi:"Hirose",section:"Stamping",pic:"Nurjanah"},to:{lokasi:"Hirose",section:"Plating",pic:"Andi"},reason:"Kebutuhan line Plating bertambah",by:"Andi",date:today(),status:"Pending"}],
+    tickets:[{id:"TK-0001",deviceId:"W40KXHMV2F",type:"Baterai",desc:"Baterai cepat habis, cuma tahan 2 jam",by:"Operator Molding",date:today(),priority:"Normal",status:"Open",log:[]}]};
+}
+let DB=JSON.parse(localStorage.getItem("ipadDB2")||"null")||seed();
+const S=()=>DB.settings,save=()=>localStorage.setItem("ipadDB2",JSON.stringify(DB));
+function resetData(){if(confirm("Reset semua data demo?")){DB=seed();save();render();}}
+const dev=id=>DB.devices.find(d=>d.id===id);
+
+// ==================================================== NAV
+let role="admin",page="dashboard";
+const MENU=[["dashboard","📊 Dashboard"],["monitoring","📱 Monitoring iPad"],["registrasi","📝 Registrasi iPad"],["lapor","⚠️ Lapor Masalah"],["settings","⚙️ Settings"]];
+const allowed=p=>p!=="settings"||role==="admin";
+function setRole(r){
+  role=r;if(!allowed(page))page="dashboard";render();
+}
+function go(p){page=p;render();}
+function badgeCount(p){
+  if(role!=="admin")return 0;
+  if(p==="registrasi")return DB.devices.filter(d=>d.status==="Pending").length+DB.transfers.filter(t=>t.status==="Pending").length;
+  if(p==="lapor")return DB.tickets.filter(t=>t.status!=="Closed").length;return 0;}
+function render(){
+  document.getElementById("menu").innerHTML=MENU.filter(m=>allowed(m[0])).map(([k,l])=>{const c=badgeCount(k);return`<button class="${k===page?'active':''}" onclick="go('${k}')"><span>${l}</span>${c?`<span class="cnt">${c}</span>`:""}</button>`}).join("");
+  document.getElementById("title").textContent=MENU.find(m=>m[0]===page)[1];
+  document.getElementById("who").textContent={user:"👤 User Section",admin:"🛡️ IT Admin",manager:"👔 Manager (read-only)"}[role];
+  document.getElementById("app").innerHTML={dashboard:vDash,monitoring:vMon,registrasi:vReg,lapor:vLapor,settings:vSet}[page]();
+  if(page==="registrasi")afterReg();
+}
+
+// ==================================================== HELPERS
+function toast(m,c){const t=document.getElementById("toast");t.textContent=m;t.style.background=c||"var(--ok)";t.style.display="block";setTimeout(()=>t.style.display="none",2500);}
+const badge=s=>`<span class="badge ${s}">${s}</span>`;
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const rp=v=>v?"Rp "+Number(v).toLocaleString("id-ID"):"-";
+const opts=(arr,sel)=>arr.map(x=>`<option ${x===sel?"selected":""}>${esc(x)}</option>`).join("");
+const prog=d=>{const n=S().checklist.filter((_,i)=>d.checklist[i]).length,t=S().checklist.length;return`<span class="progress"><i style="width:${n/t*100}%"></i></span> <small>${n}/${t}</small>`};
+const devLabel=d=>d?`${esc(d.name)} · ${d.serial}`:"-";
+function nextName(){const n=Math.max(0,...DB.devices.map(x=>parseInt((x.name.match(/\d+/)||[0])[0])));return S().prefix+(n+1);}
+function openModal(h){document.getElementById("modal").innerHTML=h;document.getElementById("modalBg").style.display="flex";}
+function closeModal(){document.getElementById("modalBg").style.display="none";}
+
+// ==================================================== 1. DASHBOARD
+function vDash(){
+  const D=DB.devices,c=s=>D.filter(d=>d.status===s).length;
+  const lok=Object.keys(S().lokasi).map(l=>[l,D.filter(d=>d.lokasi===l&&["Available","Repair"].includes(d.status)).length]);
+  const mx=Math.max(1,...lok.map(x=>x[1]));
+  const sec={};D.filter(d=>d.status==="Available").forEach(d=>sec[d.lokasi+" · "+d.section]=(sec[d.lokasi+" · "+d.section]||0)+1);
+  const model={};D.filter(d=>!["Loss","Damaged"].includes(d.status)).forEach(d=>model[d.model]=(model[d.model]||0)+1);
+  const mm=Math.max(1,...Object.values(model));
+  const old=D.filter(d=>d.status==="Available"&&d.arrival&&(new Date()-new Date(d.arrival))/31536e6>5).length;
+  const openT=DB.tickets.filter(t=>t.status!=="Closed");
+  const act=[...DB.devices.flatMap(d=>d.history.map(h=>({...h,dev:d.name}))),].sort((a,b)=>b.ts.localeCompare(a.ts)).slice(0,8);
+  const k=(l,v,col,f)=>`<div class="kpi" style="border-color:${col}" onclick="monF={q:'',lok:'',st:'${f||""}'};go('monitoring')"><span>${l}</span><b>${v}</b></div>`;
+  return`<div class="kpis">${k("Total Unit",D.length,"var(--pri2)")}${k("Available",c("Available"),"var(--ok)","Available")}${k("Pending / Setup",c("Pending")+c("Setup"),"var(--warn)","Pending")}${k("Repair",c("Repair"),"#8e44ad","Repair")}${k("Damaged",c("Damaged"),"var(--bad)","Damaged")}${k("Loss",c("Loss"),"#555","Loss")}</div>
+  <div class="kpis"><div class="kpi" style="border-color:var(--bad)" onclick="go('lapor')"><span>Tiket Masalah Aktif</span><b>${openT.length}</b></div>
+  <div class="kpi" style="border-color:var(--warn)" onclick="go('registrasi')"><span>Mutasi Menunggu Approval</span><b>${DB.transfers.filter(t=>t.status==="Pending").length}</b></div>
+  <div class="kpi" style="border-color:var(--mut)"><span>Unit Aktif &gt; 5 Tahun</span><b>${old}</b></div></div>
+  <div class="g2"><div class="card"><h3>Unit Aktif per Lokasi</h3>${lok.map(([l,n])=>`<div class="bar"><span style="width:70px">${l}</span><div class="b" style="width:${n/mx*70}%"></div><b>${n}</b></div>`).join("")}
+    <h3 style="margin-top:20px">Unit Aktif per Model</h3>${Object.entries(model).sort((a,b)=>b[1]-a[1]).map(([m,n])=>`<div class="bar"><span style="width:160px;font-size:13px">${esc(m)}</span><div class="b" style="width:${n/mm*45}%;background:var(--ok)"></div><b>${n}</b></div>`).join("")}</div>
+  <div class="card"><h3>Available per Section</h3><table>${Object.entries(sec).sort((a,b)=>b[1]-a[1]).map(([s,n])=>`<tr><td>${esc(s)}</td><td style="text-align:right"><b>${n}</b></td></tr>`).join("")}</table></div></div>
+  <div class="g2"><div class="card"><h3>⚠️ Tiket Masalah Aktif</h3><table><tr><th>ID</th><th>iPad</th><th>Masalah</th><th>Status</th></tr>${openT.map(t=>`<tr><td>${t.id}</td><td>${devLabel(dev(t.deviceId))}</td><td>${esc(t.type)}</td><td>${badge(t.status)}</td></tr>`).join("")||"<tr><td colspan=4 class=muted>Tidak ada</td></tr>"}</table></div>
+  <div class="card"><h3>🕒 Aktivitas Terbaru</h3>${act.map(h=>`<div class="hist"><b>${esc(h.dev)}</b> – ${esc(h.action)}<br><small>${h.ts} · ${esc(h.by)}</small></div>`).join("")}</div></div>`;
+}
+
+// ==================================================== 2. MONITORING
+let monF={q:"",lok:"",st:""};
+function vMon(){
+  const f=monF,rows=DB.devices.filter(d=>(!f.lok||d.lokasi===f.lok)&&(!f.st||d.status===f.st||(f.st==="Pending"&&d.status==="Setup"))&&(!f.q||(d.name+d.serial+d.section+d.pic+d.model+d.ireporterUser).toLowerCase().includes(f.q.toLowerCase())));
+  return`<div class="card"><div class="toolbar">
+  <input id="q" placeholder="🔍 Cari nama / serial / section / PIC / user i-Reporter" value="${esc(f.q)}" oninput="monF.q=this.value;render();const e=document.getElementById('q');e.focus();e.setSelectionRange(99,99)" style="min-width:320px">
+  <select onchange="monF.lok=this.value;render()"><option value="">Semua Lokasi</option>${opts(Object.keys(S().lokasi),f.lok)}</select>
+  <select onchange="monF.st=this.value;render()"><option value="">Semua Status</option>${opts(["Pending","Setup","Available","Repair","Damaged","Loss"],f.st)}</select>
+  ${role!=="user"?`<button class="btn sec" onclick="exportCSV()">⬇️ Export CSV</button>`:""}<span class="muted">${rows.length} unit</span></div>
+  <table><tr><th>Nama</th><th>Serial</th><th>Lokasi / Section</th><th>Model</th><th>PIC</th><th>User i-Rep</th><th>Setup</th>${role==="manager"?"<th>Harga</th>":""}<th>Status</th><th></th></tr>
+  ${rows.map(d=>`<tr><td><b>${esc(d.name)}</b></td><td>${d.serial}</td><td>${d.lokasi} · ${esc(d.section)}</td><td>${esc(d.model)}<br><small class="muted">${d.capacity} ${esc(d.color)}</small></td><td>${esc(d.pic)}</td><td>${esc(d.ireporterUser)||"-"}</td><td>${prog(d)}</td>${role==="manager"?`<td>${rp(d.price)}</td>`:""}<td>${badge(d.status)}</td>
+  <td><button class="btn sec sm" onclick="openDev('${d.id}')">${role==="admin"?"Kelola":"Detail"}</button></td></tr>`).join("")}</table></div>`;
+}
+function exportCSV(){
+  const cols=["name","serial","lokasi","section","model","capacity","color","pic","arrival","purchaseFrom","price","status","wifi","ip","conmasId","ireporterUser"];
+  const csv=[cols.join(","),...DB.devices.map(d=>cols.map(c=>`"${String(d[c]??"").replace(/"/g,'""')}"`).join(","))].join("\n");
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv"}));a.download=`ipad_list_${today()}.csv`;a.click();
+}
+function openDev(id){
+  const d=dev(id),adm=role==="admin",dis=adm?"":"disabled";
+  const tk=DB.tickets.filter(t=>t.deviceId===id),mt=DB.transfers.filter(t=>t.deviceId===id);
+  openModal(`<h2>${esc(d.name)} ${badge(d.status)}</h2>
+  <div class="st">Data Perangkat</div><div class="grid">
+   <div><label>Nama iPad</label><input id="m_name" value="${esc(d.name)}" ${dis}>${adm&&d.name.startsWith("(")?`<small class="muted">Saran: <a href="#" onclick="m_name.value='${nextName()}';return false">${nextName()}</a></small>`:""}</div>
+   <div><label>Serial Number</label><input value="${d.serial}" disabled></div>
+   <div><label>Model</label><input value="${esc(d.model)} · ${d.capacity} · ${esc(d.color)}" disabled></div>
+   <div><label>Status</label><select id="m_status" ${dis}>${opts(["Pending","Setup","Available","Repair","Damaged","Loss"],d.status)}</select></div>
+   <div><label>Lokasi / Section</label><input value="${d.lokasi} · ${esc(d.section)}" disabled><small class="muted">Ubah lewat menu Registrasi › Pindah Tempat</small></div>
+   <div><label>PIC</label><input value="${esc(d.pic)}" disabled></div>
+   <div><label>Tgl Datang / Vendor</label><input value="${d.arrival} · ${esc(d.purchaseFrom)}" disabled></div>
+   ${role!=="user"?`<div><label>Harga</label><input value="${rp(d.price)}" disabled></div>`:""}</div>
+  ${role!=="user"?`<div class="st">Data Teknis</div><div class="grid">
+   <div><label>Wi-Fi SSID</label><select id="m_wifi" ${dis}><option value="">-</option>${opts(S().wifi,d.wifi)}</select></div>
+   <div><label>IP Address</label><input id="m_ip" value="${esc(d.ip)}" ${dis}></div>
+   <div><label>ConMas Device ID</label><input id="m_conmas" value="${esc(d.conmasId)}" ${dis}></div>
+   <div><label>User i-Reporter</label><input id="m_irep" value="${esc(d.ireporterUser)}" ${dis}></div></div>
+   <div class="note" style="margin-top:12px">🔒 Apple ID, passcode & password dikelola di Password Manager (referensi entry: <b>${esc(d.name)} – ${d.serial}</b>).</div>`:""}
+  ${adm?`<div class="st">Checklist Setup</div>${S().checklist.map((l,i)=>`<label class="check"><input type="checkbox" id="c_${i}" ${d.checklist[i]?"checked":""}> ${esc(l)}</label>`).join("")}`:""}
+  ${tk.length?`<div class="st">Tiket Masalah</div><table>${tk.map(t=>`<tr><td>${t.id}</td><td>${t.date}</td><td>${esc(t.type)}</td><td>${badge(t.status)}</td></tr>`).join("")}</table>`:""}
+  ${mt.length?`<div class="st">Riwayat Mutasi</div><table>${mt.map(t=>`<tr><td>${t.id}</td><td>${t.date}</td><td>${esc(t.from.section)} → ${esc(t.to.section)}</td><td>${badge(t.status)}</td></tr>`).join("")}</table>`:""}
+  <div class="st">Riwayat Perangkat</div>${d.history.slice().reverse().map(h=>`<div class="hist">${esc(h.action)}<br><small>${h.ts} · ${esc(h.by)}</small></div>`).join("")}
+  <div style="margin-top:20px;display:flex;gap:10px;justify-content:flex-end"><button class="btn sec" onclick="closeModal()">Tutup</button>
+   ${adm?`<button class="btn" onclick="saveDev('${id}')">Simpan</button>`:""}
+   ${adm&&["Pending","Setup"].includes(d.status)?`<button class="btn ok" onclick="saveDev('${id}',1)">✔ Setup Selesai → Available</button>`:""}</div>`);
+}
+function saveDev(id,finish){
+  const d=dev(id),ch=[],set=(k,v)=>{if(String(d[k]??"")!==String(v)){ch.push(`${k}: "${d[k]??""}" → "${v}"`);d[k]=v;}};
+  if(DB.devices.some(x=>x.id!==id&&x.name===m_name.value.trim()&&!["Damaged","Loss"].includes(x.status))&&!confirm("Nama iPad sudah dipakai unit aktif lain. Tetap simpan?"))return;
+  set("name",m_name.value.trim());set("wifi",m_wifi.value);set("ip",m_ip.value);set("conmasId",m_conmas.value);set("ireporterUser",m_irep.value);
+  d.checklist=S().checklist.map((_,i)=>document.getElementById("c_"+i).checked);
+  let st=m_status.value;
+  if(finish){if(!d.checklist.every(Boolean))return alert("Checklist belum lengkap!");if(d.name.startsWith("("))return alert("Nama iPad belum diisi!");st="Available";}
+  else if(st==="Pending"&&d.checklist.some(Boolean))st="Setup";
+  set("status",st);d.history.push({ts:today(),by:"IT Admin",action:ch.length?"Update – "+ch.join("; "):"Update checklist setup"});
+  save();closeModal();render();toast("Tersimpan");
+}
+
+// ==================================================== 3. REGISTRASI
+let regTab="baru";
+function vReg(){
+  const L=Object.keys(S().lokasi),pendNew=DB.devices.filter(d=>["Pending","Setup"].includes(d.status)),pendMt=DB.transfers.filter(t=>t.status==="Pending");
+  const tabs=`<div class="tabs"><button class="${regTab==="baru"?"active":""}" onclick="regTab='baru';render()">🆕 iPad Baru</button><button class="${regTab==="pindah"?"active":""}" onclick="regTab='pindah';render()">🔁 iPad Lama (Pindah Tempat)</button><button class="${regTab==="riwayat"?"active":""}" onclick="regTab='riwayat';render()">📋 Status Pengajuan ${role==="admin"&&pendNew.length+pendMt.length?`(${pendNew.length+pendMt.length})`:""}</button></div>`;
+  if(role==="manager"&&regTab!=="riwayat")regTab="riwayat";
+  if(regTab==="baru")return tabs+`<div class="card"><h3>Registrasi iPad Baru</h3><p class="muted">Isi data fisik iPad yang baru datang. Setelah submit, IT akan melakukan setup & memberi nama iPad.</p>
+  <form onsubmit="submitNew(event)"><div class="grid">
+   <div><label class="req">Serial Number</label><input name="serial" required placeholder="Settings › General › About" style="text-transform:uppercase" oninput="chkSerial(this)"><small id="snMsg"></small></div>
+   <div><label class="req">Model</label><select name="model">${opts(S().models)}</select></div>
+   <div><label class="req">Kapasitas</label><select name="capacity">${opts(S().capacities,"128GB")}</select></div>
+   <div><label>Warna</label><input name="color" placeholder="Silver / Blue / Pink"></div>
+   <div><label class="req">Lokasi Tujuan</label><select name="lokasi" id="nLok" onchange="fillSec('nLok','nSec')">${opts(L)}</select></div>
+   <div><label class="req">Section</label><select name="section" id="nSec"></select></div>
+   <div><label class="req">PIC Penerima</label><input name="pic" required></div>
+   <div><label class="req">Tanggal Datang</label><input type="date" name="arrival" value="${today()}" required></div>
+   <div><label>Vendor</label><select name="purchaseFrom">${opts(S().vendors)}</select></div>
+   <div><label>Harga (Rp)</label><input type="number" name="price"></div>
+   <div><label>Foto Nota / Dus</label><input type="file" accept="image/*"></div></div>
+   <div style="margin-top:12px"><label>Catatan</label><textarea name="note" rows="2"></textarea></div>
+   <div class="note" style="margin-top:14px">🔒 Jangan isi password, passcode, atau Apple ID di sini.</div>
+   <div style="margin-top:16px"><button class="btn">Submit Registrasi</button></div></form></div>`;
+  if(regTab==="pindah"){const act=DB.devices.filter(d=>["Available","Repair"].includes(d.status));
+    return tabs+`<div class="card"><h3>Mutasi / Pindah Tempat iPad</h3><p class="muted">Untuk iPad yang sudah terdaftar dan dipindahkan ke lokasi/section lain. Perubahan berlaku setelah di-approve IT.</p>
+    <form onsubmit="submitMove(event)"><div class="grid">
+     <div style="grid-column:1/-1"><label class="req">Pilih iPad (cari nama / serial)</label><input list="devList" id="mvDev" required placeholder="Ketik iPad85 atau serial..." oninput="showFrom()"><datalist id="devList">${act.map(d=>`<option value="${d.name} | ${d.serial}">`).join("")}</datalist></div></div>
+     <div id="mvCmp" style="margin-top:14px"></div>
+     <div class="grid" style="margin-top:14px">
+      <div><label class="req">Lokasi Tujuan</label><select name="lokasi" id="mLok" onchange="fillSec('mLok','mSec')">${opts(L)}</select></div>
+      <div><label class="req">Section Tujuan</label><select name="section" id="mSec"></select></div>
+      <div><label class="req">PIC Baru</label><input name="pic" required></div>
+      <div><label class="req">Tanggal Pindah</label><input type="date" name="date" value="${today()}"></div>
+      <div><label class="req">Diajukan oleh</label><input name="by" required></div></div>
+     <div style="margin-top:12px"><label class="req">Alasan Pindah</label><textarea name="reason" rows="2" required></textarea></div>
+     <div class="note info" style="margin-top:14px">ℹ️ Jika pindah antar lokasi (mis. Hirose → SGP), IT mungkin perlu ubah Wi-Fi / IP / user i-Reporter.</div>
+     <div style="margin-top:16px"><button class="btn">Ajukan Mutasi</button></div></form></div>`;}
+  return tabs+`<div class="card"><h3>Registrasi iPad Baru</h3><table><tr><th>Serial</th><th>Model</th><th>Tujuan</th><th>PIC</th><th>Tgl</th><th>Setup</th><th>Status</th><th></th></tr>
+   ${pendNew.map(d=>`<tr><td>${d.serial}</td><td>${esc(d.model)}</td><td>${d.lokasi} · ${esc(d.section)}</td><td>${esc(d.pic)}</td><td>${d.arrival}</td><td>${prog(d)}</td><td>${badge(d.status)}</td><td>${role==="admin"?`<button class="btn sm" onclick="openDev('${d.id}')">Proses</button>`:""}</td></tr>`).join("")||"<tr><td colspan=8 class=muted>Tidak ada antrian</td></tr>"}</table></div>
+  <div class="card"><h3>Pengajuan Mutasi</h3><table><tr><th>ID</th><th>iPad</th><th>Dari</th><th>Ke</th><th>Alasan</th><th>Oleh</th><th>Status</th><th></th></tr>
+   ${DB.transfers.slice().reverse().map(t=>`<tr><td>${t.id}</td><td>${devLabel(dev(t.deviceId))}</td><td>${t.from.lokasi} · ${esc(t.from.section)}<br><small class="muted">${esc(t.from.pic)}</small></td><td>${t.to.lokasi} · ${esc(t.to.section)}<br><small class="muted">${esc(t.to.pic)}</small></td><td>${esc(t.reason)}</td><td>${esc(t.by)}<br><small class="muted">${t.date}</small></td><td>${badge(t.status)}</td>
+   <td>${role==="admin"&&t.status==="Pending"?`<button class="btn ok sm" onclick="decideMove('${t.id}',1)">Approve</button> <button class="btn bad sm" onclick="decideMove('${t.id}',0)">Reject</button>`:""}</td></tr>`).join("")||"<tr><td colspan=8 class=muted>Belum ada</td></tr>"}</table></div>`;
+}
+function afterReg(){if(document.getElementById("nLok"))fillSec("nLok","nSec");if(document.getElementById("mLok"))fillSec("mLok","mSec");}
+function fillSec(a,b){document.getElementById(b).innerHTML=opts(S().lokasi[document.getElementById(a).value]||[]);}
+const normSN=v=>v.trim().toUpperCase().replace(/Ø/g,"0");
+function chkSerial(i){const e=document.getElementById("snMsg"),ex=DB.devices.find(d=>d.serial===normSN(i.value));e.innerHTML=ex?`<span style="color:var(--bad)">⚠ Sudah terdaftar sebagai ${esc(ex.name)} – gunakan tab Pindah Tempat</span>`:"";}
+function submitNew(e){
+  e.preventDefault();const f=Object.fromEntries(new FormData(e.target));f.serial=normSN(f.serial);
+  if(DB.devices.some(d=>d.serial===f.serial))return alert("Serial sudah terdaftar! Gunakan tab Pindah Tempat.");
+  DB.devices.push({id:f.serial,name:"(belum dinamai)",serial:f.serial,model:f.model,capacity:f.capacity,color:f.color,lokasi:f.lokasi,section:f.section,pic:f.pic,arrival:f.arrival,purchaseFrom:f.purchaseFrom,price:f.price||null,
+    status:"Pending",checklist:[],wifi:"",ip:"",conmasId:"",ireporterUser:"",history:[{ts:today(),by:"User – "+f.pic,action:"Registrasi iPad baru"+(f.note?` (${f.note})`:"")}]});
+  save();toast("Registrasi terkirim, menunggu setup IT");regTab="riwayat";render();
+}
+function pickDev(){const v=(document.getElementById("mvDev")||{}).value||"";return dev(v.split("|").pop().trim());}
+function showFrom(){const d=pickDev();document.getElementById("mvCmp").innerHTML=d?`<div class="cmp"><div class="box"><small class="muted">POSISI SEKARANG</small><br><b>${d.lokasi} · ${esc(d.section)}</b><br>PIC: ${esc(d.pic)}</div><div style="text-align:center;font-size:22px">➜</div><div class="box"><small class="muted">TUJUAN</small><br>isi di bawah</div></div>`:"";}
+function submitMove(e){
+  e.preventDefault();const d=pickDev();if(!d)return alert("Pilih iPad dari daftar!");const f=Object.fromEntries(new FormData(e.target));
+  if(f.lokasi===d.lokasi&&f.section===d.section&&f.pic===d.pic)return alert("Tujuan sama dengan posisi sekarang.");
+  if(DB.transfers.some(t=>t.deviceId===d.id&&t.status==="Pending"))return alert("iPad ini sudah punya pengajuan mutasi yang belum diproses.");
+  DB.transfers.push({id:"MT-"+String(DB.transfers.length+1).padStart(4,"0"),deviceId:d.id,from:{lokasi:d.lokasi,section:d.section,pic:d.pic},to:{lokasi:f.lokasi,section:f.section,pic:f.pic},reason:f.reason,by:f.by,date:f.date,status:"Pending"});
+  d.history.push({ts:today(),by:"User – "+f.by,action:`Pengajuan mutasi ke ${f.lokasi} · ${f.section}`});
+  save();toast("Pengajuan mutasi terkirim");regTab="riwayat";render();
+}
+function decideMove(id,ok){
+  const t=DB.transfers.find(x=>x.id===id),d=dev(t.deviceId);
+  if(!ok){const r=prompt("Alasan reject:");if(r===null)return;t.status="Rejected";d.history.push({ts:today(),by:"IT Admin",action:`Mutasi ${id} ditolak: ${r}`});}
+  else{t.status="Approved";Object.assign(d,{lokasi:t.to.lokasi,section:t.to.section,pic:t.to.pic});
+    d.history.push({ts:today(),by:"IT Admin",action:`Mutasi ${id} disetujui: ${t.from.section} → ${t.to.section} (PIC ${t.to.pic})`});
+    if(t.from.lokasi!==t.to.lokasi)toast("Pindah antar lokasi – cek Wi-Fi/IP di Monitoring","var(--warn)");}
+  save();render();if(ok&&t.from.lokasi===t.to.lokasi)toast("Mutasi disetujui");
+}
+
+// ==================================================== 4. LAPOR MASALAH
+let tkF="aktif";
+function vLapor(){
+  const act=DB.devices.filter(d=>!["Loss","Pending"].includes(d.status));
+  const list=DB.tickets.filter(t=>tkF==="semua"||(tkF==="aktif"?t.status!=="Closed":t.status==="Closed")).slice().reverse();
+  return`${role!=="manager"?`<div class="card"><h3>Buat Laporan</h3><form onsubmit="submitTicket(event)"><div class="grid">
+   <div><label class="req">iPad</label><input list="tkList" id="tkDev" required placeholder="Ketik nama / serial"><datalist id="tkList">${act.map(d=>`<option value="${d.name} | ${d.serial}">`).join("")}</datalist></div>
+   <div><label class="req">Jenis Masalah</label><select name="type">${opts(S().problems)}</select></div>
+   <div><label class="req">Prioritas</label><select name="priority"><option>Normal</option><option>Tinggi – line terganggu</option></select></div>
+   <div><label class="req">Pelapor</label><input name="by" required></div>
+   <div><label>Foto Kondisi</label><input type="file" accept="image/*"></div></div>
+   <div style="margin-top:12px"><label class="req">Kronologi / Deskripsi</label><textarea name="desc" rows="3" required></textarea></div>
+   <div style="margin-top:16px"><button class="btn bad">Kirim Laporan</button></div></form></div>`:""}
+  <div class="card"><div class="toolbar"><h3 style="margin:0;flex:1">Daftar Tiket</h3><select onchange="tkF=this.value;render()">${["aktif","selesai","semua"].map(x=>`<option ${x===tkF?"selected":""}>${x}</option>`).join("")}</select></div>
+  <table><tr><th>ID</th><th>Tgl</th><th>iPad</th><th>Section</th><th>Masalah</th><th>Prioritas</th><th>Pelapor</th><th>Status</th><th></th></tr>
+  ${list.map(t=>{const d=dev(t.deviceId);return`<tr><td>${t.id}</td><td>${t.date}</td><td>${devLabel(d)}</td><td>${esc(d?.section)}</td><td>${esc(t.type)}<br><small class="muted">${esc(t.desc)}</small></td><td>${t.priority.startsWith("Tinggi")?"🔴 Tinggi":"Normal"}</td><td>${esc(t.by)}</td><td>${badge(t.status)}</td>
+  <td>${role==="admin"&&t.status!=="Closed"?`<button class="btn sm" onclick="openTicket('${t.id}')">Tangani</button>`:`<button class="btn sec sm" onclick="openTicket('${t.id}')">Detail</button>`}</td></tr>`}).join("")||"<tr><td colspan=9 class=muted>Tidak ada tiket</td></tr>"}</table></div>`;
+}
+function submitTicket(e){
+  e.preventDefault();const v=document.getElementById("tkDev").value,d=dev(v.split("|").pop().trim());if(!d)return alert("Pilih iPad dari daftar!");
+  const f=Object.fromEntries(new FormData(e.target));
+  const t={id:"TK-"+String(DB.tickets.length+1).padStart(4,"0"),deviceId:d.id,type:f.type,desc:f.desc,by:f.by,date:today(),priority:f.priority,status:"Open",log:[]};
+  DB.tickets.push(t);d.history.push({ts:today(),by:"User – "+f.by,action:`Lapor masalah ${t.id}: ${f.type}`});
+  save();toast("Laporan "+t.id+" terkirim");render();
+}
+function openTicket(id){
+  const t=DB.tickets.find(x=>x.id===id),d=dev(t.deviceId),adm=role==="admin"&&t.status!=="Closed";
+  openModal(`<h2>${t.id} ${badge(t.status)}</h2><div class="grid">
+   <div><label>iPad</label><b>${devLabel(d)}</b></div><div><label>Lokasi</label>${d.lokasi} · ${esc(d.section)}</div>
+   <div><label>Masalah</label>${esc(t.type)}</div><div><label>Pelapor / Tgl</label>${esc(t.by)} · ${t.date}</div></div>
+   <p><label>Deskripsi</label>${esc(t.desc)}</p>
+   <div class="st">Log Penanganan</div>${t.log.map(l=>`<div class="hist">${esc(l.text)}<br><small>${l.ts} · ${esc(l.by)}</small></div>`).join("")||"<p class=muted>Belum ada</p>"}
+   ${adm?`<div class="st">Tindak Lanjut</div><div class="grid">
+    <div><label>Status Tiket</label><select id="t_st">${opts(["Open","Proses","Closed"],t.status)}</select></div>
+    <div><label>Ubah Status iPad</label><select id="t_dst"><option value="">(tidak berubah – ${d.status})</option>${opts(["Available","Repair","Damaged","Loss"])}</select></div></div>
+    <div style="margin-top:10px"><label>Catatan</label><textarea id="t_note" rows="2" placeholder="mis. Dikirim ke iBox untuk ganti baterai"></textarea></div>`:""}
+   <div style="margin-top:20px;display:flex;gap:10px;justify-content:flex-end"><button class="btn sec" onclick="closeModal()">Tutup</button>${adm?`<button class="btn" onclick="saveTicket('${id}')">Simpan</button>`:""}</div>`);
+}
+function saveTicket(id){
+  const t=DB.tickets.find(x=>x.id===id),d=dev(t.deviceId),st=t_st.value,ds=t_dst.value,n=t_note.value.trim();
+  const parts=[];if(st!==t.status)parts.push(`Status tiket → ${st}`);if(ds&&ds!==d.status){parts.push(`Status iPad ${d.status} → ${ds}`);d.history.push({ts:today(),by:"IT Admin",action:`Status ${d.status} → ${ds} (tiket ${id})`});d.status=ds;}
+  if(n)parts.push(n);if(!parts.length)return closeModal();
+  t.status=st;t.log.push({ts:today(),by:"IT Admin",text:parts.join(". ")});save();closeModal();render();toast("Tiket diupdate");
+}
+
+// ==================================================== 5. SETTINGS
+let setTab="lokasi";
+function vSet(){
+  const T=[["lokasi","📍 Lokasi & Section"],["master","🗂️ Master Data"],["checklist","✅ Checklist Setup"],["users","👥 User & Role"],["sistem","🔧 Sistem"]];
+  const tabs=`<div class="tabs">${T.map(([k,l])=>`<button class="${k===setTab?"active":""}" onclick="setTab='${k}';render()">${l}</button>`).join("")}</div>`;
+  const listEd=(key,title,hint)=>`<div class="card"><h3>${title}</h3>${hint?`<p class="muted">${hint}</p>`:""}<div class="chips">${S()[key].map((x,i)=>`<span class="chip">${esc(x)}<b onclick="delItem('${key}',${i})">✕</b></span>`).join("")}</div>
+    <div class="addrow"><input id="add_${key}" placeholder="Tambah..."><button class="btn sm" onclick="addItem('${key}')">Tambah</button></div></div>`;
+  if(setTab==="lokasi")return tabs+`<div class="card"><h3>Lokasi</h3><div class="addrow" style="max-width:400px"><input id="newLok" placeholder="Nama lokasi baru"><button class="btn sm" onclick="addLok()">Tambah Lokasi</button></div></div>
+    ${Object.entries(S().lokasi).map(([l,secs])=>`<div class="card"><div class="toolbar"><h3 style="margin:0;flex:1">📍 ${esc(l)} <small class="muted">(${DB.devices.filter(d=>d.lokasi===l).length} unit)</small></h3><button class="btn bad sm" onclick="delLok('${esc(l)}')">Hapus Lokasi</button></div>
+    <div class="chips">${secs.map((s,i)=>`<span class="chip">${esc(s)}<b onclick="delSec('${esc(l)}',${i})">✕</b></span>`).join("")}</div>
+    <div class="addrow"><input id="sec_${esc(l)}" placeholder="Tambah section"><button class="btn sm" onclick="addSec('${esc(l)}')">Tambah</button></div></div>`).join("")}`;
+  if(setTab==="master")return tabs+`<div class="g2">${listEd("models","Model iPad")}${listEd("capacities","Kapasitas")}${listEd("wifi","Wi-Fi SSID")}${listEd("vendors","Vendor")}</div>${listEd("problems","Jenis Masalah","Muncul di form Lapor Masalah")}`;
+  if(setTab==="checklist")return tabs+listEd("checklist","Checklist Setup iPad","Urutan langkah setup yang wajib dicentang IT sebelum iPad bisa berstatus Available. ⚠ Mengubah daftar akan me-reset progress checklist unit yang belum selesai.");
+  if(setTab==="users")return tabs+`<div class="card"><h3>User & Role</h3><p class="muted">Di versi produksi, login memakai akun Microsoft (Entra ID). Di sini hanya mengatur role.</p>
+    <table><tr><th>Nama</th><th>Email</th><th>Role</th><th></th></tr>${S().users.map((u,i)=>`<tr><td>${esc(u.name)}</td><td>${esc(u.email)}</td><td><select onchange="S().users[${i}].role=this.value;save()" style="width:auto">${["user","admin","manager"].map(r=>`<option ${r===u.role?"selected":""}>${r}</option>`).join("")}</select></td><td><button class="btn bad sm" onclick="S().users.splice(${i},1);save();render()">Hapus</button></td></tr>`).join("")}</table>
+    <div class="addrow" style="margin-top:14px"><input id="uN" placeholder="Nama"><input id="uE" placeholder="email@hirose.co.id"><select id="uR" style="width:auto"><option>user</option><option>admin</option><option>manager</option></select><button class="btn sm" onclick="addUser()">Tambah</button></div>
+    <div class="st">Hak Akses</div><table><tr><th>Menu</th><th>User</th><th>Admin</th><th>Manager</th></tr>
+    <tr><td>Dashboard</td><td>✅ lihat</td><td>✅</td><td>✅</td></tr><tr><td>Monitoring iPad</td><td>✅ lihat (tanpa data teknis)</td><td>✅ kelola</td><td>✅ lihat + harga</td></tr>
+    <tr><td>Registrasi (baru / pindah)</td><td>✅ ajukan</td><td>✅ approve & setup</td><td>👁 lihat status</td></tr><tr><td>Lapor Masalah</td><td>✅ lapor</td><td>✅ tangani</td><td>👁 lihat</td></tr><tr><td>Settings</td><td>❌</td><td>✅</td><td>❌</td></tr></table></div>`;
+  return tabs+`<div class="card"><h3>Sistem</h3><div class="grid"><div><label>Prefix Nama iPad</label><input id="pf" value="${esc(S().prefix)}"></div><div><label>Nama berikutnya</label><input value="${nextName()}" disabled></div></div>
+    <button class="btn sm" style="margin-top:12px" onclick="S().prefix=pf.value.trim()||'iPad';save();render();toast('Tersimpan')">Simpan</button>
+    <div class="st">Data</div><div class="toolbar"><button class="btn sec" onclick="backup()">⬇️ Backup JSON</button><label class="btn sec" style="margin:0">⬆️ Restore JSON<input type="file" accept=".json" style="display:none" onchange="restore(this)"></label><button class="btn bad" onclick="resetData()">Reset ke Data Demo</button></div>
+    <div class="note info">ℹ️ Prototype menyimpan data di browser (localStorage). Versi produksi → PostgreSQL di server.</div></div>`;
+}
+function addItem(k){const i=document.getElementById("add_"+k),v=i.value.trim();if(!v)return;if(S()[k].includes(v))return alert("Sudah ada");S()[k].push(v);if(k==="checklist")resetCk();save();render();}
+function delItem(k,i){if(!confirm(`Hapus "${S()[k][i]}"?`))return;S()[k].splice(i,1);if(k==="checklist")resetCk();save();render();}
+function resetCk(){DB.devices.forEach(d=>{d.checklist=d.status==="Available"?S().checklist.map(()=>true):[];});}
+function addLok(){const v=newLok.value.trim();if(!v||S().lokasi[v])return;S().lokasi[v]=[];save();render();}
+function delLok(l){if(DB.devices.some(d=>d.lokasi===l))return alert("Masih ada iPad di lokasi ini, pindahkan dulu.");if(confirm("Hapus lokasi "+l+"?")){delete S().lokasi[l];save();render();}}
+function addSec(l){const i=document.getElementById("sec_"+l),v=i.value.trim();if(!v||S().lokasi[l].includes(v))return;S().lokasi[l].push(v);save();render();}
+function delSec(l,i){const s=S().lokasi[l][i];if(DB.devices.some(d=>d.lokasi===l&&d.section===s))return alert("Masih ada iPad di section ini.");S().lokasi[l].splice(i,1);save();render();}
+function addUser(){if(!uN.value||!uE.value)return;S().users.push({name:uN.value,email:uE.value,role:uR.value});save();render();}
+function backup(){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(DB,null,2)]));a.download=`ipad_backup_${today()}.json`;a.click();}
+function restore(inp){const r=new FileReader();r.onload=()=>{try{DB=JSON.parse(r.result);save();render();toast("Restore berhasil");}catch{alert("File tidak valid");}};r.readAsText(inp.files[0]);}
+
+render();
+</script>
+</body>
+</html>
