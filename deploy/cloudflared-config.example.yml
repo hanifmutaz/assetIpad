@@ -1,11 +1,6 @@
-# Contoh config Cloudflare Tunnel langsung ke Node (tanpa IIS).
-# cloudflared menambahkan header X-Forwarded-Proto: https & X-Forwarded-For secara otomatis.
 tunnel: <TUNNEL-ID>
 credentials-file: C:\Users\<akun>\.cloudflared\<TUNNEL-ID>.json
 ingress:
   - hostname: ipad.hirose-idn.example
     service: http://127.0.0.1:4000
-    originRequest:
-      noTLSVerify: false
-      connectTimeout: 10s
   - service: http_status:404

@@ -1,0 +1,21 @@
+import express from 'express';
+import { router as me } from './me.js';
+import { router as dashboard } from './dashboard.js';
+import { router as devices } from './devices.js';
+import { router as credentials } from './credentials.js';
+import { router as config } from './config.js';
+import { router as tickets } from './tickets.js';
+import { router as transfers } from './transfers.js';
+import { router as settings } from './settings.js';
+import { router as users } from './users.js';
+
+export const router = express.Router();
+router.use('/', config);
+router.use('/', me);
+router.use('/dashboard', dashboard);
+router.use('/devices', credentials);
+router.use('/devices', devices);
+router.use('/tickets', tickets);
+router.use('/transfers', transfers);
+router.use('/settings', settings);
+router.use('/users', users);

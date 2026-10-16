@@ -1,88 +1,53 @@
-# iPad Asset Management – PT Hirose Electric Indonesia
+# iPad Asset Management v2 – PT Hirose Electric Indonesia
 
-Versi production dari prototype v0.7. Fitur: dashboard, monitoring iPad, registrasi + konfigurasi bertahap (panduan no-code + QR), mutasi, lapor masalah/tiket, credential terenkripsi, user/PIC, audit log.
+React + TypeScript (Vite, TanStack Query) · Node.js + Express (TypeScript) · PostgreSQL 13+ · login akun lokal (email + password).
 
-| Lapisan | Teknologi |
-|---|---|
-| Frontend | React 18 + Vite + React Router (tanpa framework CSS, tema ala Devias) |
-| Backend | Node.js 20/22 LTS + Express |
-| Database | PostgreSQL **13 ke atas** (disarankan 16) |
-| Login | Microsoft Entra ID (akun Microsoft 365 kantor) – OAuth 2.0 Authorization Code + PKCE, server-side |
-| Hosting | Windows Server 2019 · Node sebagai Windows Service · IIS reverse proxy dan/atau Cloudflare Tunnel |
+## Yang baru di v2
+- **3 role**: Super Admin (full), Admin iPad (registrasi, mutasi, konfigurasi, kelola semua aset), Admin Department (iPad di department-nya). Lihat `docs/ROLES.md`.
+- **Department** sebagai entitas sendiri (bukan section). Tiap iPad punya Lokasi · Section · Department · **Peruntukan** (i-Reporter / Dashboard).
+- **Panduan bersyarat**: tiap item & langkah bisa dibatasi per *skenario* (iPad baru / reset-pindah), *lokasi*, dan *peruntukan*. Layar Setup Assistant bisa ditandai **"Tidak muncul"**. Lihat `docs/PANDUAN-KONFIGURASI.md`.
+- **Mutasi dengan reset**: setelah disetujui Super Admin, iPad kembali ke *Setup* dengan panduan skenario reset; `{{apple_id:lama}}` otomatis mengambil Apple ID lokasi lama untuk Activation Lock.
+- **Passcode 123456** dipakai saat setup, **wajib diganti** di langkah terakhir – konfigurasi tidak bisa diselesaikan selama passcode masih default.
+- **Login lokal**: akun dibuat Super Admin (password sementara, wajib diganti), lupa password via email SMTP, kunci 15 menit setelah 5x gagal. Buka data rahasia = konfirmasi ulang password.
 
-```
-ipad-asset/
-├─ backend/          API Express (src/), migrasi & seed (db/), script admin (scripts/)
-├─ frontend/         React (src/), file statis (public/)
-├─ deploy/           web.config IIS, install service (NSSM), role DB, backup, contoh cloudflared
-└─ docs/             ENTRA-SETUP, DEPLOY-WINDOWS, SECURITY, MIGRASI-EXCEL
-```
-
-## Jalan cepat (development di laptop)
-
+## Jalan di laptop (development)
 ```powershell
-# 1. Database (PostgreSQL 16 lokal) – sekali saja, sebagai superuser
-psql -U postgres -f deploy/db-roles.sql          # ganti dulu password di file
+psql -U postgres -p 5433 -f deploy/db-roles.sql        # ganti password di file dulu
 
-# 2. Backend
 cd backend
 copy .env.example .env
 npm install
-npm run gen-keys                                  # tempel hasilnya ke .env
-#   .env dev: NODE_ENV=development, BASE_URL=http://localhost:5173, DEV_LOGIN=true
+npm run gen-keys                                         # tempel hasilnya ke .env
+#   .env dev: NODE_ENV=development, BASE_URL=http://localhost:5173
 npm run migrate
 npm run seed
-npm run create-admin -- nama@hirose.co.id "Nama Lengkap"
-npm run dev                                       # http://127.0.0.1:4000
+npm run create-superadmin -- nama@hirose.co.id "Nama Lengkap"   # catat password sementara
+npm run dev                                              # API di :4000
 
-# 3. Frontend (terminal lain)
-cd frontend
+cd ..\frontend
 npm install
-npm run dev                                       # buka http://localhost:5173
+npm run dev                                              # buka http://localhost:5173
 ```
 
-`DEV_LOGIN=true` menampilkan login tanpa Microsoft (hanya untuk dev; otomatis ditolak bila `NODE_ENV=production`).
-Untuk mencoba login Microsoft di dev, daftarkan redirect URI `http://localhost:5173/auth/redirect` di Entra (lihat docs/ENTRA-SETUP.md).
-
-## Production
-
-1. Daftarkan aplikasi di Microsoft Entra ID → **docs/ENTRA-SETUP.md**
-2. Install & deploy di Windows Server 2019 → **docs/DEPLOY-WINDOWS.md**
-3. Baca **docs/SECURITY.md** (kunci enkripsi, backup, hak akses)
-4. Migrasi data dari Excel → **docs/MIGRASI-EXCEL.md**
-
-Ringkas:
+## Production (Windows Server 2019)
 ```powershell
-cd frontend; npm ci; npm run build                # hasil: frontend/dist (disajikan oleh backend)
-cd ..\backend; npm ci --omit=dev
-npm run migrate; npm run seed
-npm run create-admin -- nama@hirose.co.id "Nama"
+cd frontend; npm ci; npm run build
+cd ..\backend; npm ci; npm run build; npm run migrate; npm run seed
+npm run create-superadmin -- nama@hirose.co.id "Nama"
 powershell -ExecutionPolicy Bypass -File ..\deploy\install-service.ps1 -AppDir "D:\apps\ipad-asset"
 ```
+Detail: `docs/DEPLOY-WINDOWS.md` · keamanan: `docs/SECURITY.md`.
 
 ## Update aplikasi
-
 ```powershell
 git pull
 cd frontend; npm ci; npm run build
-cd ..\backend; npm ci --omit=dev; npm run migrate
+cd ..\backend; npm ci; npm run build; npm run migrate
 Restart-Service IpadAssetApi
 ```
 
-## Peran (role)
-
-| Fitur | User | PIC | IT Admin | Manager |
-|---|---|---|---|---|
-| Dashboard, Monitoring | lihat (tanpa data teknis) | lihat + teknis | kelola + aksi massal | lihat + harga |
-| Registrasi iPad baru | isi identitas | isi identitas | identitas + konfigurasi | lihat |
-| Mutasi | ajukan | ajukan | approve | lihat |
-| Tiket | lapor | tangani di scope | tangani semua | lihat |
-| Credential passcode / unlock / i-Reporter | ✗ | scope sendiri | ✓ | ✗ |
-| Credential Apple ID / Gmail | ✗ | ✗ | ✓ | ✗ |
-| Retired, Loss → Available | ✗ | ✗ | ajukan | setujui (orang lain) |
-| Pengaturan, panduan, variabel, audit | ✗ | ✗ | ✓ | ✗ |
-
-## Yang belum termasuk (fase berikutnya)
-- Pengiriman notifikasi email / Teams (preferensi sudah disimpan; butuh izin Microsoft Graph `Mail.Send` / webhook Teams).
-- Sinkronisasi dengan MDM (Intune / Apple Business Manager).
-- Format QR khusus ConMas i-Reporter – saat ini QR berisi teks polos; sesuaikan bila scanner i-Reporter butuh format tertentu.
+## Cek kualitas
+```powershell
+cd backend;  npm run typecheck; npm run audit:deps
+cd frontend; npm run typecheck
+```

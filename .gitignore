@@ -6,4 +6,3 @@ dist/
 uploads/
 *.log
 *.dump
-.DS_Store

@@ -1,23 +1,22 @@
 {
   "name": "ipad-asset-backend",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
-  "description": "iPad Asset Management – API (Node.js + PostgreSQL + Microsoft Entra ID)",
   "engines": { "node": ">=20.11" },
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "node --watch src/server.js",
-    "migrate": "node db/migrate.js",
-    "seed": "node db/seed.js",
-    "create-admin": "node scripts/create-admin.js",
-    "gen-keys": "node scripts/gen-keys.js",
-    "rotate-keys": "node scripts/rotate-keys.js",
-    "import-csv": "node scripts/import-devices-csv.js",
-    "audit:deps": "npm audit --omit=dev"
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/src/server.js",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "migrate": "tsx db/migrate.ts",
+    "seed": "tsx db/seed.ts",
+    "create-superadmin": "tsx scripts/create-superadmin.ts",
+    "gen-keys": "tsx scripts/gen-keys.ts",
+    "rotate-keys": "tsx scripts/rotate-keys.ts",
+    "audit:deps": "npm audit --omit=dev --audit-level=high"
   },
   "dependencies": {
-    "@azure/msal-node": "^5.2.3",
     "connect-pg-simple": "^10.0.0",
     "dotenv": "^16.4.5",
     "exceljs": "^4.4.0",
@@ -26,9 +25,21 @@
     "express-session": "^1.18.1",
     "helmet": "^8.0.0",
     "multer": "^2.0.2",
+    "nodemailer": "^6.9.16",
     "pg": "^8.13.1",
     "pino": "^9.6.0",
     "pino-http": "^10.4.0",
     "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/connect-pg-simple": "^7.0.3",
+    "@types/express": "^4.17.21",
+    "@types/express-session": "^1.18.1",
+    "@types/multer": "^1.4.12",
+    "@types/node": "^22.10.2",
+    "@types/nodemailer": "^6.4.17",
+    "@types/pg": "^8.11.10",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
   }
 }
