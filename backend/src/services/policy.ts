@@ -3,7 +3,7 @@ import type { AuthUser, Role } from '../types.js';
 export const ROLES: Role[] = ['superadmin', 'admin_ipad', 'admin_dept'];
 export const ROLE_LABEL: Record<Role, string> = { superadmin: 'Super Admin', admin_ipad: 'Admin iPad', admin_dept: 'Admin Department' };
 
-/** Matriks hak akses – satu sumber kebenaran, dipakai backend & dikirim ke frontend. */
+/** Matriks hak akses, satu sumber kebenaran, dipakai backend & dikirim ke frontend. */
 export const PERMS = {
   'device.viewAll': ['superadmin', 'admin_ipad'],
   'device.register': ['superadmin', 'admin_ipad'],

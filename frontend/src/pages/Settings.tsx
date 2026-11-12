@@ -8,17 +8,18 @@ import Vars from './settings/Vars';
 import Users from './settings/Users';
 import Audit from './settings/Audit';
 
+// Pengaturan sistem aplikasi di depan, panduan konfigurasi setelahnya.
 const ALL: [string, string, Perm][] = [
-  ['panduan', 'Panduan Konfigurasi', 'guide.edit'], ['variabel', 'Variabel', 'var.edit'], ['user', 'User & Role', 'users.manage'],
-  ['department', 'Department', 'settings.master'], ['lokasi', 'Lokasi & Section', 'settings.master'], ['master', 'Master Data', 'settings.master'],
-  ['aturan', 'Aturan', 'settings.master'], ['audit', 'Audit Log', 'audit.view'],
+  ['aturan', 'Aturan Sistem', 'settings.master'], ['master', 'Master Data', 'settings.master'], ['department', 'Department', 'settings.master'],
+  ['lokasi', 'Lokasi & Section', 'settings.master'], ['user', 'User & Role', 'users.manage'], ['variabel', 'Variabel', 'var.edit'],
+  ['panduan', 'Panduan Konfigurasi', 'guide.edit'], ['audit', 'Audit Log', 'audit.view'],
 ];
 export default function Settings() {
   const { tab } = useParams();
   const nav = useNavigate();
   const { can } = useAuth();
   const T = ALL.filter((t) => can(t[2])).map(([k, l]) => [k, l] as [string, string]);
-  const cur = T.some((t) => t[0] === tab) ? tab! : T[0]?.[0] ?? 'panduan';
+  const cur = T.some((t) => t[0] === tab) ? tab! : T[0]?.[0] ?? 'aturan';
   return (
     <>
       <PageHead title="Pengaturan" />

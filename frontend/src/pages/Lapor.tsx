@@ -68,7 +68,7 @@ function NewTicket({ preset, onDone }: { preset: string | null; onDone: () => vo
       <div className="grid">
         <Field label="iPad" req id="tkDev"><input id="tkDev" list="tkList" required value={pick} onChange={(e) => setPick(e.target.value)} placeholder="Ketik nama / serial" /><datalist id="tkList">{devs?.map((x) => <option key={x.id} value={label(x)} />)}</datalist></Field>
         <Field label="Jenis masalah" req id="tkT"><select id="tkT" value={v.type} onChange={(e) => setV({ ...v, type: e.target.value })}>{meta?.master.problem?.map((p) => <option key={p}>{p}</option>)}</select></Field>
-        <Field label="Prioritas" req id="tkP"><select id="tkP" value={v.priority} onChange={(e) => setV({ ...v, priority: e.target.value })}><option value="Normal">Normal</option><option value="Tinggi">Tinggi – line terganggu</option></select></Field>
+        <Field label="Prioritas" req id="tkP"><select id="tkP" value={v.priority} onChange={(e) => setV({ ...v, priority: e.target.value })}><option value="Normal">Normal</option><option value="Tinggi">Tinggi, line terganggu</option></select></Field>
         <Field label="Pelapor"><RO>{me?.name}</RO></Field>
         <Field label="Foto (opsional)" id="tkF"><input id="tkF" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" onChange={(e) => setPhoto(e.target.files?.[0] ?? null)} /></Field>
       </div>
@@ -102,7 +102,7 @@ function TicketModal({ id, onClose }: { id: string; onClose: () => void }) {
         {t.log.length ? t.log.map((l, i) => <div className="hist" key={i}>{l.text}<br /><small>{fmtDT(l.at)} · {l.by_name}</small></div>) : <p className="muted">Belum ada.</p>}
         {t.can_handle && <><div className="st">Tindak lanjut</div><div className="grid">
           <Field label="Status tiket" id="t_st"><select id="t_st" value={v.status} onChange={(e) => setV({ ...v, status: e.target.value })}>{['Open', 'Proses', 'Eskalasi', 'Closed'].map((s) => <option key={s}>{s}</option>)}</select></Field>
-          <Field label="Ubah status iPad" id="t_ds" hint={!can('device.status') ? 'Hanya Admin iPad / Super Admin' : undefined}><select id="t_ds" disabled={!can('device.status')} value={v.deviceStatus} onChange={(e) => setV({ ...v, deviceStatus: e.target.value })}><option value="">(tetap – {t.device_status})</option>{t.device_transitions.map((s) => <option key={s}>{s}</option>)}</select></Field>
+          <Field label="Ubah status iPad" id="t_ds" hint={!can('device.status') ? 'Hanya Admin iPad / Super Admin' : undefined}><select id="t_ds" disabled={!can('device.status')} value={v.deviceStatus} onChange={(e) => setV({ ...v, deviceStatus: e.target.value })}><option value="">(tetap, {t.device_status})</option>{t.device_transitions.map((s) => <option key={s}>{s}</option>)}</select></Field>
         </div><div style={{ marginTop: 12 }}><Field label="Catatan" id="t_n"><textarea id="t_n" rows={2} value={v.note} onChange={(e) => setV({ ...v, note: e.target.value })} /></Field></div></>}
       </>}
     </Modal>

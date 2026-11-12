@@ -33,10 +33,10 @@ function PlaceFields({ v, set, p }: { v: Place; set: (x: Partial<Place>) => void
   const cur = lok.find((l) => String(l.id) === v.lokasiId);
   return (
     <>
-      <Field label="Lokasi" req id={`${p}l`}><select id={`${p}l`} required value={v.lokasiId} onChange={(e) => set({ lokasiId: e.target.value, sectionId: '' })}><option value="">— pilih —</option>{lok.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}</select></Field>
-      <Field label="Section" req id={`${p}s`}><select id={`${p}s`} required value={v.sectionId} onChange={(e) => set({ sectionId: e.target.value })}><option value="">— pilih —</option>{cur?.sections.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</select></Field>
-      <Field label="Department" req id={`${p}d`} hint="Menentukan Admin Department yang bertanggung jawab"><select id={`${p}d`} required value={v.departmentId} onChange={(e) => set({ departmentId: e.target.value })}><option value="">— pilih —</option>{meta?.allDepartments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select></Field>
-      <Field label="Peruntukan" req id={`${p}p`} hint="Menentukan Apple ID & langkah konfigurasi"><select id={`${p}p`} required value={v.purpose} onChange={(e) => set({ purpose: e.target.value })}><option value="">— pilih —</option>{meta?.master.purpose?.map((x) => <option key={x}>{x}</option>)}</select></Field>
+      <Field label="Lokasi" req id={`${p}l`}><select id={`${p}l`} required value={v.lokasiId} onChange={(e) => set({ lokasiId: e.target.value, sectionId: '' })}><option value="">Pilih</option>{lok.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}</select></Field>
+      <Field label="Section" req id={`${p}s`}><select id={`${p}s`} required value={v.sectionId} onChange={(e) => set({ sectionId: e.target.value })}><option value="">Pilih</option>{cur?.sections.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</select></Field>
+      <Field label="Department" req id={`${p}d`} hint="Menentukan Admin Department yang bertanggung jawab"><select id={`${p}d`} required value={v.departmentId} onChange={(e) => set({ departmentId: e.target.value })}><option value="">Pilih</option>{meta?.allDepartments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select></Field>
+      <Field label="Peruntukan" req id={`${p}p`} hint="Menentukan Apple ID & langkah konfigurasi"><select id={`${p}p`} required value={v.purpose} onChange={(e) => set({ purpose: e.target.value })}><option value="">Pilih</option>{meta?.master.purpose?.map((x) => <option key={x}>{x}</option>)}</select></Field>
     </>
   );
 }
@@ -53,12 +53,12 @@ function NewForm() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const sn = v.serial.trim().toUpperCase().replace(/Ø/g, '0').replace(/\s+/g, '');
-    if (!/^[A-Z0-9]{8,14}$/.test(sn)) return toast('Format serial tidak valid (8–14 huruf/angka)', 'err');
+    if (!/^[A-Z0-9]{8,14}$/.test(sn)) return toast('Format serial tidak valid (8 sampai 14 huruf/angka)', 'err');
     const fd = new FormData();
     Object.entries({ ...v, serial: sn }).forEach(([k, x]) => { if (k !== 'lokasiId' && x !== '') fd.append(k, x); });
     if (photo) fd.append('photo', photo);
     setBusy(true);
-    try { const r = await postForm<{ id: string }>('/devices', fd); toast('Identitas tersimpan – lanjut konfigurasi'); nav(`/registrasi/konfigurasi/${r.id}`); }
+    try { const r = await postForm<{ id: string }>('/devices', fd); toast('Identitas tersimpan, lanjut konfigurasi'); nav(`/registrasi/konfigurasi/${r.id}`); }
     catch (x) { toast(errMsg(x), 'err'); } finally { setBusy(false); }
   };
   return (
@@ -117,7 +117,7 @@ function MoveForm({ onDone }: { onDone: () => void }) {
       </div>
       <div style={{ marginTop: 16 }}><Field label="Alasan pindah" req id="m_r"><textarea id="m_r" rows={2} required minLength={3} value={v.reason} onChange={(e) => setV({ ...v, reason: e.target.value })} /></Field></div>
       <label className="check" style={{ marginTop: 12 }}><input type="checkbox" checked={resetVal} onChange={(e) => setReset(e.target.checked)} />
-        <span><b>iPad direset & dikonfigurasi ulang</b><br /><small className="muted">Disarankan bila lokasi / peruntukan berubah (Apple ID, Wi-Fi, server ConMas berbeda). Setelah disetujui, iPad kembali ke status Setup dengan panduan skenario "reset / pindah" – termasuk Apple ID lokasi lama untuk Activation Lock.</small></span></label>
+        <span><b>iPad direset & dikonfigurasi ulang</b><br /><small className="muted">Disarankan bila lokasi / peruntukan berubah (Apple ID, Wi-Fi, server ConMas berbeda). Setelah disetujui, iPad kembali ke status Setup dengan panduan skenario "reset / pindah", termasuk Apple ID lokasi lama untuk Activation Lock.</small></span></label>
       <div className="cfoot" style={{ marginTop: 24 }}><button className="btn" disabled={!d}>{can('approval.decide') ? 'Simpan mutasi' : 'Ajukan ke Super Admin'}</button></div>
     </form>
   );

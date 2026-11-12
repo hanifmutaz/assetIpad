@@ -165,7 +165,7 @@ router.post('/status-requests/:rid/decide', requirePerm('approval.decide'), ah(a
 async function applyStatus(c: import('../db.js').Db, id: string, from: Status, to: Status, reason: string | undefined, u: AuthUser, requester?: string) {
   const retire = to === 'Retired' ? JSON.stringify({ reason, date: new Date().toISOString().slice(0, 10), by: requester ?? u.name, approver: u.name }) : null;
   await c.query('UPDATE device SET status=$2, retire=COALESCE($3::jsonb, retire), last_check=current_date, updated_at=now(), version=version+1 WHERE id=$1', [id, to, retire]);
-  await history(c, id, u, `Status ${from} → ${to}${reason ? ` – ${reason}` : ''}${requester ? ` (diajukan ${requester}, disetujui ${u.name})` : ''}`, to);
+  await history(c, id, u, `Status ${from} → ${to}${reason ? `, ${reason}` : ''}${requester ? ` (diajukan ${requester}, disetujui ${u.name})` : ''}`, to);
 }
 
 // ---------------------------------------------------------------- aksi massal
@@ -197,7 +197,7 @@ router.post('/bulk', requirePerm('device.status'), ah(async (req, res) => {
 // ---------------------------------------------------------------- registrasi iPad baru (Admin iPad)
 router.post('/', requirePerm('device.register'), upload.single('photo'), ah(async (req, res) => {
   const b = z.object({
-    serial: z.string().transform(normSerial).refine((s) => SERIAL_RE.test(s), 'Format serial tidak valid (8–14 huruf/angka)'),
+    serial: z.string().transform(normSerial).refine((s) => SERIAL_RE.test(s), 'Format serial tidak valid (8 sampai 14 huruf/angka)'),
     model: z.string().min(1).max(80), capacity: z.string().max(20).optional(), color: z.string().max(40).optional(),
     sectionId: z.coerce.number().int(), departmentId: z.coerce.number().int(), purpose: z.string().min(1).max(60),
     userName: z.string().trim().min(1).max(120), arrival: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -209,7 +209,7 @@ router.post('/', requirePerm('device.register'), upload.single('photo'), ah(asyn
   const R = await getRules();
   const id = await tx(async (c) => {
     const ex = (await c.query('SELECT name FROM device WHERE serial=$1', [b.serial])).rows[0];
-    if (ex) throw conflict(`Serial sudah terdaftar sebagai ${ex.name ?? '(tanpa nama)'} – gunakan menu Pindah Tempat`, 'SERIAL_EXISTS');
+    if (ex) throw conflict(`Serial sudah terdaftar sebagai ${ex.name ?? '(tanpa nama)'}, gunakan menu Pindah Tempat`, 'SERIAL_EXISTS');
     const photo = await saveImage(c, req.file, req.user!.id);
     const name = await nextName(c, R.prefix);
     const r = await c.query(`INSERT INTO device(serial,name,section_id,department_id,purpose,model,capacity,color,user_name,arrival,vendor,price,status,photo_id,note)
@@ -217,7 +217,7 @@ router.post('/', requirePerm('device.register'), upload.single('photo'), ah(asyn
     [b.serial, name, b.sectionId, b.departmentId, b.purpose, b.model, b.capacity ?? null, b.color ?? null, b.userName, b.arrival, b.vendor ?? null, b.price ?? null, photo, b.note ?? null]);
     const did = r.rows[0].id as string;
     await c.query("INSERT INTO config_run(device_id,scenario,started_by) VALUES($1,'baru',$2)", [did, req.user!.id]);
-    await history(c, did, req.user, `Registrasi iPad baru (${name})${b.note ? ` – ${b.note}` : ''}`, 'Setup');
+    await history(c, did, req.user, `Registrasi iPad baru (${name})${b.note ? `, ${b.note}` : ''}`, 'Setup');
     return did;
   });
   await audit(req, { action: 'Registrasi iPad', deviceId: id, target: b.serial });
@@ -308,7 +308,7 @@ router.patch('/:id', requirePerm('device.edit'), ah(async (req, res) => {
     }
     if (!sets.length) return;
     await c.query(`UPDATE device SET ${sets.join(', ')}, updated_at=now(), version=version+1 WHERE id=$1`, vals);
-    await history(c, id, req.user, `Update – ${changes.join('; ')}`);
+    await history(c, id, req.user, `Update: ${changes.join('; ')}`);
   });
   res.json({ ok: true });
 }));

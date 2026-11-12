@@ -13,7 +13,7 @@ const transport = cfg.smtpReady
 
 export async function sendMail(to: string, subject: string, text: string): Promise<void> {
   if (!transport) {
-    logger.warn({ to, subject }, 'SMTP belum diatur – email tidak dikirim');
+    logger.warn({ to, subject }, 'SMTP belum diatur, email tidak dikirim');
     return;
   }
   await transport.sendMail({ from: cfg.MAIL_FROM, to, subject, text });

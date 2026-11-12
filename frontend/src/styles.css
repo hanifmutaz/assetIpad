@@ -1,4 +1,4 @@
-/* iPad Asset Management v2 – tema ala Devias (navy + indigo) */
+/* iPad Asset Management v2, tema ala Devias (navy + indigo) */
 :root{--pri:#5048e5;--pri2:#5048e5;--priL:rgba(80,72,229,.08);--bg:#f9fafc;--card:#fff;--txt:#121828;--mut:#65748b;--ok:#10b981;--teal:#14b8a6;--warn:#ffb020;--warnT:#b27b16;--bad:#d14343;--info:#2196f3;--bd:#e6e8f0;--soft:#f3f4f6;
 --side:#111827;--sideT:#d1d5db;--sideM:#9ca3af;--sh:0 1px 1px rgba(100,116,139,.06),0 1px 2px rgba(100,116,139,.1);--sh2:0 10px 15px rgba(31,41,55,.1),0 0 1px rgba(31,41,55,.05)}
 body.dark{--bg:#0b0f19;--card:#111827;--txt:#edf2f7;--mut:#a0aec0;--bd:#2d3748;--soft:#1a2232;--priL:rgba(124,117,255,.15);--pri2:#7c75ff;--sh:0 0 0 1px #2d3748}
@@ -123,7 +123,7 @@ ol.steps{padding:0;margin:0;list-style:none;counter-reset:s}
 ol.steps li{counter-increment:s;display:flex;gap:14px;align-items:flex-start;padding:12px 14px;border:1px solid var(--bd);border-radius:8px;margin-bottom:10px}
 ol.steps li::before{content:counter(s);width:26px;height:26px;border-radius:50%;background:var(--soft);display:inline-flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;font-weight:700}
 ol.steps li.ok{background:rgba(20,184,166,.06);border-color:rgba(20,184,166,.4)}ol.steps li.ok::before{background:var(--teal);color:#fff}
-ol.steps li.skip{background:var(--soft);opacity:.75}ol.steps li.skip::before{content:"–"}
+ol.steps li.skip{background:var(--soft);opacity:.75}ol.steps li.skip::before{content:"·"}
 .stepbody{flex:1;min-width:0}.stepact{display:flex;gap:6px;flex-shrink:0}
 .subl{margin-top:6px;padding:2px 0 2px 12px;border-left:2px solid var(--bd);font-size:13px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .vv{color:var(--pri2);font-weight:700}.vs{display:inline-flex;gap:4px;align-items:center;vertical-align:middle;flex-wrap:wrap}.vs code{background:var(--soft);padding:3px 8px;border-radius:4px}

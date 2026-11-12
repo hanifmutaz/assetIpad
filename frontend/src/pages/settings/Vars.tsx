@@ -23,10 +23,13 @@ export default function Vars() {
       fields: [
         { k: 'lokasiId', l: 'Lokasi', opts: [{ value: '', label: 'Semua lokasi' }, ...(meta?.lokasi ?? []).map((l) => ({ value: String(l.id), label: l.name }))], v: row?.lokasi_id ? String(row.lokasi_id) : '' },
         { k: 'purpose', l: 'Peruntukan', opts: [{ value: '', label: 'Semua peruntukan' }, ...(meta?.master.purpose ?? []).map((p) => ({ value: p, label: p }))], v: row?.purpose ?? '' },
-        { k: 'value', l: 'Nilai', type: v.type === 'secret' ? 'password' : 'text', req: true, v: row?.value ?? '', hint: v.type === 'secret' ? 'Disimpan terenkripsi, tidak akan ditampilkan lagi di halaman ini.' : undefined },
+        { k: 'value', l: 'Nilai', type: v.type === 'secret' ? 'password' : 'text', req: !(row && v.type === 'secret'), again: v.type === 'secret', v: row?.value ?? '',
+          hint: v.type === 'secret' ? (row ? 'Kosongkan jika nilai rahasia tidak ingin diganti. Tekan Lihat untuk memeriksa ketikan sebelum menyimpan.' : 'Tekan Lihat untuk memeriksa ketikan. Setelah disimpan, nilai terenkripsi dan tidak ditampilkan lagi di halaman ini.') : undefined },
       ], ok: 'Simpan' });
     if (!r || r === true) return;
-    await run(() => post(`/settings/vars/${v.key}/values`, { lokasiId: r.lokasiId ? Number(r.lokasiId) : null, purpose: r.purpose || null, value: r.value }), 'Nilai disimpan');
+    const body = { lokasiId: r.lokasiId ? Number(r.lokasiId) : null, purpose: r.purpose || null, value: r.value || undefined };
+    if (row) await run(() => put(`/settings/vars/${v.key}/values/${row.id}`, body), 'Nilai diperbarui');
+    else await run(() => post(`/settings/vars/${v.key}/values`, body), 'Nilai ditambahkan');
   };
   return (
     <>

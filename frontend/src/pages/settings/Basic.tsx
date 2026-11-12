@@ -46,7 +46,7 @@ export function Lokasi() {
   if (error || !data) return <ErrorBox error={error} />;
   return (
     <>
-      <div className="card"><h3>Lokasi</h3><div style={{ maxWidth: 420 }}><AddRow placeholder="Nama lokasi baru" onAdd={(name) => act(() => post('/settings/lokasi', { name }), 'Lokasi ditambah – isi nilainya di tab Variabel')} /></div></div>
+      <div className="card"><h3>Lokasi</h3><div style={{ maxWidth: 420 }}><AddRow placeholder="Nama lokasi baru" onAdd={(name) => act(() => post('/settings/lokasi', { name }), 'Lokasi ditambah, isi nilainya di tab Variabel')} /></div></div>
       {data.lokasi.map((l) => (
         <div className="card" key={l.id}>
           <div className="toolbar"><h3 style={{ margin: 0, flex: 1 }}>{l.name} <small style={{ display: 'inline' }}>({l.devices} iPad)</small></h3>
@@ -63,12 +63,12 @@ const KINDS: [string, string, string?][] = [['purpose', 'Peruntukan iPad', 'Mene
   ['problem', 'Jenis masalah'], ['reason', 'Alasan akses credential'], ['old_model', 'Model lama (kandidat replace)'], ['reconfig', 'Item re-config']];
 export function Master() {
   const { data, loading, error, act } = useSettings();
-  const { confirm } = useUi();
+  const { confirm, dialog } = useUi();
   if (loading) return <Loading />;
   if (error || !data) return <ErrorBox error={error} />;
   return <div className="g2">{KINDS.map(([k, t, hint]) => (
     <div className="card" key={k}><h3>{t}{hint && <small>{hint}</small>}</h3>
-      <div className="chips">{data.master[k]?.map((m) => <span key={m.id} className="chip">{m.value}<button aria-label={`Hapus ${m.value}`} onClick={async () => { if (await confirm('Hapus item', `Hapus "${m.value}"?`, true)) await act(() => del(`/settings/master/${m.id}`)); }}>✕</button></span>)}</div>
+      <div className="chips">{data.master[k]?.map((m) => <span key={m.id} className="chip">{m.value}<button aria-label={`Ubah ${m.value}`} title="Ubah nama" onClick={async () => { const r = await dialog({ title: `Ubah ${t.toLowerCase()}`, body: <p className="muted">Nama diganti pada item ini dan pada semua iPad yang memakainya. Tidak menambah item baru.</p>, fields: [{ k: 'value', l: 'Nama', v: m.value, req: true }], ok: 'Simpan' }); if (r && r !== true && r.value !== m.value) await act(() => patch(`/settings/master/${m.id}`, { value: r.value }), 'Nama diubah'); }}>✎</button><button aria-label={`Hapus ${m.value}`} onClick={async () => { if (await confirm('Hapus item', `Hapus "${m.value}"?`, true)) await act(() => del(`/settings/master/${m.id}`)); }}>✕</button></span>)}</div>
       <AddRow placeholder={`Tambah ${t.toLowerCase()}`} onAdd={(value) => act(() => post('/settings/master', { kind: k, value }))} />
     </div>
   ))}</div>;

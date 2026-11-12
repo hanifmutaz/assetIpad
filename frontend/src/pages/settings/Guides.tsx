@@ -81,7 +81,7 @@ export default function Guides() {
     vars: Object.fromEntries(data.vars.flatMap((v) => [[v.key, { label: v.label, type: v.type, qr: false, set: true, value: null, lama: false }], [`${v.key}:lama`, { label: `${v.label} (lokasi lama)`, type: v.type, qr: false, set: true, value: null, lama: true }]])) };
   const varOpts = <><option value="">+ Sisipkan variabel</option>
     <optgroup label="Variabel (nilai mengikuti lokasi & peruntukan)">{data.vars.map((v) => <option key={v.key} value={v.key}>{v.label}{v.type === 'secret' ? ' (rahasia)' : ''}</option>)}</optgroup>
-    <optgroup label="Variabel di lokasi LAMA (untuk Activation Lock)">{data.vars.map((v) => <option key={v.key} value={`${v.key}:lama`}>{v.label} – lokasi lama</option>)}</optgroup>
+    <optgroup label="Variabel di lokasi LAMA (untuk Activation Lock)">{data.vars.map((v) => <option key={v.key} value={`${v.key}:lama`}>{v.label} (lokasi lama)</option>)}</optgroup>
     <optgroup label="Otomatis dari data iPad">{Object.entries(data.sysvars).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</optgroup></>;
   const showFor = draft && applies(draft.cond, pv);
   return (

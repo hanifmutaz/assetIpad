@@ -34,7 +34,7 @@ router.post('/login', limit(20, 15), ah(async (req, res) => {
     if (u) {
       const n = u.failed_count + 1;
       await q('UPDATE app_user SET failed_count=$2, locked_until = CASE WHEN $2 >= $3 THEN now() + make_interval(mins => $4) ELSE NULL END WHERE id=$1', [u.id, n >= MAX_FAIL ? 0 : n, MAX_FAIL, LOCK_MIN]);
-      await audit(req, { action: n >= MAX_FAIL ? 'Login gagal – akun dikunci sementara' : 'Login gagal', target: b.email }, undefined, u);
+      await audit(req, { action: n >= MAX_FAIL ? 'Login gagal, akun dikunci sementara' : 'Login gagal', target: b.email }, undefined, u);
     }
     throw unauth(u && !u.active && ok ? 'Akun Anda dinonaktifkan. Hubungi Super Admin.' : 'Email atau password salah');
   }

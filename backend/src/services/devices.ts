@@ -52,11 +52,11 @@ export async function setCredential(db: Db, deviceId: string, field: string, val
   const v = value.trim();
   if (!v || v.length > 200) throw bad(`${meta.label} tidak valid`);
   const weak = weakReason(v, meta.kind);
-  if (enforce && weak) throw bad(`${meta.label} ditolak – ${weak}`, 'WEAK');
+  if (enforce && weak) throw bad(`${meta.label} ditolak, ${weak}`, 'WEAK');
   const h = hmac(v, field);
   if (enforce && meta.unique) {
     const dup = await db.query('SELECT 1 FROM device_credential WHERE field=$1 AND hmac=$2 AND device_id<>$3 LIMIT 1', [field, h, deviceId]);
-    if (dup.rowCount) throw bad(`${meta.label} sudah dipakai iPad lain – gunakan nilai unik`, 'DUPLICATE_SECRET');
+    if (dup.rowCount) throw bad(`${meta.label} sudah dipakai iPad lain, gunakan nilai unik`, 'DUPLICATE_SECRET');
   }
   const cur = await db.query('SELECT hmac FROM device_credential WHERE device_id=$1 AND field=$2', [deviceId, field]);
   if (enforce && meta.sec && cur.rows[0]?.hmac === h) throw bad(`${meta.label} sama dengan nilai lama`);

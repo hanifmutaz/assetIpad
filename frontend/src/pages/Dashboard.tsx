@@ -85,7 +85,7 @@ export default function Dashboard() {
           </tbody></table> : <Empty msg="Tidak ada kandidat replace." />}
         </div>
         <div className="card"><h3>Aktivitas terbaru</h3>
-          {d.activity.length ? d.activity.map((h, i) => <div className="hist" key={i}><button className="link" onClick={() => nav(`/devices/${h.device_id}`)}>{h.device}</button> – {h.action}<br /><small>{fmtDT(h.at)} · {h.by_name}</small></div>) : <Empty msg="Belum ada aktivitas." />}
+          {d.activity.length ? d.activity.map((h, i) => <div className="hist" key={i}><button className="link" onClick={() => nav(`/devices/${h.device_id}`)}>{h.device}</button>: {h.action}<br /><small>{fmtDT(h.at)} · {h.by_name}</small></div>) : <Empty msg="Belum ada aktivitas." />}
         </div>
       </div>
     </>

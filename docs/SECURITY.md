@@ -8,7 +8,7 @@
 - Ganti/reset password, nonaktif user → semua sesi user tersebut diputus.
 - Sesi di PostgreSQL, cookie `__Host-` HttpOnly + Secure + SameSite=Strict, idle timeout + batas absolut, session ID dibuat ulang saat login.
 - Buka data rahasia (credential, variabel rahasia) = konfirmasi ulang password, terkunci lagi setelah idle.
-- MFA (TOTP) belum ada – disarankan untuk Super Admin di fase berikutnya.
+- MFA (TOTP) belum ada, disarankan untuk Super Admin di fase berikutnya.
 
 ## Proteksi request & data
 - CSRF token per sesi + cek Origin; sebelum login wajib header custom + Origin.
@@ -19,7 +19,7 @@
 - Upload: cek magic bytes, maks 5 MB, nama acak, di luar folder web.
 
 ## ⚠ Sebelum go-live
-- [ ] **Ganti semua password Apple ID / Gmail yang pernah tertulis di dokumen SOP** – anggap sudah bocor. Simpan hanya di Pengaturan › Variabel.
+- [ ] **Ganti semua password Apple ID / Gmail yang pernah tertulis di dokumen SOP**, anggap sudah bocor. Simpan hanya di Pengaturan › Variabel.
 - [ ] Cek ulang Apple ID SGP & Systech (di SOP sama-sama ind61).
 - [ ] `NODE_ENV=production`, `BASE_URL` https, SMTP terisi.
 - [ ] Cadangan `DATA_KEYS` & `HMAC_KEY` di brankas, terpisah dari backup DB.

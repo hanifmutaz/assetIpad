@@ -1,5 +1,5 @@
 // Data awal: master, department contoh, variabel, panduan dari SOP. Aman diulang (hanya mengisi tabel kosong).
-// TIDAK mengisi password apa pun – nilai rahasia diisi Super Admin lewat Pengaturan › Variabel.
+// TIDAK mengisi password apa pun, nilai rahasia diisi Super Admin lewat Pengaturan › Variabel.
 import 'dotenv/config';
 import crypto from 'node:crypto';
 import { makePool } from '../src/db.js';
@@ -13,7 +13,7 @@ const LOKASI: Record<string, string[]> = {
   SGP: ['SGP', 'QC PI SGP'],
   Systech: ['Systech', 'QC PI SYS'],
 };
-// CONTOH – ganti sesuai struktur department perusahaan di Pengaturan › Department
+// CONTOH, ganti sesuai struktur department perusahaan di Pengaturan › Department
 const DEPARTMENTS = ['QA', 'Produksi AL', 'Molding', 'Stamping', 'Plating', 'PPIC', 'Purchasing', 'IT'];
 const MASTER: Record<string, string[]> = {
   model: ['iPad (A16)', 'iPad 9th Generation', 'iPad 8th Generation', 'iPad 7th Generation', 'iPad 6th Generation', 'iPad 5th Generation', 'iPad Air 11-inch (M3)'],
@@ -69,7 +69,7 @@ try {
       await c.query('INSERT INTO config_var(key,label,type,qr,sort) VALUES($1,$2,$3,$4,$5)', [k, l, t, qr, i]);
       for (const [lok, pur, v] of vals) await c.query('INSERT INTO config_var_value(key,lokasi_id,purpose,value) VALUES($1,$2,$3,$4)', [k, lok ? L[lok] : null, pur, v]);
     }
-    console.log('✓ variabel (password kosong – isi lewat aplikasi)');
+    console.log('✓ variabel (password kosong, isi lewat aplikasi)');
   }
 
   if (await empty('guide')) {
@@ -78,7 +78,7 @@ try {
     const s = (text: string, o: { cond?: object; skip?: boolean } = {}) => ({ id: crypto.randomUUID(), text, cond: o.cond ?? {}, skippable: o.skip ?? false });
     const sk = (text: string, cond?: object) => s(text, { skip: true, cond });
     const appleId = s('**Apple ID**: sign-in sesuai lokasi & peruntukan iPad ({{lokasi}} · {{peruntukan}})\nEmail: {{apple_id}}\nPassword: {{apple_pass}}\nKlik **Next**, isi password, **Next**');
-    const twofa = sk('Muncul **Apple ID Verification Code** → isi kode yang muncul di iPad lain dengan akun Apple yang sama\nJika tidak dapat: klik **Didn\'t get a code › Send text** – kode dikirim SMS ke {{apple_2fa}}');
+    const twofa = sk('Muncul **Apple ID Verification Code** → isi kode yang muncul di iPad lain dengan akun Apple yang sama\nJika tidak dapat: klik **Didn\'t get a code › Send text**, kode dikirim SMS ke {{apple_2fa}}');
     const passcode = s('**Create a Passcode** → isi passcode sementara {{setup_passcode}}\nPop-up "This Passcode Can Be Easily Guessed" → **Use Anyway**\nIsi ulang passcode yang sama\nPasscode ini **wajib diganti** di langkah terakhir');
     const tail = [
       sk('**Terms and Conditions** → **Agree**'), sk('**Express Settings** → **Continue**'), sk('**Keep Your iPad Up to Date** → **Continue**'),
@@ -86,7 +86,7 @@ try {
       sk('**App Analytics** → **Don\'t Share**'),
     ];
     const G: [string, string, object, ReturnType<typeof s>[], object[], object, boolean][] = [
-      ['Setup Assistant – iPad baru',
+      ['Setup Assistant: iPad baru',
         'Layar Setup Assistant bisa muncul dengan urutan berbeda tergantung versi iPadOS. Centang **Selesai** untuk layar yang muncul, atau **Tidak muncul** bila layar itu tidak ada.',
         { scenarios: ['baru'] }, [
           sk('Pilih bahasa **English**'), sk('Select Your Country or Region → **United States**'),
@@ -95,7 +95,7 @@ try {
           sk('**Touch ID** → **Set Up Touch ID Later** → pop-up → **Don\'t Use**'), sk('**Transfer Your Apps & Data** → **Don\'t Transfer Anything**'),
           appleId, twofa, tail[0]!, sk('**Data & Privacy** → **Continue**'), passcode, ...tail.slice(1), sk('**Welcome to iPad** → **Get Started**'),
         ], [{ k: 'appleStatus', label: 'Status Apple ID', target: 'appleStatus', required: true }], { wifi: 'wifi_ssid', appleId: 'apple_id', applePwd: 'apple_pass' }, true],
-      ['Setup Assistant – iPad reset / pindah tempat',
+      ['Setup Assistant: iPad reset / pindah tempat',
         'Untuk iPad lama yang direset karena pindah lokasi/peruntukan. Activation Lock memakai Apple ID **lokasi sebelumnya**.',
         { scenarios: ['reset'] }, [
           sk('Pilih bahasa **English**'), sk('Select Your Country or Region → **United States**'), sk('**Quick Start** → **Set Up Manually**'),
@@ -120,9 +120,9 @@ try {
         s('Coba login sampai muncul notifikasi perlu registrasi akun', { cond: HO }), s('Klik **OK** → **Device Authentication › Apply Registrasi**', { cond: HO }),
         s('Isi lalu **Apply**\nName Device = {{nama_ipad}}\nRemark = {{nama_ipad}}', { cond: HO }), s('Informasikan ke PIC ConMas i-Reporter untuk di-approve', { cond: HO }),
         s('Setelah di-approve, login kembali', { cond: HO }), s('Pilih **Custom Master › Refresh Custom Master**', { cond: HO }),
-        s('Cukup sampai sini – setting selanjutnya di jaringan subcont', { cond: SS }),
+        s('Cukup sampai sini, setting selanjutnya di jaringan subcont', { cond: SS }),
       ], [{ k: 'ireporterUser', label: 'User i-Reporter', target: 'ireporterUser', required: false }, { k: 'conmasId', label: 'ConMas Device ID', target: 'conmasId', required: false }], {}, true],
-      ['Ganti wallpaper', '', {}, [s('Ganti wallpaper – request wallpaper ke PIC ConMas i-Reporter')], [], {}, true],
+      ['Ganti wallpaper', '', {}, [s('Ganti wallpaper: request wallpaper ke PIC ConMas i-Reporter')], [], {}, true],
       ['Aktifkan Find My', 'Wajib untuk melacak iPad bila hilang.', {}, [
         s('Buka **Settings › [nama Apple ID] › Find My**'), s('**Find My iPad** → ON'), s('Aktifkan **Find My network** dan **Send Last Location**'),
         s('Minta Admin cek iPad muncul di iCloud Find Devices'),
@@ -134,7 +134,7 @@ try {
       ], [], {}, true],
       ['Ganti passcode (wajib, langkah terakhir)', 'Passcode {{setup_passcode}} hanya untuk setup. Ganti dengan passcode 6 digit yang unik (tidak berulang/berurutan, tidak sama dengan iPad lain).', {}, [
         s('Buka **Settings › Touch ID & Passcode** (atau Face ID & Passcode)'), s('**Change Passcode** → masukkan {{setup_passcode}} → isi passcode baru'),
-        s('Isi passcode baru di bawah – disimpan terenkripsi'),
+        s('Isi passcode baru di bawah, disimpan terenkripsi'),
       ], [{ k: 'passcode', label: 'Passcode baru', target: 'passcode', required: true }], {}, true],
     ];
     for (const [i, [t, d, cond, steps, fields, auto, req]] of G.entries()) {

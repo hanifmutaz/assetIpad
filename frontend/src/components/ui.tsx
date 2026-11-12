@@ -19,7 +19,7 @@ export const cmpVer = (a?: string | null, b?: string | null) => {
 export const errMsg = (e: unknown) => (e instanceof Error ? e.message : 'Terjadi kesalahan');
 
 // ------------------------------------------------------------ toast + dialog
-export interface DlgField { k: string; l: string; type?: string; req?: boolean; v?: string | boolean; opts?: (string | { value: string; label: string })[]; area?: boolean; check?: boolean; hint?: string }
+export interface DlgField { k: string; l: string; type?: string; req?: boolean; v?: string | boolean; opts?: (string | { value: string; label: string })[]; area?: boolean; check?: boolean; hint?: string; again?: boolean }
 interface DlgOpts { title: string; body?: ReactNode; fields?: DlgField[]; ok?: string; cancel?: string; danger?: boolean }
 type DlgResult = Record<string, string | boolean> | true | null;
 interface UiCtx { toast: (m: string, t?: 'ok' | 'err' | 'warn') => void; dialog: (o: DlgOpts) => Promise<DlgResult>; confirm: (title: string, body: ReactNode, danger?: boolean) => Promise<boolean> }
@@ -55,6 +55,7 @@ export function UiProvider({ children }: { children: ReactNode }) {
 function Dialog({ title, body, fields = [], ok = 'OK', cancel = 'Batal', danger, onClose }: DlgOpts & { onClose: (v: DlgResult) => void }) {
   const [vals, setVals] = useState<Record<string, string | boolean>>(() => Object.fromEntries(fields.map((f) => [f.k, f.v ?? (f.check ? false : '')])));
   const [err, setErr] = useState('');
+  const [shown, setShown] = useState<Record<string, boolean>>({});
   const first = useRef<HTMLInputElement & HTMLSelectElement & HTMLTextAreaElement & HTMLButtonElement>(null);
   useEffect(() => {
     first.current?.focus();
@@ -65,7 +66,8 @@ function Dialog({ title, body, fields = [], ok = 'OK', cancel = 'Batal', danger,
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     for (const f of fields) if (f.req && !String(vals[f.k] ?? '').trim()) { setErr(`${f.l} wajib diisi`); return; }
-    onClose(fields.length ? Object.fromEntries(Object.entries(vals).map(([k, v]) => [k, typeof v === 'string' ? v.trim() : v])) : true);
+    for (const f of fields) if (f.again && String(vals[f.k] ?? '') !== String(vals[`${f.k}__2`] ?? '')) { setErr(`${f.l} dan ulangannya belum sama`); return; }
+    onClose(fields.length ? Object.fromEntries(Object.entries(vals).filter(([k]) => !k.endsWith('__2')).map(([k, v]) => [k, typeof v === 'string' ? v.trim() : v])) : true);
   };
   const set = (k: string, v: string | boolean) => setVals((s) => ({ ...s, [k]: v }));
   return (
@@ -82,13 +84,26 @@ function Dialog({ title, body, fields = [], ok = 'OK', cancel = 'Batal', danger,
                 <label htmlFor={`dlg_${f.k}`} className={f.req ? 'req' : ''}>{f.l}</label>
                 {f.opts ? (
                   <select id={`dlg_${f.k}`} ref={i === 0 ? first : undefined} value={String(vals[f.k])} onChange={(e) => set(f.k, e.target.value)}>
-                    <option value="">— pilih —</option>
+                    <option value="">Pilih</option>
                     {f.opts.map((o) => (typeof o === 'object' ? <option key={o.value} value={o.value}>{o.label}</option> : <option key={o}>{o}</option>))}
                   </select>
                 ) : f.area ? (
                   <textarea id={`dlg_${f.k}`} ref={i === 0 ? first : undefined} rows={3} value={String(vals[f.k])} onChange={(e) => set(f.k, e.target.value)} />
                 ) : (
-                  <input id={`dlg_${f.k}`} ref={i === 0 ? first : undefined} type={f.type ?? 'text'} autoComplete={f.type === 'password' ? 'current-password' : 'off'} value={String(vals[f.k])} onChange={(e) => set(f.k, e.target.value)} />
+                  f.type === 'password' ? (
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <input id={`dlg_${f.k}`} ref={i === 0 ? first : undefined} type={shown[f.k] ? 'text' : 'password'} autoComplete="new-password" style={{ flex: 1 }} value={String(vals[f.k])} onChange={(e) => set(f.k, e.target.value)} />
+                      <button type="button" className="btn sec sm" aria-pressed={!!shown[f.k]} onClick={() => setShown((x) => ({ ...x, [f.k]: !x[f.k] }))}>{shown[f.k] ? 'Sembunyikan' : 'Lihat'}</button>
+                    </div>
+                  ) : (
+                    <input id={`dlg_${f.k}`} ref={i === 0 ? first : undefined} type={f.type ?? 'text'} autoComplete="off" value={String(vals[f.k])} onChange={(e) => set(f.k, e.target.value)} />
+                  )
+                )}
+                {f.again && f.type === 'password' && (
+                  <div style={{ marginTop: 8 }}>
+                    <label htmlFor={`dlg_${f.k}__2`}>Ketik ulang {f.l.toLowerCase()}</label>
+                    <input id={`dlg_${f.k}__2`} type={shown[f.k] ? 'text' : 'password'} autoComplete="new-password" value={String(vals[`${f.k}__2`] ?? '')} onChange={(e) => set(`${f.k}__2`, e.target.value)} />
+                  </div>
                 )}
                 {f.hint && <small className="hint">{f.hint}</small>}
               </>

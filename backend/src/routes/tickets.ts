@@ -72,7 +72,7 @@ router.post('/:id/update', ah(async (req, res) => {
       if (!TRANS[from]?.includes(ds) || needApproval(from, ds)) throw bad('Perubahan status iPad ini tidak bisa dari tiket (butuh persetujuan)');
       if (needReason(from, ds) && !b.note) throw bad('Isi catatan sebagai alasan perubahan status iPad');
       await c.query('UPDATE device SET status=$2, last_check=current_date, updated_at=now(), version=version+1 WHERE id=$1', [t.device_id, ds]);
-      await history(c, t.device_id, req.user, `Status ${from} → ${ds} – ${b.note ?? 'via tiket'} (${t.code})`, ds);
+      await history(c, t.device_id, req.user, `Status ${from} → ${ds}, ${b.note ?? 'via tiket'} (${t.code})`, ds);
       parts.push(`Status iPad ${from} → ${ds}`);
     }
     if (b.status !== t.status) parts.push(`Status tiket → ${b.status}`);

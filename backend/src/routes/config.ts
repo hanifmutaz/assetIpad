@@ -153,7 +153,7 @@ router.post('/devices/:id/config/finish', A, ah(async (req, res) => {
     if (d.passcode_default) throw bad('Passcode masih default (123456). Selesaikan langkah "Ganti passcode" dulu.', 'PASSCODE_DEFAULT');
     await c.query('UPDATE config_run SET finished_at=now(), finished_by=$2 WHERE id=$1', [run.id, req.user!.id]);
     await c.query("UPDATE device SET status='Available', last_check=current_date, updated_at=now(), version=version+1 WHERE id=$1", [id]);
-    await history(c, id, req.user, `Konfigurasi selesai (${run.scenario === 'baru' ? 'iPad baru' : 'reset / pindah'}) – Setup → Available`, 'Available');
+    await history(c, id, req.user, `Konfigurasi selesai (${run.scenario === 'baru' ? 'iPad baru' : 'reset / pindah'}), Setup → Available`, 'Available');
   });
   await audit(req, { action: 'Konfigurasi selesai', deviceId: id });
   res.json({ ok: true });

@@ -34,7 +34,7 @@ async function applyTransfer(c: Db, t: Record<string, any>, u: AuthUser): Promis
       [t.device_id, from?.lokasi_id ?? null, t.from_purpose, u.id, t.id]);
     // Reset iPad memakai passcode default 123456 → wajib diganti di langkah terakhir
     await c.query("UPDATE device SET status='Setup', passcode_default=true WHERE id=$1", [t.device_id]);
-    await history(c, t.device_id, u, `Mutasi ${code} disetujui – iPad direset & masuk konfigurasi ulang`, 'Setup');
+    await history(c, t.device_id, u, `Mutasi ${code} disetujui, iPad direset & masuk konfigurasi ulang`, 'Setup');
   } else {
     await history(c, t.device_id, u, `Mutasi ${code} disetujui (tanpa reset)`);
   }

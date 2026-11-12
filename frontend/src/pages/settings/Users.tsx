@@ -28,7 +28,7 @@ export default function Users() {
     <>
       {data.orphans.length > 0 && <div className="note">⚠ Department tanpa Admin Department aktif: {data.orphans.map((o) => `${o.name} (${o.n} iPad)`).join(', ')}</div>}
       <div className="card cardt">
-        <h3>User & Role<small>Login dengan email + password. User tidak dihapus, hanya dinonaktifkan. {data.smtp ? 'Password sementara juga dikirim lewat email.' : 'SMTP belum diatur – serahkan password sementara secara langsung.'}</small></h3>
+        <h3>User & Role<small>Login dengan email + password. User tidak dihapus, hanya dinonaktifkan. {data.smtp ? 'Password sementara juga dikirim lewat email.' : 'SMTP belum diatur, serahkan password sementara secara langsung.'}</small></h3>
         <div className="tw"><table>
           <thead><tr><th>Nama</th><th>Role</th><th>Department</th><th>Status</th><th /></tr></thead>
           <tbody>{data.users.map((u) => (

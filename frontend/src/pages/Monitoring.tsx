@@ -133,7 +133,7 @@ function DeviceList() {
               </tr>
             ))}</tbody>
           </table></div>
-          <div className="pager"><span>{(page - 1) * per + 1}–{Math.min(page * per, data?.total ?? 0)} dari {data?.total} unit</span>
+          <div className="pager"><span>{(page - 1) * per + 1} sampai {Math.min(page * per, data?.total ?? 0)} dari {data?.total} unit</span>
             <select aria-label="Baris per halaman" value={per} onChange={(e) => { setPer(Number(e.target.value)); setPage(1); }}>{[10, 20, 50, 100].map((n) => <option key={n}>{n}</option>)}</select>
             <button className="btn sec sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>‹</button><span>{page} / {pages}</span><button className="btn sec sm" disabled={page >= pages} onClick={() => setPage(page + 1)}>›</button></div>
         </div>

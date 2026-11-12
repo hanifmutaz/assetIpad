@@ -42,7 +42,7 @@ router.post('/lokasi', SA, ah(async (req, res) => {
 router.delete('/lokasi/:id', SA, ah(async (req, res) => {
   const lid = id.parse(req.params.id);
   await tx(async (c) => {
-    if ((await c.query('SELECT 1 FROM device d JOIN section s ON s.id=d.section_id WHERE s.lokasi_id=$1 LIMIT 1', [lid])).rowCount) throw conflict('Masih ada iPad di lokasi ini – pindahkan dulu');
+    if ((await c.query('SELECT 1 FROM device d JOIN section s ON s.id=d.section_id WHERE s.lokasi_id=$1 LIMIT 1', [lid])).rowCount) throw conflict('Masih ada iPad di lokasi ini, pindahkan dulu');
     await c.query('DELETE FROM section WHERE lokasi_id=$1', [lid]);
     await c.query('DELETE FROM lokasi WHERE id=$1', [lid]);
   });
@@ -88,6 +88,33 @@ router.post('/master', SA, ah(async (req, res) => {
   await q('INSERT INTO master_item(kind,value,sort) VALUES($1,$2,(SELECT COALESCE(max(sort),0)+1 FROM master_item WHERE kind=$1))', [b.kind, b.value]);
   res.status(201).json({ ok: true });
 }));
+/** Ubah nama item master (mis. SSID Wi-Fi, peruntukan): data lama ikut diperbarui, tidak menambah baris baru. */
+router.patch('/master/:id', SA, ah(async (req, res) => {
+  const mid = id.parse(req.params.id);
+  const b = z.object({ value: z.string().trim().min(1).max(120) }).parse(req.body);
+  await tx(async (c) => {
+    const m = (await c.query('SELECT kind, value FROM master_item WHERE id=$1 FOR UPDATE', [mid])).rows[0];
+    if (!m) throw notFound();
+    if (m.value === b.value) return;
+    if ((await c.query('SELECT 1 FROM master_item WHERE kind=$1 AND value=$2', [m.kind, b.value])).rowCount) throw conflict(`"${b.value}" sudah ada`);
+    await c.query('UPDATE master_item SET value=$2 WHERE id=$1', [mid, b.value]);
+    const col: Record<string, string> = { model: 'model', capacity: 'capacity', wifi: 'wifi', vendor: 'vendor', purpose: 'purpose' };
+    if (col[m.kind]) await c.query(`UPDATE device SET ${col[m.kind]}=$2 WHERE ${col[m.kind]}=$1`, [m.value, b.value]);
+    if (m.kind === 'purpose') {
+      await c.query('UPDATE transfer SET from_purpose=$2 WHERE from_purpose=$1', [m.value, b.value]);
+      await c.query('UPDATE transfer SET to_purpose=$2 WHERE to_purpose=$1', [m.value, b.value]);
+      await c.query('UPDATE config_run SET from_purpose=$2 WHERE from_purpose=$1', [m.value, b.value]);
+      await c.query('UPDATE config_var_value SET purpose=$2 WHERE purpose=$1', [m.value, b.value]);
+      // panduan: syarat peruntukan di level panduan dan di level langkah
+      const swap = (cd: { purposes?: string[] } | undefined) => (cd?.purposes ? { ...cd, purposes: cd.purposes.map((p) => (p === m.value ? b.value : p)) } : cd);
+      for (const g of (await c.query('SELECT id, cond, steps FROM guide')).rows) {
+        await c.query('UPDATE guide SET cond=$2, steps=$3 WHERE id=$1', [g.id, JSON.stringify(swap(g.cond)), JSON.stringify(g.steps.map((st: { cond?: { purposes?: string[] } }) => ({ ...st, cond: swap(st.cond) })))]);
+      }
+    }
+    await audit(req, { action: 'Ubah item master', target: `${m.kind}: ${m.value} → ${b.value}` });
+  });
+  res.json({ ok: true });
+}));
 router.delete('/master/:id', SA, ah(async (req, res) => {
   const m = (await q('SELECT kind, value FROM master_item WHERE id=$1', [id.parse(req.params.id)])).rows[0];
   if (!m) throw notFound();
@@ -121,7 +148,7 @@ async function validateGuide(g: z.infer<typeof guideSchema>) {
   const keys = new Set((await q('SELECT key FROM config_var')).rows.map((r) => r.key as string));
   const unknown = new Set<string>();
   for (const t of [g.descr, ...g.steps.map((s) => s.text)]) for (const m of t.matchAll(VAR_TOKEN_RE)) if (!keys.has(m[1]!) && !SYSVARS[m[1]!]) unknown.add(m[1]!);
-  if (unknown.size) throw bad(`Variabel tidak dikenal: ${[...unknown].join(', ')} – tambahkan di tab Variabel dulu`);
+  if (unknown.size) throw bad(`Variabel tidak dikenal: ${[...unknown].join(', ')}, tambahkan di tab Variabel dulu`);
   const targets = g.fields.map((f) => (f.target === 'note' ? f.k : f.target));
   if (new Set(targets).size !== targets.length) throw bad('Ada isian yang disimpan ke data yang sama');
   for (const k of Object.values(g.auto)) if (!keys.has(k)) throw bad(`Variabel otomatis ${k} tidak ada`);
@@ -202,6 +229,26 @@ router.post('/vars/:key/values', V, ah(async (req, res) => {
     const rowId: number = ex?.id ?? (await c.query("INSERT INTO config_var_value(key,lokasi_id,purpose,value) VALUES($1,$2,$3,'') RETURNING id", [key, b.lokasiId, b.purpose])).rows[0].id;
     if (v.type === 'secret') await c.query('UPDATE config_var_value SET value=NULL, enc=$2 WHERE id=$1', [rowId, encrypt(b.value, varCtx({ key, id: rowId }))]);
     else await c.query('UPDATE config_var_value SET value=$2, enc=NULL WHERE id=$1', [rowId, b.value]);
+  });
+  await audit(req, { action: 'Ubah nilai variabel', target: `${key} [lokasi ${b.lokasiId ?? 'semua'} · ${b.purpose ?? 'semua'}]` });
+  res.json({ ok: true });
+}));
+/** Ubah satu nilai di tempat (lokasi/peruntukan/nilai). Nilai kosong pada variabel rahasia = pertahankan nilai lama. */
+router.put('/vars/:key/values/:id', V, ah(async (req, res) => {
+  const key = String(req.params.key);
+  const rid = id.parse(req.params.id);
+  const b = z.object({ lokasiId: z.number().int().nullable(), purpose: z.string().max(60).nullable(), value: z.string().trim().max(300).optional() }).parse(req.body);
+  await tx(async (c) => {
+    const v = (await c.query('SELECT type FROM config_var WHERE key=$1', [key])).rows[0];
+    const row = (await c.query('SELECT id FROM config_var_value WHERE id=$1 AND key=$2 FOR UPDATE', [rid, key])).rows[0];
+    if (!v || !row) throw notFound();
+    if ((await c.query('SELECT 1 FROM config_var_value WHERE key=$1 AND id<>$4 AND lokasi_id IS NOT DISTINCT FROM $2 AND purpose IS NOT DISTINCT FROM $3', [key, b.lokasiId, b.purpose, rid])).rowCount)
+      throw conflict('Kombinasi lokasi dan peruntukan ini sudah punya nilai. Ubah baris yang sudah ada.');
+    await c.query('UPDATE config_var_value SET lokasi_id=$2, purpose=$3 WHERE id=$1', [rid, b.lokasiId, b.purpose]);
+    if (b.value) {
+      if (v.type === 'secret') await c.query('UPDATE config_var_value SET value=NULL, enc=$2 WHERE id=$1', [rid, encrypt(b.value, varCtx({ key, id: rid }))]);
+      else await c.query('UPDATE config_var_value SET value=$2, enc=NULL WHERE id=$1', [rid, b.value]);
+    } else if (v.type !== 'secret') throw bad('Nilai wajib diisi');
   });
   await audit(req, { action: 'Ubah nilai variabel', target: `${key} [lokasi ${b.lokasiId ?? 'semua'} · ${b.purpose ?? 'semua'}]` });
   res.json({ ok: true });

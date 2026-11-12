@@ -94,7 +94,7 @@ function InfoTab({ data }: { data: Detail }) {
         {'price' in d && <Field label="Harga"><RO>{rp(d.price)}</RO></Field>}
         <Field label="Terakhir dicek"><RO>{fmtDate(d.last_check)}</RO></Field>
       </div>
-      {d.retire && <div className="note bad" style={{ marginTop: 16 }}>Retired {d.retire.date} – diajukan {d.retire.by}, disetujui {d.retire.approver}. Alasan: {d.retire.reason}</div>}
+      {d.retire && <div className="note bad" style={{ marginTop: 16 }}>Retired {d.retire.date}, diajukan {d.retire.by}, disetujui {d.retire.approver}. Alasan: {d.retire.reason}</div>}
       {d.photo_id && <div style={{ marginTop: 16 }}><label>Foto nota / dus</label><img className="photo" src={`/api/files/${d.photo_id}`} alt="Foto nota" /></div>}
       <div className="toolbar" style={{ marginTop: 16 }}>
         {perms.transitions.length > 0 && <button className="btn sec" onClick={() => void changeStatus()}>Ubah status</button>}

@@ -82,9 +82,9 @@ export default function ConfigWizard() {
               <span className={`dot ${x.state.done ? 'ok' : ''}`}>{x.state.done ? '✓' : k + 1}</span><span style={{ flex: 1 }}>{x.title}{!x.required && <small className="muted"> (opsional)</small>}</span>
             </button>
           ))}</div>
-          {d.passcode_default && <div className="note" style={{ margin: '12px 0 0' }}>Passcode masih 123456 – wajib diganti sebelum selesai.</div>}
+          {d.passcode_default && <div className="note" style={{ margin: '12px 0 0' }}>Passcode masih 123456, wajib diganti sebelum selesai.</div>}
           <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <button className="btn ok" disabled={!!data.progress.requiredLeft || d.passcode_default} onClick={() => void finish()}>✓ Selesai – iPad siap dipakai</button>
+            <button className="btn ok" disabled={!!data.progress.requiredLeft || d.passcode_default} onClick={() => void finish()}>✓ Selesai, iPad siap dipakai</button>
             <button className="btn sec" onClick={() => nav('/registrasi?tab=status')}>Simpan & lanjut nanti</button>
           </div>
         </div>

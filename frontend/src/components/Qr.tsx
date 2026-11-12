@@ -40,7 +40,7 @@ export function QrButton({ label, sub, getValue, secret }: { label: string; sub?
   const stop = (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); };
   return (
     <span className="qv" ref={ref}>
-      <button type="button" className="qbtn" title="Tampilkan QR – scan dari iPad" aria-label={`Tampilkan QR ${label}`} onClick={toggle}><Ic n="qr" s={14} /></button>
+      <button type="button" className="qbtn" title="Tampilkan QR, scan dari iPad" aria-label={`Tampilkan QR ${label}`} onClick={toggle}><Ic n="qr" s={14} /></button>
       {open && (
         <span className="qpop" role="dialog" aria-label={`QR ${label}`} onClick={stop}>
           <span className="qh"><Ic n="qr" s={16} /><b>{label}{sub && <span className="muted"> · {sub}</span>}</b><button type="button" className="x" style={{ width: 28, height: 28, fontSize: 16 }} aria-label="Tutup" onClick={() => setOpen(false)}>✕</button></span>
