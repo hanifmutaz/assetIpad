@@ -1,0 +1,1068 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>iPad Asset Management – Hirose Indonesia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ===== PRIMITIVE ===== */
+:root{
+--brand:#003F97;--brand-hover:#00316F;--brand-soft:#E7EEF9;
+--blue-50:#E7EEF9;--blue-100:#CFDDF2;--blue-500:#2F68C4;--blue-600:#003F97;--blue-700:#003F97;--cyan-500:#003F97;
+--navy-900:#0E1A2E;--navy-950:#0A1322;
+--slate-0:#FFFFFF;--slate-25:#F4F5F7;--slate-50:#EEF0F3;--slate-100:#DDE1E7;--slate-300:#B9C0CC;--slate-500:#7A8594;--slate-600:#55606F;--slate-700:#3A4452;--slate-900:#1A2230;
+--green-50:#E8F5EE;--green-600:#1E8A55;--green-700:#17693F;--amber-50:#FFF4DD;--amber-500:#D98E04;--amber-700:#895A00;
+--red-50:#FCE9E8;--red-600:#C93A33;--red-700:#9B2620;--violet-50:#EFEBF8;--violet-600:#6A4FB5;--violet-700:#523B93;
+--brown-50:#F5EDE1;--brown-600:#8A6420;--brown-700:#6B4C16;
+--font-sans:"IBM Plex Sans",system-ui,"Segoe UI",Roboto,sans-serif;--font-mono:"IBM Plex Mono",Consolas,monospace;
+--fs-xs:12px;--fs-sm:13px;--fs-md:14px;--fs-lg:16px;--fs-xl:19px;--fs-2xl:22px;--fs-3xl:28px;
+--sp-1:4px;--sp-2:8px;--sp-3:12px;--sp-4:16px;--sp-5:20px;--sp-6:24px;--sp-8:32px;--sp-10:40px;
+--r-sm:3px;--r-md:5px;--r-lg:6px;--r-full:999px;
+}
+/* ===== SEMANTIC ===== */
+:root{
+--color-bg:var(--slate-25);--color-surface:#fff;--color-surface-muted:#F7F8FA;
+--color-border:var(--slate-100);--color-border-strong:var(--slate-300);
+--color-text:var(--slate-900);--color-text-muted:var(--slate-600);--color-text-subtle:var(--slate-500);
+--color-primary:var(--brand);--color-primary-hover:var(--brand-hover);--color-primary-soft:var(--brand-soft);--color-on-primary:#fff;
+--color-logo:var(--brand);
+--gradient-brand:var(--brand);--gradient-side:#fff;
+--color-side-text:var(--slate-700);--color-side-muted:var(--slate-500);--color-side-active:var(--brand);
+--color-side-active-bg:var(--brand-soft);--color-side-hover:var(--slate-50);--color-side-border:var(--slate-100);
+--s-ok-bg:var(--green-50);--s-ok-fg:var(--green-700);--s-ok-dot:var(--green-600);
+--s-warn-bg:var(--amber-50);--s-warn-fg:var(--amber-700);--s-warn-dot:var(--amber-500);
+--s-bad-bg:var(--red-50);--s-bad-fg:var(--red-700);--s-bad-dot:var(--red-600);
+--s-info-bg:var(--blue-50);--s-info-fg:var(--blue-700);--s-info-dot:var(--blue-500);
+--s-rep-bg:var(--violet-50);--s-rep-fg:var(--violet-700);--s-rep-dot:var(--violet-600);
+--s-neu-bg:var(--slate-50);--s-neu-fg:var(--slate-700);--s-neu-dot:var(--slate-500);
+--s-ret-bg:var(--brown-50);--s-ret-fg:var(--brown-700);--s-ret-dot:var(--brown-600);
+--shadow-sm:none;--shadow-md:0 8px 24px rgba(14,26,46,.16);
+--focus-ring:0 0 0 2px #fff,0 0 0 4px rgba(0,63,151,.55);--overlay:rgba(14,26,46,.5);--color-toast:#1A2230;
+}
+body.dark{
+--color-bg:#0E131B;--color-surface:#151B25;--color-surface-muted:#1A212C;--color-border:#262F3D;--color-border-strong:#3A4658;
+--color-text:#E6EAF0;--color-text-muted:#A5B0C0;--color-text-subtle:#8693A6;
+--color-primary:#5B8DEF;--color-primary-hover:#7AA3F4;--color-primary-soft:rgba(91,141,239,.14);--color-on-primary:#0E131B;
+--color-logo:#E6EAF0;--gradient-brand:#5B8DEF;--gradient-side:#151B25;
+--color-side-text:#B7C1D0;--color-side-muted:#8693A6;--color-side-active:#fff;--color-side-active-bg:rgba(91,141,239,.16);--color-side-hover:rgba(255,255,255,.05);--color-side-border:#262F3D;
+--s-ok-bg:rgba(30,138,85,.18);--s-ok-fg:#7DDBA9;--s-warn-bg:rgba(217,142,4,.18);--s-warn-fg:#F2C265;
+--s-bad-bg:rgba(201,58,51,.2);--s-bad-fg:#F2A19C;--s-info-bg:rgba(91,141,239,.16);--s-info-fg:#9DBBF5;
+--s-rep-bg:rgba(106,79,181,.22);--s-rep-fg:#C5B7EE;--s-neu-bg:rgba(122,133,148,.18);--s-neu-fg:#C9D1DD;--s-ret-bg:rgba(138,100,32,.24);--s-ret-fg:#EBCB92;
+--toast:#222B39;--color-toast:#222B39;--focus-ring:0 0 0 2px #151B25,0 0 0 4px rgba(91,141,239,.7);
+}
+/* ===== COMPONENT ===== */
+:root{--side-w:240px;--top-h:56px;--btn-h:38px;--input-h:40px;--card-pad:var(--sp-5)}
+
+*{box-sizing:border-box}html,body{margin:0}
+body{font-family:var(--font-sans);font-size:var(--fs-md);line-height:1.5;color:var(--color-text);background:var(--color-bg);-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+a{color:var(--color-primary)}
+h1,h2,h3,h4{margin:0;font-weight:600;letter-spacing:-.005em}
+.muted{color:var(--color-text-muted)}.subtle{color:var(--color-text-subtle);font-size:var(--fs-sm)}
+.mono{font-family:var(--font-mono);font-size:var(--fs-xs)}
+.ic{width:18px;height:18px;flex-shrink:0}
+:focus-visible{outline:none;box-shadow:var(--focus-ring)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.stack{display:flex;flex-direction:column;gap:var(--sp-4)}
+.row{display:flex;align-items:center;gap:var(--sp-3);flex-wrap:wrap}
+.spread{display:flex;justify-content:space-between;align-items:center;gap:var(--sp-3);flex-wrap:wrap}
+
+/* Shell */
+.shell{display:flex;min-height:100vh}
+.side{width:var(--side-w);background:#fff;color:var(--color-side-text);display:flex;flex-direction:column;gap:var(--sp-1);padding:0 var(--sp-3) var(--sp-4);position:sticky;top:0;height:100vh;flex-shrink:0;z-index:20;border-right:1px solid var(--color-border)}
+body.dark .side{background:var(--color-surface)}
+.brand{display:flex;align-items:center;gap:var(--sp-3);height:var(--top-h);padding:0 var(--sp-2);margin:0 calc(var(--sp-3)*-1) var(--sp-3);padding-left:calc(var(--sp-3) + var(--sp-2));border-bottom:1px solid var(--color-border)}
+.brand b{display:block;color:var(--color-text);font-size:var(--fs-md);font-weight:600;line-height:1.2}
+.brand small{display:block;font-size:11px;color:var(--color-side-muted);letter-spacing:.02em}
+.brand-t{padding-left:var(--sp-3);border-left:1px solid var(--color-border-strong);line-height:1.2}
+.logo{height:26px;width:auto;color:var(--color-logo);flex-shrink:0;display:block}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav a{display:flex;align-items:center;gap:var(--sp-3);min-height:40px;padding:0 var(--sp-3);border-radius:var(--r-md);color:inherit;text-decoration:none;font-weight:500;position:relative}
+.nav a:hover{background:var(--color-side-hover);color:var(--color-text)}
+.nav a.on{background:var(--color-side-active-bg);color:var(--color-side-active);font-weight:600}
+.nav a.on::before{content:"";position:absolute;left:-12px;top:8px;bottom:8px;width:3px;border-radius:0 2px 2px 0;background:var(--color-primary)}
+.side-foot{margin-top:auto;border-top:1px solid var(--color-side-border);padding:var(--sp-4) var(--sp-1) 0;display:flex;flex-direction:column;gap:var(--sp-2);font-size:var(--fs-xs);color:var(--color-side-muted)}
+.side-foot select{background:var(--color-surface-muted);color:var(--color-text);border:1px solid var(--color-border);min-height:36px;font-size:var(--fs-sm)}
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.top{height:var(--top-h);background:var(--color-surface);border-bottom:1px solid var(--color-border);display:flex;align-items:center;gap:var(--sp-4);padding:0 var(--sp-6);position:sticky;top:0;z-index:15}
+.gs{flex:1;max-width:440px;position:relative;color:var(--color-text-subtle)}
+.gs .ic{position:absolute;left:var(--sp-3);top:50%;transform:translateY(-50%)}
+.gs input{padding-left:var(--sp-10);background:var(--color-surface-muted);min-height:36px}
+.top-act{margin-left:auto;display:flex;align-items:center;gap:var(--sp-1)}
+.ibtn{position:relative;min-width:38px;min-height:38px;border-radius:var(--r-md);border:0;background:transparent;color:var(--color-text-muted);display:grid;place-items:center;cursor:pointer}
+.ibtn:hover{background:var(--color-surface-muted);color:var(--color-text)}
+.cnt{position:absolute;top:3px;right:2px;min-width:17px;height:17px;border-radius:var(--r-full);background:var(--s-bad-dot);color:#fff;font-size:10px;font-weight:600;display:grid;place-items:center;padding:0 4px}
+.avatar{width:32px;height:32px;margin-left:var(--sp-2);border-radius:var(--r-sm);background:var(--slate-900);color:#fff;display:grid;place-items:center;font-weight:600;font-size:var(--fs-xs);letter-spacing:.03em}
+body.dark .avatar{background:var(--slate-700)}
+.pop-wrap{position:relative}
+.pop{position:absolute;right:0;top:calc(100% + var(--sp-2));width:340px;background:var(--color-surface);border:1px solid var(--color-border-strong);border-radius:var(--r-lg);box-shadow:var(--shadow-md);padding:var(--sp-2);z-index:30}
+.pop a{display:block;padding:var(--sp-3);border-radius:var(--r-md);color:var(--color-text);text-decoration:none}
+.pop a:hover{background:var(--color-surface-muted)}
+.page{padding:var(--sp-6);width:100%;max-width:1360px}
+.ph{display:flex;justify-content:space-between;align-items:flex-end;gap:var(--sp-4);flex-wrap:wrap;margin-bottom:var(--sp-5);padding-bottom:var(--sp-4);border-bottom:1px solid var(--color-border)}
+.ph h1{font-size:var(--fs-2xl);font-weight:600}.ph p{margin:2px 0 0;color:var(--color-text-muted);font-size:var(--fs-sm)}
+.crumb{font-size:var(--fs-sm);color:var(--color-text-subtle);margin-bottom:var(--sp-2)}.crumb a{text-decoration:none}.crumb a:hover{text-decoration:underline}
+
+/* Card & grid */
+.card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--r-lg);padding:var(--card-pad)}
+.card-h{display:flex;justify-content:space-between;align-items:flex-start;gap:var(--sp-3);margin-bottom:var(--sp-4)}
+.card-h h2{font-size:var(--fs-md);font-weight:600}.card-h p{margin:2px 0 0;font-size:var(--fs-sm);color:var(--color-text-muted)}
+.grid{display:grid;gap:var(--sp-4)}
+.g4{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g21{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr)}
+.g12{grid-template-columns:minmax(0,1fr) minmax(0,1.6fr)}
+.mb{margin-bottom:var(--sp-5)}
+
+/* KPI: strip menyatu */
+.g4.mb{gap:0;border:1px solid var(--color-border);border-radius:var(--r-lg);background:var(--color-surface);overflow:hidden}
+.g4.mb>.card{border:0;border-radius:0;border-right:1px solid var(--color-border);background:transparent}
+.g4.mb>.card:last-child{border-right:0}
+.kpi{display:flex;flex-direction:column;gap:2px}
+.kpi .l{font-size:var(--fs-xs);color:var(--color-text-muted);font-weight:500;text-transform:uppercase;letter-spacing:.05em}
+.kpi .v{font-size:var(--fs-3xl);font-weight:600;line-height:1.2;font-family:var(--font-mono);letter-spacing:-.02em}
+.kpi .h{font-size:var(--fs-sm);color:var(--color-text-subtle)}
+.kpi.hero .v{color:var(--color-primary)}
+.bar{height:6px;border-radius:var(--r-sm);background:var(--color-surface-muted);border:1px solid var(--color-border);overflow:hidden;margin-top:var(--sp-2)}
+.bar i{display:block;height:100%;background:var(--color-primary)}
+
+/* To-do */
+.todo{display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-3);border:1px solid var(--color-border);border-radius:var(--r-md);margin-bottom:var(--sp-2);min-height:52px}
+.todo:hover{background:var(--color-surface-muted)}
+.todo .n{min-width:36px;height:36px;border-radius:var(--r-sm);display:grid;place-items:center;font-weight:600;font-size:var(--fs-md);font-family:var(--font-mono)}
+.todo .t{flex:1;min-width:0}.todo .t b{display:block;font-weight:600}.todo .t small{color:var(--color-text-subtle);font-size:var(--fs-xs)}
+
+/* Tones */
+.tone-ok{background:var(--s-ok-bg);color:var(--s-ok-fg);--d:var(--s-ok-dot)}
+.tone-warn{background:var(--s-warn-bg);color:var(--s-warn-fg);--d:var(--s-warn-dot)}
+.tone-bad{background:var(--s-bad-bg);color:var(--s-bad-fg);--d:var(--s-bad-dot)}
+.tone-info{background:var(--s-info-bg);color:var(--s-info-fg);--d:var(--s-info-dot)}
+.tone-rep{background:var(--s-rep-bg);color:var(--s-rep-fg);--d:var(--s-rep-dot)}
+.tone-neu{background:var(--s-neu-bg);color:var(--s-neu-fg);--d:var(--s-neu-dot)}
+.tone-ret{background:var(--s-ret-bg);color:var(--s-ret-fg);--d:var(--s-ret-dot)}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:1px 8px 1px 7px;border-radius:var(--r-sm);font-size:var(--fs-xs);font-weight:600;line-height:20px;white-space:nowrap}
+.badge::before{content:"";width:6px;height:6px;border-radius:1px;background:var(--d,currentColor)}
+.badge.plain::before{display:none}
+
+/* Horizontal bars */
+.hb{display:grid;grid-template-columns:120px 1fr 32px;align-items:center;gap:var(--sp-3);margin-bottom:var(--sp-3);font-size:var(--fs-sm)}
+.hb-track{height:8px;border-radius:var(--r-sm);background:var(--color-surface-muted);overflow:hidden}
+.hb-track i{display:block;height:100%;background:var(--d,var(--color-primary))}
+.hb-track i.brand{background:var(--color-primary)}
+.hb b{text-align:right;font-family:var(--font-mono);font-weight:500}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--sp-2);min-height:var(--btn-h);padding:0 var(--sp-4);border-radius:var(--r-md);border:1px solid var(--color-primary);background:var(--color-primary);color:var(--color-on-primary);font:inherit;font-weight:500;cursor:pointer;text-decoration:none;white-space:nowrap;transition:background .12s,border-color .12s}
+.btn:hover:not(:disabled){background:var(--color-primary-hover);border-color:var(--color-primary-hover)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-sec{background:var(--color-surface);color:var(--color-text);border-color:var(--color-border-strong)}
+.btn-sec:hover:not(:disabled){background:var(--color-surface-muted);border-color:var(--slate-500)}
+.btn-soft{background:var(--color-primary-soft);color:var(--color-primary);border-color:transparent}
+.btn-soft:hover:not(:disabled){background:var(--color-primary-soft);border-color:var(--color-primary)}
+.btn-ok{background:var(--s-ok-dot);border-color:var(--s-ok-dot);color:#fff}.btn-ok:hover:not(:disabled){background:var(--s-ok-fg);border-color:var(--s-ok-fg)}
+.btn-bad{background:var(--s-bad-dot);border-color:var(--s-bad-dot);color:#fff}.btn-bad:hover:not(:disabled){background:var(--s-bad-fg)}
+.btn-link{background:transparent;border-color:transparent;color:var(--color-primary);padding:0 var(--sp-2)}.btn-link:hover:not(:disabled){background:transparent;border-color:transparent;text-decoration:underline}
+.btn-sm{min-height:32px;padding:0 var(--sp-3);font-size:var(--fs-sm);border-radius:var(--r-sm)}
+.btn-block{width:100%}
+.seg{display:inline-flex;border:1px solid var(--color-border-strong);border-radius:var(--r-md);overflow:hidden}
+.seg button{border:0;background:var(--color-surface);color:var(--color-text-muted);min-height:34px;min-width:38px;display:grid;place-items:center;cursor:pointer}
+.seg button+button{border-left:1px solid var(--color-border-strong)}
+.seg button.on{background:var(--color-primary-soft);color:var(--color-primary)}
+
+/* Forms */
+.field{display:flex;flex-direction:column;gap:5px}
+.field label,.lbl{font-size:var(--fs-sm);font-weight:600}
+.field .hint{font-size:var(--fs-xs);color:var(--color-text-subtle)}
+.field .err{font-size:var(--fs-xs);color:var(--s-bad-fg);font-weight:600}
+input,select,textarea{font:inherit;color:var(--color-text);background:var(--color-surface);border:1px solid var(--color-border-strong);border-radius:var(--r-md);min-height:var(--input-h);padding:0 var(--sp-3);width:100%}
+textarea{padding:var(--sp-2) var(--sp-3);min-height:88px;resize:vertical}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--color-primary);box-shadow:var(--focus-ring)}
+input[type=checkbox]{width:16px;height:16px;min-height:0;accent-color:var(--color-primary);cursor:pointer}
+.ro{min-height:var(--input-h);display:flex;align-items:center;padding:0 var(--sp-3);border-radius:var(--r-md);background:var(--color-surface-muted);border:1px solid var(--color-border)}
+.filters{display:grid;grid-template-columns:2fr repeat(4,1fr);gap:var(--sp-3);margin-bottom:var(--sp-4)}
+
+/* Tabs */
+.tabs{display:flex;gap:var(--sp-5);border-bottom:1px solid var(--color-border);margin-bottom:var(--sp-5);overflow-x:auto}
+.tabs a,.tabs button{min-height:42px;padding:0 2px;display:flex;align-items:center;gap:var(--sp-2);border:0;background:none;font:inherit;font-weight:500;color:var(--color-text-muted);text-decoration:none;border-bottom:2px solid transparent;margin-bottom:-1px;cursor:pointer;white-space:nowrap}
+.tabs a:hover,.tabs button:hover{color:var(--color-text)}
+.tabs .on{color:var(--color-primary);border-bottom-color:var(--color-primary);font-weight:600}
+.chips{display:flex;gap:var(--sp-2);flex-wrap:wrap;margin-bottom:var(--sp-4)}
+.chip{min-height:32px;padding:0 var(--sp-3);border-radius:var(--r-sm);border:1px solid var(--color-border-strong);background:var(--color-surface);color:var(--color-text-muted);font:inherit;font-size:var(--fs-sm);font-weight:500;cursor:pointer}
+.chip:hover{border-color:var(--slate-500)}
+.chip.on{background:var(--color-primary);border-color:var(--color-primary);color:var(--color-on-primary)}
+
+/* Table */
+.tw{overflow-x:auto;border:1px solid var(--color-border);border-radius:var(--r-md)}
+table{width:100%;border-collapse:collapse}
+th{background:var(--color-surface-muted);font-size:11px;font-weight:600;color:var(--color-text-muted);text-align:left;padding:var(--sp-2) var(--sp-4);white-space:nowrap;text-transform:uppercase;letter-spacing:.05em}
+td{padding:10px var(--sp-4);border-top:1px solid var(--color-border);vertical-align:middle}
+tbody tr:hover td{background:var(--color-surface-muted)}
+td .sub{display:block;font-size:var(--fs-xs);color:var(--color-text-subtle)}
+.bulk{display:flex;align-items:center;gap:var(--sp-3);flex-wrap:wrap;padding:var(--sp-2) var(--sp-4);margin-bottom:var(--sp-3);border-radius:var(--r-md);background:var(--color-primary-soft);border:1px solid var(--color-primary)}
+
+/* Device cards */
+.dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:var(--sp-3)}
+.dcard{border:1px solid var(--color-border);border-radius:var(--r-lg);padding:var(--sp-4);background:var(--color-surface);display:flex;flex-direction:column;gap:var(--sp-2)}
+.dcard:hover{border-color:var(--color-primary)}
+.dl{display:grid;grid-template-columns:150px 1fr;gap:var(--sp-3) var(--sp-4);margin:0}
+.dl dt{color:var(--color-text-muted);font-size:var(--fs-sm)}.dl dd{margin:0;font-weight:500}
+
+/* Notes */
+.note{padding:var(--sp-3) var(--sp-4);border-radius:var(--r-sm);border-left:3px solid var(--d);font-size:var(--fs-sm);color:var(--color-text);margin-bottom:var(--sp-4)}
+.note.tone-warn,.note.tone-info,.note.tone-bad,.note.tone-ok{color:var(--color-text)}
+.empty{text-align:center;padding:var(--sp-10) var(--sp-4);color:var(--color-text-muted)}
+.empty b{display:block;color:var(--color-text);font-size:var(--fs-md);margin-bottom:var(--sp-1)}
+
+/* Wizard */
+.wsteps{display:flex;gap:0;margin-bottom:var(--sp-6);border:1px solid var(--color-border);border-radius:var(--r-md);overflow:hidden}
+.ws{flex:1;min-width:150px;display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-3) var(--sp-4);color:var(--color-text-muted);font-weight:500;border-right:1px solid var(--color-border)}
+.ws:last-child{border-right:0}
+.ws .num{width:24px;height:24px;border-radius:var(--r-sm);display:grid;place-items:center;background:var(--color-surface-muted);border:1px solid var(--color-border-strong);font-size:var(--fs-xs);font-family:var(--font-mono)}
+.ws.cur{background:var(--color-primary-soft);color:var(--color-primary);font-weight:600}
+.ws.cur .num{background:var(--color-primary);border-color:var(--color-primary);color:var(--color-on-primary)}
+.ws.done{color:var(--s-ok-fg)}.ws.done .num{background:var(--s-ok-dot);border-color:var(--s-ok-dot);color:#fff}
+
+/* Konfigurasi */
+.cfg{display:grid;grid-template-columns:300px minmax(0,1fr);gap:var(--sp-4);align-items:start}
+.cfgl{display:flex;flex-direction:column;gap:2px}
+.cfgl button{display:flex;align-items:center;gap:var(--sp-3);min-height:44px;padding:var(--sp-2) var(--sp-3);border:0;border-radius:var(--r-md);background:none;font:inherit;text-align:left;color:var(--color-text);cursor:pointer}
+.cfgl button:hover{background:var(--color-surface-muted)}
+.cfgl button.cur{background:var(--color-primary-soft);color:var(--color-primary);font-weight:600}
+.dot{width:20px;height:20px;border-radius:var(--r-sm);border:1.5px solid var(--color-border-strong);display:grid;place-items:center;flex-shrink:0;color:#fff}
+.dot.ok{background:var(--s-ok-dot);border-color:var(--s-ok-dot)}.dot.skip{background:var(--s-neu-dot);border-color:var(--s-neu-dot)}
+.dot .ic{width:13px;height:13px}
+ol.steps{margin:0 0 var(--sp-4);padding:0;list-style:none;counter-reset:s}
+ol.steps li{counter-increment:s;display:flex;gap:var(--sp-3);padding:var(--sp-3);border:1px solid var(--color-border);border-radius:var(--r-md);margin-bottom:var(--sp-2)}
+ol.steps li::before{content:counter(s);width:24px;height:24px;border-radius:var(--r-sm);background:var(--color-surface-muted);border:1px solid var(--color-border);color:var(--color-text-muted);font-weight:600;font-size:var(--fs-xs);font-family:var(--font-mono);display:grid;place-items:center;flex-shrink:0}
+.var{display:inline-flex;align-items:center;gap:var(--sp-1);padding:0 var(--sp-2);border-radius:var(--r-sm);border:1px dashed var(--color-primary);background:var(--color-primary-soft);color:var(--color-primary);font-family:var(--font-mono);font-size:var(--fs-xs);cursor:pointer;min-height:24px}
+.var .ic{width:12px;height:12px}
+
+/* Credential */
+.cred{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3);padding:var(--sp-3) var(--sp-4);border:1px solid var(--color-border);border-radius:var(--r-md);margin-bottom:var(--sp-2)}
+.cred .val{font-family:var(--font-mono);font-weight:500;letter-spacing:.06em}
+.timer{font-size:var(--fs-xs);color:var(--s-warn-fg);font-weight:600}
+
+/* Timeline */
+.tl{list-style:none;margin:0;padding:0}
+.tl li{position:relative;padding:0 0 var(--sp-4) var(--sp-5);border-left:1px solid var(--color-border-strong);margin-left:5px}
+.tl li::before{content:"";position:absolute;left:-5px;top:6px;width:9px;height:9px;border-radius:1px;background:var(--color-surface);border:2px solid var(--color-primary)}
+.tl li:last-child{border-color:transparent}
+
+/* QR */
+.qr{color:#111;background:#fff;padding:var(--sp-2);border-radius:var(--r-sm);display:inline-block;border:1px solid var(--color-border)}
+.labels{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:var(--sp-3)}
+.label{display:flex;gap:var(--sp-3);align-items:center;padding:var(--sp-3);border:1px dashed var(--color-border-strong);border-radius:var(--r-md)}
+
+/* Modal & toast */
+.overlay{position:fixed;inset:0;background:var(--overlay);display:grid;place-items:center;padding:var(--sp-4);z-index:50}
+.modal{width:min(540px,100%);max-height:90vh;overflow:auto;background:var(--color-surface);border-radius:var(--r-lg);box-shadow:var(--shadow-md);border:1px solid var(--color-border)}
+.modal.wide{width:min(820px,100%)}
+.modal-h{display:flex;justify-content:space-between;align-items:center;padding:var(--sp-4) var(--sp-5);border-bottom:1px solid var(--color-border)}
+.modal-h h3{font-size:var(--fs-lg)}
+.modal-b{padding:var(--sp-5)}
+.modal-f{display:flex;justify-content:flex-end;gap:var(--sp-2);padding:var(--sp-3) var(--sp-5);border-top:1px solid var(--color-border);background:var(--color-surface-muted)}
+.toasts{position:fixed;right:var(--sp-5);bottom:var(--sp-5);display:flex;flex-direction:column;gap:var(--sp-2);z-index:60}
+.toast{min-width:260px;max-width:380px;padding:var(--sp-3) var(--sp-4);border-radius:var(--r-md);background:var(--color-toast);color:#fff;border-left:3px solid var(--d);box-shadow:var(--shadow-md);font-size:var(--fs-sm);animation:in .18s ease-out}
+.toast.tone-ok,.toast.tone-warn,.toast.tone-bad,.toast.tone-info{background:var(--color-toast);color:#fff}
+@keyframes in{from{opacity:0;transform:translateY(6px)}}
+
+/* Login */
+.login{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);min-height:100vh;background:var(--color-surface)}
+.login-form{padding:var(--sp-10);display:flex;flex-direction:column;justify-content:center;max-width:440px;margin:0 auto;width:100%}
+.login-form .brand{height:auto;border:0;margin:0;padding:0}
+.login-form .logo{height:40px}
+.login-form h1{font-size:var(--fs-2xl);font-weight:600;margin-top:var(--sp-8)}
+.login-form>p{margin:var(--sp-1) 0 var(--sp-6)}
+.login-hero{background:var(--brand);color:#D5E1F5;display:flex;align-items:flex-end;padding:var(--sp-10)}
+.login-hero>div{max-width:440px}
+.lh-logo .logo{height:56px;color:#fff;margin-bottom:var(--sp-8)}
+.login-hero h2{color:#fff;font-size:30px;font-weight:600;line-height:1.25}
+.login-hero p{margin:var(--sp-3) 0 0}
+.hero-stats{display:flex;gap:var(--sp-8);margin-top:var(--sp-8);padding-top:var(--sp-5);border-top:1px solid rgba(255,255,255,.25)}
+.hero-stats b{display:block;font-size:var(--fs-3xl);font-family:var(--font-mono);font-weight:600;color:#fff}
+.hero-stats span{font-size:var(--fs-sm)}
+.e404{text-align:center;padding:var(--sp-10) var(--sp-4)}
+.e404 b{font-size:88px;font-weight:600;font-family:var(--font-mono);color:var(--slate-300);line-height:1}
+
+/* Responsive */
+@media (max-width:1100px){.g21,.g12,.cfg{grid-template-columns:1fr}.filters{grid-template-columns:1fr 1fr}}
+@media (max-width:900px){
+ :root{--side-w:68px}
+ .brand-t,.nav a span,.side-foot label,.side-foot small{display:none}
+ .brand{padding-left:0;justify-content:center}
+ .logo{height:22px}
+ .nav a{justify-content:center;padding:0}
+ .nav a.on::before{left:-12px}
+ .side-foot select{font-size:10px;padding:0 2px}
+ .g2{grid-template-columns:1fr}.login{grid-template-columns:1fr}.login-hero{display:none}
+}
+@media (max-width:600px){
+ .side{position:fixed;bottom:0;top:auto;left:0;right:0;width:100%;height:auto;flex-direction:row;padding:var(--sp-1);border-right:0;border-top:1px solid var(--color-border)}
+ .brand,.side-foot{display:none}
+ .nav{flex-direction:row;justify-content:space-around;width:100%}
+ .nav a{flex:1;min-height:48px}
+ .nav a.on::before{display:none}
+ .page{padding:var(--sp-5) var(--sp-4) 88px}.top{padding:0 var(--sp-4)}
+ .g4.mb>.card{border-right:0;border-bottom:1px solid var(--color-border)}
+ .filters{grid-template-columns:1fr}.dl{grid-template-columns:1fr}
+ .hb{grid-template-columns:90px 1fr 28px}
+}
+@media print{
+ body *{visibility:hidden}
+ .printable,.printable *{visibility:visible}
+ .printable{position:absolute;left:0;top:0;width:100%}
+ .modal-f,.modal-h button{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+.sysv{font-weight:600;color:var(--color-primary)}
+.subl{display:block;font-size:var(--fs-sm);color:var(--color-text-muted);margin-top:2px}
+ol.steps li{align-items:center}ol.steps li.ok{background:var(--color-primary-soft)}ol.steps li.skip{opacity:.6}
+.condrow{display:flex;flex-wrap:wrap;gap:var(--sp-2) var(--sp-4);margin:var(--sp-2) 0}
+.condrow .chip{min-height:26px;padding:0 var(--sp-2);font-size:var(--fs-xs)}
+.srow{display:flex;gap:var(--sp-3);align-items:flex-start;padding:var(--sp-3);border:1px solid var(--color-border);border-radius:var(--r-md)}
+.srow textarea{width:100%}.addrow{display:flex;gap:var(--sp-2);align-items:center}.addrow input:not([type=checkbox]){flex:1;min-width:0}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="modal-root"></div>
+<div id="toasts" class="toasts" aria-live="polite"></div>
+
+<script>
+(function(){
+"use strict";
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const LOGO=`<svg class="logo" viewBox="0 0 147 80" role="img" aria-label="HRS" xmlns="http://www.w3.org/2000/svg"><path d="M0 0 C5.2658008 -0.06915205 10.53000412 -0.12879947 15.79589844 -0.16479492 C17.58436443 -0.17981184 19.37279403 -0.20023158 21.16113281 -0.22631836 C23.74293031 -0.26301615 26.32423779 -0.27979745 28.90625 -0.29296875 C29.69616333 -0.30845261 30.48607666 -0.32393646 31.29992676 -0.33988953 C38.03827757 -0.34189807 43.45081302 1.0049841 48.875 5.25 C54.3230026 12.30035631 53.60347856 21.52427879 53 30 C51.99377637 34.7065299 50.14728694 38.72369854 48 43 C57.97288613 56.14299484 57.97288613 56.14299484 72.5390625 62.41796875 C78.40124565 62.78154515 84.15491797 62.52417825 90 62 C90 56.39 90 50.78 90 45 C84.71970903 45.1569867 84.71970903 45.1569867 79.44116211 45.36035156 C74.06612567 45.4401629 70.13298635 44.56693382 66 41 C61.34463276 35.14300388 61.38841199 29.73256618 61.5 22.4375 C61.47679688 20.91479492 61.47679688 20.91479492 61.453125 19.36132812 C61.4840652 13.44014768 61.80985028 9.53234529 66 5 C70.64486517 1.25246756 74.20270707 0.4407726 80.0234375 0.609375 C80.76961334 0.61503479 81.51578918 0.62069458 82.28457642 0.62652588 C84.64872637 0.64877102 87.01131459 0.69894016 89.375 0.75 C90.98565507 0.77008056 92.59633409 0.7883286 94.20703125 0.8046875 C98.13909448 0.84518249 102.0678165 0.92348183 106 1 C106 6.28 106 11.56 106 17 C96.76 17 87.52 17 78 17 C78 20.96 78 24.92 78 29 C79.22976562 28.95359375 80.45953125 28.9071875 81.7265625 28.859375 C83.3593506 28.82183964 84.99216511 28.78544138 86.625 28.75 C87.43324219 28.71648438 88.24148437 28.68296875 89.07421875 28.6484375 C94.54978315 28.55940393 97.78468677 29.16789706 102 33 C107.09196326 39.29505607 106.56778078 45.72464036 106.4375 53.5625 C106.44458984 54.76841797 106.45167969 55.97433594 106.45898438 57.21679688 C106.41474988 63.3790018 106.20868853 67.58854607 103 73 C94.08736549 81.04310919 79.73311767 79.47547637 68.265625 79.13671875 C60.9834982 78.75826712 56.17795592 77.40566504 50.71313477 72.25927734 C48.16782013 69.34184427 45.84868437 66.33718371 43.64013672 63.15820312 C40.2948883 58.75629839 35.9207191 55.39311416 31.46875 52.1640625 C28.4818083 49.82903268 26.31691404 47.85916904 25.65625 43.98339844 C25.31118877 38.96491413 25.59035729 34.00674425 26 29 C29.3 29 32.6 29 36 29 C36 25.04 36 21.08 36 17 C29.73 17 23.46 17 17 17 C17 31.85 17 46.7 17 62 C19.31 62 21.62 62 24 62 C24 67.28 24 72.56 24 78 C16.08 78 8.16 78 0 78 C0 67.11 0 56.22 0 45 C-5.61 45 -11.22 45 -17 45 C-17 55.89 -17 66.78 -17 78 C-24.92 78 -32.84 78 -41 78 C-41 72.72 -41 67.44 -41 62 C-38.36 62 -35.72 62 -33 62 C-33 47.15 -33 32.3 -33 17 C-35.64 17 -38.28 17 -41 17 C-41 11.72 -41 6.44 -41 1 C-33.08 1 -25.16 1 -17 1 C-17 10.24 -17 19.48 -17 29 C-11.39 29 -5.78 29 0 29 C0 19.43 0 9.86 0 0 Z " fill="currentColor" transform="translate(41,0)"/></svg>`;
+const NOW_YEAR=2026, TODAY='15-11-2026';
+
+/* ---------- ROLE & HAK AKSES ---------- */
+const ROLES={superadmin:'Super Admin',admin_ipad:'Admin iPad',admin_dept:'Admin Department'};
+const PERM={
+ superadmin:{viewAll:1,register:1,mutasiDirect:1,approve:1,credAll:1,credBasic:1,settings:1,cfgSettings:1},
+ admin_ipad:{viewAll:1,register:1,mutasiDirect:0,approve:0,credAll:1,credBasic:1,settings:0,cfgSettings:1},
+ admin_dept:{viewAll:0,register:0,mutasiDirect:0,approve:0,credAll:0,credBasic:1,settings:0,cfgSettings:0}
+};
+const S={auth:false,role:'superadmin',dept:'Production',dark:false,view:'table',sel:new Set(),
+ f:{q:'',lok:'',dept:'',status:'',untuk:''},tf:'aktif',notif:false,
+ wiz:{step:1,d:{lok:'Hirose',sec:'',dept:'Production',untuk:'i-Reporter',model:'iPad (10th gen)',serial:''}},
+ mv:{ipad:'',lok:'Hirose',sec:'',dept:'Production',reset:true},
+ cfg:{},cfgCur:{},preq:[],credAlert:1,revealLog:[]};
+const can=p=>!!PERM[S.role][p];
+
+/* ---------- MASTER DATA ---------- */
+const SEC={Hirose:['Assembly 1','Assembly 2','Assembly 3','Molding','Press','Plating','QC Incoming','QC Outgoing','Warehouse','PPIC','Maintenance','Engineering','Office','Training Room'],SGP:['SGP Line 1','SGP Line 2'],Systech:['Systech Line 1','Systech Line 2']};
+const DEPTS=['Production','Quality','Engineering','PPIC','Warehouse','Maintenance','HR & GA','IT'];
+const UNTUK=['i-Reporter','Inspeksi','Umum'];
+const ISO='2026-11-15';
+const MODELS=['iPad (A16)','iPad (10th gen)','iPad (9th gen)','iPad (8th gen)','iPad (7th gen)','iPad (6th gen)','iPad (5th gen)','iPad Air (5th gen)','iPad Air 11-inch (M3)'];
+const SEEDM=['iPad (9th gen)','iPad (10th gen)','iPad Air (5th gen)'];
+const STATUSES=['Setup','Available','Repair','Damaged','Loss','Retired'];
+const RULES={eskalasi:3,belumDicek:90,umurMax:6,targetIos:'18.7.9',idleLock:5,alertN:5,alertMin:10,prefix:'iPad'};
+
+const ip=(n,status,lok,sec,dept,o={})=>Object.assign({id:'ipad'+n,num:+n,name:'iPad'+n,serial:'DMPX'+n+'Q7K'+(9-(+n%9)),model:SEEDM[+n%3],ios:'18.7.9',lok,sec,dept,untuk:'i-Reporter',status,prog:status==='Setup'?0:100,check:18,year:2023,passDefault:false,apple:'OK',scn:'baru',pass:null,iosAt:'2026-11-15',rc:null,fromLokasi:'',fromUntuk:''},o);
+const D={
+ ipads:[
+  ip('001','Setup','Hirose','Assembly 1','Production',{prog:20,passDefault:true}),
+  ip('002','Available','Hirose','Assembly 2','Quality',{ios:'17.6.1',iosAt:'2026-03-12',rc:{done:[1,1,1,0,0,0,0],plan:'2026-11-10',actual:''}}),
+  ip('003','Repair','Hirose','Molding','Production',{year:2019,model:'iPad (6th gen)',ios:'16.7.8',iosAt:'2026-03-12'}),
+  ip('004','Available','SGP','SGP Line 1','Production',{rc:{done:[1,0,0,0,0,0,0],plan:'2026-11-30',actual:''}}),
+  ip('005','Available','Systech','Systech Line 1','Quality',{check:120,rc:{done:[1,1,1,1,1,1,1],plan:'2026-11-05',actual:'2026-11-12'}}),
+  ip('006','Available','Hirose','Warehouse','Warehouse',{apple:'Need Verification'}),
+  ip('007','Repair','Hirose','Assembly 3','Engineering',{ios:'17.6.1',iosAt:'2026-03-12'}),
+  ip('008','Available','Hirose','QC Outgoing','Quality',{untuk:'Inspeksi'}),
+  ip('009','Setup','Hirose','Assembly 1','Production',{prog:15,scn:'reset',passDefault:true,fromLokasi:'Systech',fromUntuk:'i-Reporter'}),
+  ip('010','Damaged','Hirose','PPIC','PPIC',{year:2019}),
+  ip('011','Loss','Hirose','Maintenance','Maintenance'),
+  ip('012','Retired','Hirose','Office','IT',{year:2018}),
+  ip('013','Setup','Hirose','Press','Production'),
+  ip('014','Setup','Hirose','Plating','Production'),
+  ip('015','Setup','SGP','SGP Line 2','Production'),
+  ip('016','Setup','Systech','Systech Line 2','Quality')
+ ],
+ tickets:[
+  {id:'TK-0006',ipad:'ipad009',jenis:'Software',prio:'Sedang',desc:'Aplikasi sering force close',status:'Open',age:1,by:'Admin Production'},
+  {id:'TK-0005',ipad:'ipad007',jenis:'Hardware',prio:'Sedang',desc:'Port charge longgar',status:'Open',age:2,by:'Admin Engineering'},
+  {id:'TK-0004',ipad:'ipad010',jenis:'Hardware',prio:'Tinggi',desc:'iPad tidak bisa menyala',status:'Open',age:6,by:'Admin PPIC'},
+  {id:'TK-0003',ipad:'ipad003',jenis:'Hardware',prio:'Tinggi',desc:'Layar retak',status:'Open',age:2,by:'Admin Production'},
+  {id:'TK-0002',ipad:'ipad002',jenis:'Jaringan',prio:'Rendah',desc:'Tidak bisa konek Wi-Fi',status:'Selesai',age:9,by:'Admin Quality'},
+  {id:'TK-0001',ipad:'ipad001',jenis:'Hardware',prio:'Sedang',desc:'Baterai cepat habis',status:'Proses',age:3,by:'Admin Production'}
+ ],
+ mutasi:[
+  {id:'MT-0003',ipad:'ipad006',from:'Hirose · Warehouse',to:'SGP · SGP Line 2',dept:'Production',reset:true,status:'Pending',by:'Admin iPad 1'},
+  {id:'MT-0002',ipad:'ipad004',from:'Hirose · Assembly 2',to:'SGP · SGP Line 1',dept:'Production',reset:true,status:'Approved',by:'Admin Utama'},
+  {id:'MT-0001',ipad:'ipad008',from:'Hirose · QC Incoming',to:'Hirose · QC Outgoing',dept:'Quality',reset:false,status:'Rejected',by:'Admin iPad 2'}
+ ],
+ users:[
+  {name:'Admin Utama',user:'admin',role:'superadmin',dept:'-',aktif:true},
+  {name:'Admin iPad 1',user:'ipad1',role:'admin_ipad',dept:'-',aktif:true},
+  {name:'Admin iPad 2',user:'ipad2',role:'admin_ipad',dept:'-',aktif:true},
+  {name:'Admin Production',user:'prod',role:'admin_dept',dept:'Production',aktif:true},
+  {name:'Admin Quality',user:'qa',role:'admin_dept',dept:'Quality',aktif:true}
+ ],
+ vars:[
+  {name:'wifi_ssid',scope:'umum',val:'HRS-PROD'},
+  {name:'wifi_ssid',scope:'lokasi',lok:'SGP',val:'SGP-FACTORY'},
+  {name:'wifi_ssid',scope:'lokasi',lok:'Systech',val:'SYSTECH-NET'},
+  {name:'wifi_pass',scope:'umum',val:'wifi-hrs-2026'},
+  {name:'wifi_pass',scope:'lokasi',lok:'SGP',val:'wifi-sgp-2026'},
+  {name:'apple_id',scope:'lokasi',lok:'Hirose',val:'ipad.hirose@example.com'},
+  {name:'apple_id',scope:'lokasi+peruntukan',lok:'Hirose',untuk:'Inspeksi',val:'ipad.qc@example.com'},
+  {name:'apple_id',scope:'lokasi',lok:'SGP',val:'ipad.sgp@example.com'},
+  {name:'apple_id',scope:'lokasi',lok:'Systech',val:'ipad.systech@example.com'},
+  {name:'apple_pass',scope:'lokasi',lok:'Hirose',val:'Hrs#Apple2026'},
+  {name:'apple_pass',scope:'lokasi+peruntukan',lok:'Hirose',untuk:'Inspeksi',val:'Qc#Apple2026'},
+  {name:'apple_pass',scope:'lokasi',lok:'SGP',val:'Sgp#Apple2026'},
+  {name:'apple_pass',scope:'lokasi',lok:'Systech',val:'Sys#Apple2026'},
+  {name:'apple_2fa',scope:'umum',val:'0812-0000-0001'},
+  {name:'setup_passcode',scope:'umum',val:'123456'},
+  {name:'conmas_server',scope:'umum',val:'HRS-ConMas'},
+  {name:'conmas_server',scope:'lokasi',lok:'SGP',val:'SGP-ConMas'},
+  {name:'conmas_server',scope:'lokasi',lok:'Systech',val:'SYS-ConMas'},
+  {name:'conmas_ip',scope:'umum',val:'192.168.10.20'},
+  {name:'conmas_ip',scope:'lokasi',lok:'SGP',val:'10.20.30.5'},
+  {name:'conmas_ip',scope:'lokasi',lok:'Systech',val:'10.30.40.5'},
+  {name:'screentime_pass',scope:'umum',val:'482913'},
+  {name:'wallpaper',scope:'peruntukan',untuk:'i-Reporter',val:'wallpaper-ireporter.png'}
+ ],
+ audit:[
+  {t:'15-11 09:12',who:'Admin iPad 1',act:'Membuka credential',obj:'iPad006 · Apple ID'},
+  {t:'15-11 09:10',who:'Admin iPad 1',act:'Membuka credential',obj:'iPad004 · Apple ID'},
+  {t:'15-11 08:41',who:'Admin Production',act:'Membuat tiket',obj:'TK-0006 · iPad009'},
+  {t:'14-11 16:20',who:'Admin iPad 1',act:'Mengajukan mutasi',obj:'MT-0003 · iPad006'},
+  {t:'14-11 10:05',who:'Admin Utama',act:'Registrasi iPad',obj:'iPad016'}
+ ]
+};
+/* ---------- PANDUAN KONFIGURASI (skema v2.0: kondisi per item & per langkah) ---------- */
+let GID=0;const nid=p=>p+(++GID);
+const mkG=(t,req,cond,steps,o={})=>Object.assign({id:nid('g'),t,descr:'',req,cond,steps:steps.map(s=>{const a=typeof s==='string'?[s]:s,sk=a[0][0]==='~';return{id:nid('s'),text:sk?a[0].slice(1):a[0],skip:sk?1:0,cond:a[1]||{}}}),fields:[],auto:{}},o);
+const GUIDES=[
+ mkG('Setup Assistant: iPad baru',1,{scn:['baru']},['~Pilih bahasa **English**','~Select Your Country or Region → **United States**','Sambungkan Wi-Fi setting awal\nNama Wi-Fi: {{wifi_ssid}}\nPassword: {{wifi_pass}}','~**Appearance** → **Continue**','~**Quick Start** → **Set Up Manually**','~**Age Range** → **Adult (18 or older)**','~**Touch ID** → **Set Up Touch ID Later** → pop-up → **Don\'t Use**','~**Transfer Your Apps & Data** → **Don\'t Transfer Anything**','**Apple ID**: sign-in sesuai lokasi & peruntukan iPad ({{lokasi}} · {{peruntukan}})\nEmail: {{apple_id}}\nPassword: {{apple_pass}}\nKlik **Next**, isi password, **Next**','~Muncul **Apple ID Verification Code** → isi kode yang muncul di iPad lain dengan akun Apple yang sama\nJika tidak dapat: **Didn\'t get a code › Send text**, kode dikirim SMS ke {{apple_2fa}}','~**Terms and Conditions** → **Agree**','~**Data & Privacy** → **Continue**','**Create a Passcode** → isi passcode sementara {{setup_passcode}}\nPop-up "This Passcode Can Be Easily Guessed" → **Use Anyway**\nIsi ulang passcode yang sama\nPasscode ini **wajib diganti** di langkah terakhir','~**Express Settings** → **Continue**','~**Keep Your iPad Up to Date** → **Continue**','~**iCloud Keychain** → **Don\'t use iCloud Keychain**','~**Siri** → **Set Up Later in Settings**','~**Screen Time** → **Set Up Later in Settings**','~**App Analytics** → **Don\'t Share**','~**Welcome to iPad** → **Get Started**'],{descr:'Urutan layar bisa berbeda tergantung versi iPadOS. Tandai **Selesai** untuk layar yang muncul, atau **Tidak muncul** bila layar itu tidak ada.',fields:[{k:'appleStatus',label:'Status Apple ID',target:'appleStatus',req:1}],auto:{wifi:'wifi_ssid',appleId:'apple_id'}}),
+ mkG('Setup Assistant: iPad reset / pindah tempat',1,{scn:['reset']},['~Pilih bahasa **English**','~Select Your Country or Region → **United States**','~**Quick Start** → **Set Up Manually**','~Jika muncul **Activation Lock**, isi Apple ID lokasi sebelumnya ({{lokasi_lama}})\nEmail: {{apple_id:lama}}\nPassword: {{apple_pass:lama}}','~**Data & Privacy** → **Continue**','~**Touch ID** → **Set Up Touch ID Later** → pop-up → **Don\'t Use**','**Create a Passcode** → isi passcode sementara {{setup_passcode}}\nPop-up "This Passcode Can Be Easily Guessed" → **Use Anyway**\nIsi ulang passcode yang sama\nPasscode ini **wajib diganti** di langkah terakhir','~**Apps & Data** → **Don\'t Transfer Apps & Data**','**Apple ID**: sign-in sesuai lokasi & peruntukan iPad ({{lokasi}} · {{peruntukan}})\nEmail: {{apple_id}}\nPassword: {{apple_pass}}\nKlik **Next**, isi password, **Next**','~Muncul **Apple ID Verification Code** → isi kode dari iPad lain\nJika tidak dapat: **Didn\'t get a code › Send text**, kode dikirim SMS ke {{apple_2fa}}','~**Terms and Conditions** → **Agree**','~**Express Settings** → **Continue**','~**Keep Your iPad Up to Date** → **Continue**','~**iCloud Keychain** → **Don\'t use iCloud Keychain**','~**Siri** → **Set Up Later in Settings**','~**Screen Time** → **Set Up Later in Settings**','~**App Analytics** → **Don\'t Share**','~**Appearance** → **Continue**','~**Welcome to iPad** → **Get Started**'],{descr:'Untuk iPad lama yang direset karena pindah lokasi/peruntukan. Activation Lock memakai Apple ID **lokasi sebelumnya**.',fields:[{k:'appleStatus',label:'Status Apple ID',target:'appleStatus',req:1}],auto:{wifi:'wifi_ssid',appleId:'apple_id'}}),
+ mkG('Hapus aplikasi yang tidak berfungsi',1,{},['Hapus aplikasi yang tidak dipakai untuk pekerjaan']),
+ mkG('Update iOS',1,{},['Sambungkan iPad ke Wi-Fi dan charger (baterai minimal 50%)','Buka **Settings › General › Software Update**','Tap **Update Now** / **Install Now**, tunggu iPad restart','Cek versi di **Settings › General › About › iPadOS Version**, isi di bawah'],{descr:'Target iPadOS: {{target_ios}}.',fields:[{k:'ios',label:'Versi iPadOS terpasang',target:'ios',req:1}]}),
+ mkG('Install ConMas i-Reporter',1,{untuk:['i-Reporter']},['Buka **App Store**, cari **ConMas i-Reporter**, tap **Get / Install**','Buka i-Reporter sekali dan izinkan akses (kamera, notifikasi)','Pastikan tidak ada aplikasi pribadi / game ter-install']),
+ mkG('Login i-Reporter & daftarkan device ConMas',1,{untuk:['i-Reporter']},['Buka i-Reporter, pilih ikon **Setting** di pojok kanan atas','Pilih **Server › Server Connection › Add New Connection**','Isi data koneksi:\nServer connection = {{conmas_server}}\nConnect to = {{conmas_ip}}\nUser ID & Password = minta ke admin i-Reporter ConMas\nAktifkan **Enable to Change Server local reports Exist**','Klik **Save**',['Coba login sampai muncul notifikasi perlu registrasi akun',{lok:['Hirose']}],['Klik **OK** → **Device Authentication › Apply Registrasi**',{lok:['Hirose']}],['Isi lalu **Apply**\nName Device = {{nama_ipad}}\nRemark = {{nama_ipad}}',{lok:['Hirose']}],['Informasikan ke PIC ConMas i-Reporter untuk di-approve',{lok:['Hirose']}],['Setelah di-approve, login kembali',{lok:['Hirose']}],['Pilih **Custom Master › Refresh Custom Master**',{lok:['Hirose']}],['Cukup sampai sini, setting selanjutnya di jaringan subcont',{lok:['SGP','Systech']}]],{descr:'SGP & Systech cukup sampai simpan koneksi server (login butuh jaringan subcont).',fields:[{k:'irepUser',label:'User i-Reporter',target:'irepUser',req:0},{k:'conmasId',label:'ConMas Device ID',target:'conmasId',req:0}]}),
+ mkG('Ganti wallpaper',1,{},['Pasang wallpaper **{{wallpaper}}** di lock screen dan home screen. Bila belum ada, request ke PIC ConMas i-Reporter']),
+ mkG('Aktifkan Find My',1,{},['Buka **Settings › [nama Apple ID] › Find My**','**Find My iPad** → ON','Aktifkan **Find My network** dan **Send Last Location**','Minta Admin cek iPad muncul di iCloud Find Devices'],{descr:'Wajib untuk melacak iPad bila hilang.'}),
+ mkG('Kunci Restriction (Screen Time)',1,{},['**Settings › Screen Time › Turn On Screen Time** (pilih "This is My iPad")','**Lock Screen Time Settings** → passcode Screen Time: {{screentime_pass}}','**Content & Privacy Restrictions** → ON','**iTunes & App Store Purchases**: Installing & Deleting Apps = **Don\'t Allow**','**Allowed Apps**: matikan **Safari** dan **Mail** sesuai kebijakan','**Account Changes** = **Don\'t Allow**'],{descr:'Mengunci iPad agar hanya dipakai untuk pekerjaan.'}),
+ mkG('Ganti passcode (wajib, langkah terakhir)',1,{},['Buka **Settings › Touch ID & Passcode** (atau Face ID & Passcode)','**Change Passcode** → masukkan {{setup_passcode}} → isi passcode baru','Isi passcode baru di bawah, disimpan terenkripsi'],{descr:'Passcode {{setup_passcode}} hanya untuk setup. Ganti dengan passcode 6 digit yang unik (tidak berulang/berurutan, tidak sama dengan iPad lain).',fields:[{k:'passcode',label:'Passcode baru',target:'passcode',req:1}]})
+];
+const VARDEFS=[['wifi_ssid','Nama Wi-Fi setting awal'],['wifi_pass','Password Wi-Fi setting awal',1],['apple_id','Email Apple ID'],['apple_pass','Password Apple ID',1],['apple_2fa','No. HP penerima kode verifikasi Apple ID'],['setup_passcode','Passcode sementara saat setup'],['conmas_server','Nama server connection i-Reporter'],['conmas_ip','Alamat server ConMas (Connect to)'],['screentime_pass','Passcode Screen Time',1],['wallpaper','Wallpaper (file)']].map(([k,label,s])=>({k,label,secret:!!s}));
+const SYSV={nama_ipad:p=>p.name,serial:p=>p.serial,lokasi:p=>p.lok,lokasi_lama:p=>p.fromLokasi||p.lok,section:p=>p.sec,department:p=>p.dept,peruntukan:p=>p.untuk,target_ios:()=>RULES.targetIos};
+const TARGETS={ios:'Versi iOS',wifi:'SSID Wi-Fi',ip:'IP address',appleStatus:'Status Apple ID',irepUser:'User i-Reporter',conmasId:'ConMas Device ID',passcode:'Passcode iPad (baru, unik)',note:'Catatan'};
+const WIFIS=['HRS-PROD','HRS-IPad','SGP-FACTORY','SYSTECH-NET'];
+const RECONFIG=['Find My aktif','Browser dikunci','Gmail di-uninstall','App Store dikunci','Mail dikunci','Settings dikunci','Password tersimpan dihapus'];
+const clone=o=>JSON.parse(JSON.stringify(o));
+const condOk=(c,x)=>!c||((!(c.scn||[]).length||c.scn.includes(x.scn))&&(!(c.lok||[]).length||c.lok.includes(x.lok))&&(!(c.untuk||[]).length||c.untuk.includes(x.untuk)));
+const cmpV=(a,b)=>{const x=String(a||'0').split('.').map(Number),y=String(b||'0').split('.').map(Number);for(let i=0;i<Math.max(x.length,y.length);i++){const d=(x[i]||0)-(y[i]||0);if(d)return d<0?-1:1}return 0};
+const OLD_MODELS=['iPad (5th gen)','iPad (6th gen)'];
+const iosState=p=>cmpV(p.ios,RULES.targetIos)>=0?'Terbaru':OLD_MODELS.includes(p.model)?'Model tidak support':'Perlu update';
+const rcStatus=p=>{const r=p.rc||{done:[]};return RECONFIG.every((_,i)=>r.done[i])?'Closed':(r.plan&&r.plan<ISO)?'Delay':'Open'};
+function rcCard(){const R=vis().filter(x=>['Available','Repair'].includes(x.status));return `<div class="card" style="margin-top:var(--sp-4)"><div class="card-h"><div><h2>Checklist Re-Config</h2><p>${RECONFIG.join(' · ')}</p></div></div>${R.length?`<div class="tw"><table><thead><tr><th>iPad</th><th>Department</th><th>Item</th><th>Plan</th><th>Actual</th><th>Status</th><th></th></tr></thead><tbody>${R.map(x=>{const r=x.rc||{done:[]};return `<tr><td><b>${x.name}</b></td><td>${esc(x.dept)}</td><td>${RECONFIG.filter((_,i)=>r.done[i]).length}/${RECONFIG.length}</td><td>${r.plan||'-'}</td><td>${r.actual||'-'}</td><td>${badge(rcStatus(x))}</td><td><a class="btn btn-sm btn-sec" href="#/ipad/${x.id}/konfigurasi">Buka</a></td></tr>`}).join('')}</tbody></table></div>`:'<div class="empty"><b>Tidak ada iPad</b></div>'}</div>`}
+
+/* ---------- HELPERS ---------- */
+const TONE={Setup:'info',Proses:'info',Pending:'info',Available:'ok',Selesai:'ok',Approved:'ok',OK:'ok',Open:'warn',Closed:'ok',Delay:'bad','Perlu update':'warn','Model tidak support':'bad',Terbaru:'ok','Need Verification':'warn',Repair:'rep',Damaged:'bad',Rejected:'bad',Eskalasi:'bad','Wrong Password':'bad',Loss:'neu',Retired:'ret',Tinggi:'bad',Sedang:'warn',Rendah:'neu'};
+const badge=s=>`<span class="badge tone-${TONE[s]||'neu'}">${esc(s)}</span>`;
+const byId=id=>D.ipads.find(x=>x.id===id);
+const vis=()=>can('viewAll')?D.ipads:D.ipads.filter(x=>x.dept===S.dept);
+const visT=()=>{const ids=new Set(vis().map(x=>x.id));return D.tickets.filter(t=>ids.has(t.ipad))};
+const isEsk=t=>t.status!=='Selesai'&&t.age>RULES.eskalasi;
+const age=p=>NOW_YEAR-p.year;
+const pc=p=>p.pass||(p.passDefault?'123456':String(100000+((p.num*7919)%899999)).slice(0,6));
+const cred=(p,k)=>({passcode:pc(p),unlock:String(1000+(p.num*37)%8999).slice(0,4),irep:'irep_'+String(p.num).padStart(3,'0'),apple:'ipad'+String(p.num).padStart(3,'0')+'@hirose-ipad.example',gmail:'hirose.ipad'+String(p.num).padStart(3,'0')+'@example.com'})[k];
+const log=(act,obj)=>D.audit.unshift({t:'15-11 '+new Date().toTimeString().slice(0,5),who:me().name,act,obj});
+const me=()=>({superadmin:D.users[0],admin_ipad:D.users[1],admin_dept:D.users[3]})[S.role];
+const opts=(arr,v,ph)=>(ph!==undefined?`<option value="">${esc(ph)}</option>`:'')+arr.map(o=>`<option ${o===v?'selected':''} value="${esc(o)}">${esc(o)}</option>`).join('');
+
+const I={
+ dash:'<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>',
+ ipad:'<rect x="5" y="2" width="14" height="20" rx="2.5"/><path d="M11 18h2"/>',
+ plus:'<path d="M12 5v14M5 12h14"/>',
+ alert:'<path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>',
+ gear:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>',
+ user:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+ bell:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>',
+ moon:'<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
+ search:'<circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>',
+ out:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>',
+ eye:'<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>',
+ check:'<path d="M20 6 9 17l-5-5"/>',
+ x:'<path d="M18 6 6 18M6 6l12 12"/>',
+ grid:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>',
+ list:'<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
+ qr:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zM20 20h1M17 20h1v-3h3"/>',
+ lock:'<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+ down:'<path d="M12 3v12M7 10l5 5 5-5M4 21h16"/>',
+ arrow:'<path d="M5 12h14M13 6l6 6-6 6"/>'
+};
+const ic=(n,c='')=>`<svg class="ic ${c}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${I[n]}</svg>`;
+
+function qr(text,size=96){
+ let h=2166136261;for(const c of text){h^=c.charCodeAt(0);h=Math.imul(h,16777619)>>>0}
+ const n=21,c=size/n;let r='';
+ const fin=(x,y)=>`<rect x="${(x+.5)*c}" y="${(y+.5)*c}" width="${6*c}" height="${6*c}" fill="none" stroke="currentColor" stroke-width="${c}"/><rect x="${(x+2)*c}" y="${(y+2)*c}" width="${3*c}" height="${3*c}" fill="currentColor"/>`;
+ const inF=(x,y)=>(x<8&&y<8)||(x>12&&y<8)||(x<8&&y>12);
+ for(let y=0;y<n;y++)for(let x=0;x<n;x++){if(inF(x,y))continue;h=(Math.imul(h,1103515245)+12345)>>>0;if(h&0x10000)r+=`<rect x="${x*c}" y="${y*c}" width="${c}" height="${c}"/>`}
+ return `<span class="qr"><svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" fill="currentColor" role="img" aria-label="QR ${esc(text)} (ilustrasi)">${r}${fin(0,0)}${fin(14,0)}${fin(0,14)}</svg></span>`;
+}
+
+/* ---------- ACTION LIST ---------- */
+function actions(){
+ const L=vis(),T=visT(),out=[];
+ const esk=T.filter(isEsk);
+ if(S.role==='superadmin'&&S.credAlert)out.push({n:S.credAlert,tone:'bad',t:'Alert akses credential',d:`Ada yang membuka ≥${RULES.alertN} data rahasia dalam ${RULES.alertMin} menit`,href:'#/pengaturan/audit',cta:'Tinjau'});
+ if(esk.length)out.push({n:esk.length,tone:'bad',t:'Tiket tereskalasi',d:`Lebih dari ${RULES.eskalasi} hari belum selesai`,href:'#/lapor',cta:'Tangani'});
+ const mp=D.mutasi.filter(m=>m.status==='Pending').length+S.preq.length;
+ if(can('approve')&&mp)out.push({n:mp,tone:'warn',t:'Menunggu persetujuan Anda',d:'Mutasi & perubahan status',href:'#/registrasi/persetujuan',cta:'Review'});
+ const ap=L.filter(x=>x.apple!=='OK').length;
+ if(can('credAll')&&ap)out.push({n:ap,tone:'warn',t:'Apple ID bermasalah',d:'Perlu verifikasi ulang',href:'#/monitoring/apple',cta:'Lihat'});
+ const pd=L.filter(x=>x.passDefault).length;
+ if(pd)out.push({n:pd,tone:'warn',t:'Passcode masih default',d:'Wajib diganti sebelum dipakai',href:'#/monitoring/reconfig',cta:'Ganti'});
+ const st=L.filter(x=>x.status==='Setup');
+ if(st.length)out.push({n:st.length,tone:'info',t:'Konfigurasi belum selesai',d:st.map(x=>x.name).join(', '),href:'#/monitoring/reconfig',cta:'Lanjutkan'});
+ const bc=L.filter(x=>x.check>RULES.belumDicek&&!['Loss','Retired'].includes(x.status)).length;
+ if(bc)out.push({n:bc,tone:'neu',t:'Belum dicek fisik',d:`Lebih dari ${RULES.belumDicek} hari`,href:'#/monitoring',cta:'Lihat'});
+ return out;
+}
+
+/* ---------- SHELL ---------- */
+function shell(content,h){
+ const nav=[['dashboard','dash','Dashboard'],['monitoring','ipad','Monitoring iPad'],can('register')&&['registrasi','plus','Registrasi iPad'],['lapor','alert','Lapor Masalah'],can('cfgSettings')&&['pengaturan','gear','Pengaturan'],['akun','user','Akun']].filter(Boolean);
+ const seg=(h.split('/')[1]||'dashboard');
+ const active=({ipad:'monitoring',konfigurasi:'registrasi'})[seg]||seg;
+ const n=actions().length;
+ const u=me();
+ return `<div class="shell">
+ <aside class="side" aria-label="Navigasi utama">
+  <div class="brand">${LOGO}<span class="brand-t"><b>iPad Asset</b><small>Management · v3.0</small></span></div>
+  <nav class="nav">${nav.map(([k,i,l])=>`<a href="#/${k}" class="${k===active?'on':''}" ${k===active?'aria-current="page"':''} title="${l}">${ic(i)}<span>${l}</span></a>`).join('')}</nav>
+  <div class="side-foot"><label for="role-sw">Mode demo · ganti role</label>
+   <select id="role-sw" onchange="A.role(this.value)">${Object.entries(ROLES).map(([k,v])=>`<option value="${k}" ${k===S.role?'selected':''}>${v}</option>`).join('')}</select>
+   ${S.role==='admin_dept'?`<small>Department: ${esc(S.dept)}</small>`:''}</div>
+ </aside>
+ <div class="main">
+  <header class="top">
+   <div class="gs">${ic('search')}<input id="gs" value="${esc(S.f.q)}" placeholder="Cari iPad, serial, atau section… (tekan /)" aria-label="Pencarian global" onkeydown="if(event.key==='Enter')A.gsearch(this.value)"></div>
+   <div class="top-act">
+    <button class="ibtn" aria-label="Ganti mode gelap/terang" onclick="A.dark()">${ic('moon')}</button>
+    <div class="pop-wrap"><button class="ibtn" aria-label="Notifikasi (${n})" aria-expanded="${S.notif}" onclick="A.notif()">${ic('bell')}${n?`<span class="cnt">${n}</span>`:''}</button>
+     ${S.notif?`<div class="pop" role="menu"><div class="spread" style="padding:var(--sp-2) var(--sp-3)"><b>Notifikasi</b><span class="subtle">${n} perlu tindakan</span></div>${actions().map(a=>`<a href="${a.href}" onclick="A.notif()"><span class="row"><span class="badge tone-${a.tone}">${a.n}</span><b>${esc(a.t)}</b></span><span class="subtle">${esc(a.d)}</span></a>`).join('')||'<div class="empty">Semua beres</div>'}</div>`:''}</div>
+    <span class="avatar" title="${esc(u.name)} · ${ROLES[S.role]}">${u.name.split(' ').map(w=>w[0]).join('').slice(0,2)}</span>
+    <button class="ibtn" aria-label="Keluar" onclick="A.logout()">${ic('out')}</button>
+   </div>
+  </header>
+  <main class="page" id="main">${content}</main>
+ </div></div>`;
+}
+const head=(t,p,act='',crumb='')=>`${crumb?`<div class="crumb">${crumb}</div>`:''}<div class="ph"><div><h1>${t}</h1>${p?`<p>${p}</p>`:''}</div>${act?`<div class="row">${act}</div>`:''}</div>`;
+const noAccess=()=>`<div class="card empty">${ic('lock')}<b>Halaman ini tidak tersedia untuk role Anda</b>Hubungi Super Admin jika butuh akses.</div>`;
+
+/* ---------- LOGIN ---------- */
+function pLogin(){return `<div class="login">
+ <section class="login-form"><div class="brand">${LOGO}</div>
+ <h1>Masuk</h1><p class="muted">iPad Asset Management · PT Hirose Electric Indonesia</p>
+ <form class="stack" onsubmit="A.login(event)">
+  <div class="field"><label for="lu">Username</label><input id="lu" required value="admin" autocomplete="username"></div>
+  <div class="field"><label for="lp">Password</label><input id="lp" type="password" required value="mockup123" autocomplete="current-password"></div>
+  <div class="field"><label for="lr">Masuk sebagai (demo)</label><select id="lr">${Object.entries(ROLES).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select><span class="hint">Pilihan ini hanya ada di mockup untuk mencoba tiap role.</span></div>
+  <button class="btn btn-block">Masuk ${ic('arrow')}</button>
+  <button type="button" class="btn btn-link" onclick="A.forgot()">Lupa password?</button>
+ </form></section>
+ <section class="login-hero" aria-hidden="true"><div><span class="lh-logo">${LOGO}</span><h2>Manajemen aset iPad Hirose, SGP, dan Systech.</h2><p>Registrasi, konfigurasi, monitoring, dan tiket kerusakan dalam satu sistem.</p>
+ <div class="hero-stats"><div><b>${D.ipads.length}</b><span>iPad terdaftar</span></div><div><b>3</b><span>Lokasi</span></div><div><b>${GUIDES.length}</b><span>Panduan</span></div></div></div></section></div>`}
+
+/* ---------- DASHBOARD ---------- */
+function pDash(){
+ const L=vis(),T=visT();
+ const aktif=L.filter(x=>!['Loss','Retired','Damaged'].includes(x.status));
+ const avail=L.filter(x=>x.status==='Available').length;
+ const setup=L.filter(x=>x.status==='Setup');
+ const avg=setup.length?Math.round(setup.reduce((a,b)=>a+b.prog,0)/setup.length):100;
+ const open=T.filter(t=>t.status!=='Selesai');
+ const acts=actions();
+ const max=Math.max(1,...STATUSES.map(s=>L.filter(x=>x.status===s).length));
+ const depts=DEPTS.map(d=>[d,L.filter(x=>x.dept===d).length]).filter(x=>x[1]);
+ const dmax=Math.max(1,...depts.map(d=>d[1]));
+ const repl=L.filter(x=>age(x)>=RULES.umurMax&&x.status!=='Retired');
+ return head(`Halo, ${esc(me().name.split(' ')[0])}`,`Ringkasan ${L.length} iPad${can('viewAll')?' di Hirose, SGP, dan Systech':' department '+esc(S.dept)} · data per ${TODAY}`,
+  can('register')?`<a class="btn" href="#/registrasi">${ic('plus')}Registrasi iPad</a>`:`<a class="btn" href="#/lapor">${ic('alert')}Lapor masalah</a>`)+
+ `<div class="grid g4 mb">
+  <div class="card kpi hero"><span class="l">iPad aktif</span><span class="v">${aktif.length}</span><span class="h">dari ${L.length} unit terdaftar</span></div>
+  <div class="card kpi"><span class="l">Siap dipakai</span><span class="v">${avail}</span><span class="h">${aktif.length?Math.round(avail/aktif.length*100):0}% dari iPad aktif</span></div>
+  <div class="card kpi"><span class="l">Tiket aktif</span><span class="v">${open.length}</span><span class="h">${T.filter(isEsk).length} tereskalasi · ${T.filter(t=>t.status==='Proses').length} diproses</span></div>
+  <div class="card kpi"><span class="l">Progres konfigurasi</span><span class="v">${avg}%</span><span class="h">${setup.length} iPad sedang dikonfigurasi</span><div class="bar"><i style="width:${avg}%"></i></div></div>
+ </div>
+ <div class="grid g12 mb">
+  <section class="card"><div class="card-h"><div><h2>Perlu Anda tangani</h2><p>Diurutkan dari yang paling mendesak</p></div></div>
+   ${acts.length?acts.map(a=>`<div class="todo"><span class="n tone-${a.tone}">${a.n}</span><span class="t"><b>${esc(a.t)}</b><small>${esc(a.d)}</small></span><a class="btn btn-sm ${a.tone==='bad'?'':'btn-soft'}" href="${a.href}">${a.cta}</a></div>`).join(''):'<div class="empty"><b>Semua beres</b>Tidak ada yang perlu ditangani sekarang.</div>'}
+  </section>
+  <section class="card"><div class="card-h"><div><h2>Tiket terbaru</h2><p>${T.length} tiket tercatat</p></div><a class="btn btn-sm btn-sec" href="#/lapor">Lihat semua</a></div>
+   <div class="tw"><table><thead><tr><th>Tiket</th><th>iPad</th><th>Masalah</th><th>Status</th></tr></thead><tbody>
+   ${T.slice(0,5).map(t=>`<tr><td class="mono">${t.id}</td><td><a href="#/ipad/${t.ipad}">${byId(t.ipad).name}</a></td><td>${esc(t.desc)}</td><td>${badge(isEsk(t)?'Eskalasi':t.status)}</td></tr>`).join('')}
+   </tbody></table></div></section>
+ </div>
+ <div class="grid g3">
+  <section class="card"><div class="card-h"><div><h2>Status iPad</h2><p>Komposisi seluruh unit</p></div></div>
+   ${STATUSES.map(s=>{const n=L.filter(x=>x.status===s).length;return `<div class="hb"><span>${badge(s)}</span><div class="hb-track"><i class="tone-${TONE[s]}" style="width:${n/max*100}%;background:var(--d)"></i></div><b>${n}</b></div>`}).join('')}
+  </section>
+  <section class="card"><div class="card-h"><div><h2>iPad per department</h2><p>Jumlah unit terdaftar</p></div></div>
+   ${depts.map(([d,n])=>`<div class="hb"><span>${esc(d)}</span><div class="hb-track"><i class="brand" style="width:${n/dmax*100}%"></i></div><b>${n}</b></div>`).join('')}
+  </section>
+  <section class="card"><div class="card-h"><div><h2>Aktivitas terbaru</h2><p>Dari audit log</p></div></div>
+   <ul class="tl">${D.audit.slice(0,5).map(a=>`<li><b>${esc(a.who)}</b> <span class="muted">${esc(a.act.toLowerCase())}</span><br><span class="subtle">${esc(a.obj)} · ${a.t}</span></li>`).join('')}</ul>
+   ${repl.length?`<div class="note tone-warn" style="margin:var(--sp-2) 0 0">Kandidat replace (umur ≥ ${RULES.umurMax} tahun): ${repl.map(x=>`<a href="#/ipad/${x.id}">${x.name}</a>`).join(', ')}</div>`:''}
+  </section>
+ </div>`;
+}
+
+/* ---------- MONITORING ---------- */
+function pMon(tab){
+ tab=tab||'daftar';
+ const tabs=[['daftar','Daftar iPad'],['reconfig','Re-Config'],['ios','Update iOS'],can('credAll')&&['apple','Apple ID']].filter(Boolean);
+ let body='';
+ if(tab==='daftar')body=`<div class="card">
+  <div class="filters">
+   <div class="field"><label for="fq">Cari</label><input id="fq" value="${esc(S.f.q)}" placeholder="Nama, serial, section…" oninput="A.setF('q',this.value)"></div>
+   <div class="field"><label for="fl">Lokasi</label><select id="fl" onchange="A.setF('lok',this.value)">${opts(Object.keys(SEC),S.f.lok,'Semua lokasi')}</select></div>
+   <div class="field"><label for="fd">Department</label><select id="fd" onchange="A.setF('dept',this.value)" ${can('viewAll')?'':'disabled'}>${opts(DEPTS,S.f.dept,'Semua department')}</select></div>
+   <div class="field"><label for="fu">Peruntukan</label><select id="fu" onchange="A.setF('untuk',this.value)">${opts(UNTUK,S.f.untuk,'Semua')}</select></div>
+   <div class="field"><label for="fs">Status</label><select id="fs" onchange="A.setF('status',this.value)">${opts(STATUSES,S.f.status,'Semua status')}</select></div>
+  </div>
+  <div id="mon-res">${monRes()}</div></div>`;
+ if(tab==='reconfig'){const L=vis().filter(x=>x.status==='Setup');body=`<div class="card"><div class="card-h"><div><h2>Konfigurasi berjalan</h2><p>iPad baru dan iPad yang di-reset karena pindah tempat</p></div></div>${L.length?`<div class="tw"><table><thead><tr><th>iPad</th><th>Skenario</th><th>Lokasi</th><th>Progres</th><th>Passcode</th><th></th></tr></thead><tbody>${L.map(x=>`<tr><td><b>${x.name}</b><span class="sub mono">${x.serial}</span></td><td>${badge(x.scn==='reset'?'Pending':'Setup').replace(x.scn==='reset'?'Pending':'Setup',x.scn==='reset'?'Reset':'Baru')}</td><td>${x.lok} · ${x.sec}</td><td style="min-width:160px">${x.prog}%<div class="bar"><i style="width:${x.prog}%"></i></div></td><td>${x.passDefault?badge('Open').replace('Open','Masih default'):badge('OK').replace('OK','Sudah diganti')}</td><td>${can('register')?`<a class="btn btn-sm" href="#/konfigurasi/${x.id}">Lanjutkan</a>`:''}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty"><b>Tidak ada konfigurasi berjalan</b></div>'}</div>${rcCard()}`}
+ if(tab==='ios'){const L=vis().filter(x=>['Available','Repair'].includes(x.status)).sort((a,b)=>cmpV(a.ios,b.ios)),n=k=>L.filter(x=>iosState(x)===k).length;body=`<div class="card"><div class="card-h"><div><h2>Status iOS</h2><p>Target versi iOS: <b>${RULES.targetIos}</b> · ${n('Terbaru')} terbaru · ${n('Perlu update')} perlu update · ${n('Model tidak support')} model tidak support</p></div></div>${L.length?`<div class="tw"><table><thead><tr><th>iPad</th><th>Model</th><th>iOS</th><th>Update terakhir</th><th>Status</th><th></th></tr></thead><tbody>${L.map(x=>`<tr><td><b>${x.name}</b><span class="sub">${esc(x.dept)}</span></td><td>${x.model}</td><td class="mono">${x.ios}</td><td>${x.iosAt||'-'}</td><td>${badge(iosState(x))}</td><td>${can('register')&&iosState(x)==='Perlu update'?`<button class="btn btn-sm btn-soft" onclick="A.iosDone('${x.id}')">Tandai ${RULES.targetIos}</button>`:''}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty"><b>Tidak ada iPad</b></div>'}</div>`}
+ if(tab==='apple'){if(!can('credAll'))return noAccess();const L=vis();body=`<div class="card"><div class="card-h"><div><h2>Akun Apple ID</h2><p>Alamat disamarkan · buka detail iPad untuk melihat lengkap</p></div></div><div class="tw"><table><thead><tr><th>iPad</th><th>Apple ID</th><th>Lokasi</th><th>Status akun</th><th></th></tr></thead><tbody>${L.map(x=>{const a=cred(x,'apple');return `<tr><td><b>${x.name}</b></td><td class="mono">${a.slice(0,4)}••••@${a.split('@')[1]}</td><td>${x.lok}</td><td>${badge(x.apple)}</td><td>${x.apple!=='OK'?`<button class="btn btn-sm" onclick="A.appleOk('${x.id}')">Tandai terverifikasi</button>`:''}</td></tr>`}).join('')}</tbody></table></div></div>`}
+ return head('Monitoring iPad','Pantau status, lokasi, dan kondisi semua iPad.',`<button class="btn btn-sec" onclick="A.exp('Excel')">${ic('down')}Excel</button><button class="btn btn-sec" onclick="A.exp('PDF')">PDF</button><button class="btn btn-sec" onclick="A.exp('CSV')">CSV</button>`)+
+ `<div class="tabs" role="tablist">${tabs.map(([k,l])=>`<a role="tab" href="#/monitoring/${k}" class="${k===tab?'on':''}" aria-selected="${k===tab}">${l}</a>`).join('')}</div>`+body;
+}
+function monList(){
+ const q=S.f.q.toLowerCase();
+ return vis().filter(x=>(!q||[x.name,x.serial,x.sec,x.dept,x.lok].join(' ').toLowerCase().includes(q))&&(!S.f.lok||x.lok===S.f.lok)&&(!S.f.dept||x.dept===S.f.dept)&&(!S.f.status||x.status===S.f.status)&&(!S.f.untuk||x.untuk===S.f.untuk));
+}
+function monRes(){
+ const L=monList();
+ const bulk=S.sel.size?`<div class="bulk"><b>${S.sel.size} iPad dipilih</b><button class="btn btn-sm" onclick="A.bulkStatus()">Ubah status</button><button class="btn btn-sm btn-sec" onclick="A.bulkCheck()">${ic('check')}Tandai sudah dicek</button><button class="btn btn-sm btn-sec" onclick="A.labels()">${ic('qr')}Cetak label QR</button><button class="btn btn-sm btn-link" onclick="A.clearSel()">Batal</button></div>`:'';
+ const bar=`<div class="spread" style="margin-bottom:var(--sp-3)"><span class="subtle">Menampilkan <b>${L.length}</b> dari ${vis().length} iPad</span><div class="seg" role="group" aria-label="Tampilan"><button class="${S.view==='table'?'on':''}" aria-label="Tabel" aria-pressed="${S.view==='table'}" onclick="A.view('table')">${ic('list')}</button><button class="${S.view==='card'?'on':''}" aria-label="Kartu" aria-pressed="${S.view==='card'}" onclick="A.view('card')">${ic('grid')}</button></div></div>`;
+ if(!L.length)return bar+'<div class="empty"><b>Tidak ada iPad yang cocok</b>Coba ubah kata kunci atau filter.</div>';
+ if(S.view==='card')return bulk+bar+`<div class="dgrid">${L.map(x=>`<a class="dcard" href="#/ipad/${x.id}" style="text-decoration:none;color:inherit"><div class="spread"><b style="font-size:var(--fs-lg)">${x.name}</b>${badge(x.status)}</div><span class="mono subtle">${x.serial}</span><span>${x.lok} · ${esc(x.sec)}</span><span class="subtle">${esc(x.dept)} · ${x.untuk} · iOS ${x.ios}</span>${x.status==='Setup'?`<div class="bar"><i style="width:${x.prog}%"></i></div>`:''}</a>`).join('')}</div>`;
+ const all=L.every(x=>S.sel.has(x.id));
+ return bulk+bar+`<div class="tw"><table><thead><tr><th><input type="checkbox" aria-label="Pilih semua" ${all?'checked':''} onchange="A.selAll(this.checked)"></th><th>iPad</th><th>Lokasi · Section</th><th>Department</th><th>Peruntukan</th><th>iOS</th><th>Status</th><th>Terakhir dicek</th><th></th></tr></thead><tbody>
+ ${L.map(x=>`<tr><td><input type="checkbox" aria-label="Pilih ${x.name}" ${S.sel.has(x.id)?'checked':''} onchange="A.sel('${x.id}',this.checked)"></td><td><b>${x.name}</b><span class="sub mono">${x.serial}</span></td><td>${x.lok}<span class="sub">${esc(x.sec)}</span></td><td>${esc(x.dept)}</td><td>${x.untuk}</td><td class="mono">${x.ios}${cmpV(x.ios,RULES.targetIos)<0?' ⚠︎':''}</td><td>${badge(x.status)}</td><td>${x.check>RULES.belumDicek?`<span class="badge tone-warn">${x.check} hari</span>`:`${x.check} hari lalu`}</td><td><a class="btn btn-sm btn-sec" href="#/ipad/${x.id}">Detail</a></td></tr>`).join('')}
+ </tbody></table></div>`;
+}
+
+/* ---------- DETAIL ---------- */
+function pDetail(id,tab){
+ const p=byId(id);
+ if(!p||!vis().includes(p))return p404();
+ tab=tab||'info';
+ const tabs=[['info','Info'],['teknis','Teknis'],['credential','Credential'],['konfigurasi','Konfigurasi'],['tiket','Tiket'],['riwayat','Riwayat']];
+ let b='';
+ if(tab==='info')b=`<div class="grid g21"><div class="card"><dl class="dl">
+  <dt>Nama</dt><dd>${p.name}</dd><dt>Serial number</dt><dd class="mono">${p.serial}</dd><dt>Lokasi</dt><dd>${p.lok}</dd><dt>Section</dt><dd>${esc(p.sec)}</dd><dt>Department</dt><dd>${esc(p.dept)}</dd><dt>Peruntukan</dt><dd>${p.untuk}</dd><dt>Status</dt><dd>${badge(p.status)}</dd><dt>Terakhir dicek</dt><dd>${p.check} hari lalu ${p.check>RULES.belumDicek?badge('Open').replace('Open','Lewat batas'):''}</dd></dl></div>
+  <div class="card" style="text-align:center"><div class="card-h"><h2>QR iPad</h2></div>${qr(p.id,140)}<p class="subtle">Pindai untuk membuka halaman ini</p><button class="btn btn-sec btn-block" onclick="A.labels(['${p.id}'])">${ic('qr')}Cetak label</button></div></div>`;
+ if(tab==='teknis')b=`<div class="card"><dl class="dl"><dt>Model</dt><dd>${p.model}${OLD_MODELS.includes(p.model)?' '+badge('Model tidak support'):''}</dd><dt>Versi iOS</dt><dd class="mono">${p.ios} ${badge(iosState(p))} <span class="subtle">· target ${RULES.targetIos} · update terakhir ${p.iosAt||'-'}</span></dd><dt>Wi-Fi</dt><dd>${esc(p.wifi||'-')}</dd><dt>IP address</dt><dd class="mono">${esc(p.ip||'-')}</dd><dt>Status Apple ID</dt><dd>${badge(p.apple)}</dd><dt>User i-Reporter</dt><dd>${esc(p.irepUser||'-')}</dd><dt>ConMas Device ID</dt><dd class="mono">${esc(p.conmasId||'-')}</dd><dt>Tahun pembelian</dt><dd>${p.year} · umur ${age(p)} tahun ${age(p)>=RULES.umurMax?'<span class="badge tone-bad">Kandidat replace</span>':''}</dd><dt>Skenario setup</dt><dd>${p.scn==='reset'?'Reset (pindah tempat)'+(p.fromLokasi?' dari '+p.fromLokasi:''):'iPad baru'}</dd></dl></div>`;
+ if(tab==='credential'){
+  const rows=[['passcode','Passcode layar',can('credBasic')],['unlock','Kode unlock',can('credBasic')],['irep','Akun i-Reporter',can('credBasic')],['apple','Apple ID',can('credAll')],['gmail','Gmail',can('credAll')]];
+  b=`<div class="card"><div class="note tone-info">Setiap kali data rahasia dibuka, Anda wajib mengisi alasan dan aksesnya tercatat di audit log. Data akan tersembunyi lagi otomatis setelah 10 detik.</div>
+  ${rows.map(([k,l,ok])=>`<div class="cred"><div><div class="lbl">${l}</div><span class="val" id="cv-${k}">${ok?'••••••••':'<span class="subtle">Tidak ada akses</span>'}</span> <span class="timer" id="ct-${k}"></span></div>${ok?`<button class="btn btn-sm btn-soft" onclick="A.reveal('${p.id}','${k}','${l}')">${ic('eye')}Tampilkan</button>`:`${ic('lock')}`}</div>`).join('')}</div>`;
+ }
+ if(tab==='konfigurasi'){const Gs=guidesFor(p),st=S.cfg[p.id]||{g:{}},rc=p.rc||{done:[],plan:'',actual:''},ed=can('register');b=`<div class="stack"><div class="card"><div class="spread mb"><div><h2 style="font-size:var(--fs-lg)">Konfigurasi${p.scn==='reset'?' (reset'+(p.fromLokasi?' dari '+p.fromLokasi:'')+')':''}: ${p.prog}%</h2><p class="subtle">${p.status==='Setup'?'Konfigurasi masih berjalan':'Konfigurasi selesai. Riwayat ada di tab Riwayat.'}</p></div>${ed?`<div class="row">${p.status==='Setup'?`<a class="btn" href="#/konfigurasi/${p.id}">Lanjutkan konfigurasi</a>`:`<button class="btn btn-sec" onclick="A.reconfig('${p.id}')">Mulai reset &amp; konfigurasi ulang</button>`}</div>`:''}</div><div class="bar mb"><i style="width:${p.prog}%"></i></div>${p.status==='Setup'?Gs.map(g=>`<div class="todo"><span class="t"><b>${(st.g||{})[g.id]?'✓ ':''}${esc(g.t)}</b></span></div>`).join(''):''}</div>
+<div class="card"><div class="card-h"><div><h2>Re-Config</h2><p>Checklist pengunci iPad setelah setup</p></div>${badge(rcStatus(p))}</div>${RECONFIG.map((x,i)=>`<label class="row" style="min-height:40px"><input type="checkbox" id="rc${i}" ${rc.done[i]?'checked':''} ${ed?'':'disabled'}> ${x}</label>`).join('')}<div class="stack" style="margin-top:var(--sp-3)"><div class="field"><label for="rp">Plan</label><input id="rp" type="date" value="${rc.plan||''}" ${ed?'':'disabled'}></div><div class="field"><label for="ra">Actual</label><input id="ra" type="date" value="${rc.actual||''}" ${ed?'':'disabled'}></div></div>${ed?`<div style="margin-top:var(--sp-3)"><button class="btn" onclick="A.rcSave('${p.id}')">Simpan</button></div>`:''}</div></div>`}
+ if(tab==='tiket'){const T=D.tickets.filter(t=>t.ipad===p.id);b=`<div class="card">${T.length?`<div class="tw"><table><thead><tr><th>Tiket</th><th>Masalah</th><th>Prioritas</th><th>Status</th></tr></thead><tbody>${T.map(t=>`<tr><td class="mono">${t.id}</td><td>${esc(t.desc)}</td><td>${badge(t.prio)}</td><td>${badge(isEsk(t)?'Eskalasi':t.status)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty"><b>Belum ada tiket</b>iPad ini belum pernah dilaporkan bermasalah.</div>'}</div>`}
+ if(tab==='riwayat'){const H=D.audit.filter(a=>a.obj.toLowerCase().includes(p.name.toLowerCase()));b=`<div class="card"><ul class="tl">${H.map(a=>`<li><b>${esc(a.act)}</b> oleh ${esc(a.who)}<br><span class="subtle">${a.t}</span></li>`).join('')}<li><b>Terdaftar di sistem</b><br><span class="subtle">${p.year}</span></li></ul></div>`}
+ return head(p.name,`${p.lok} · ${esc(p.sec)} · ${esc(p.dept)}`,`${badge(p.status)}${can('register')?`<button class="btn btn-sec" onclick="A.statusModal('${p.id}')">Ubah status</button>`:''}<a class="btn btn-sec" href="#/lapor?ipad=${p.id}">${ic('alert')}Lapor masalah</a>`,`<a href="#/monitoring">Monitoring</a> › ${p.name}`)+
+ `<div class="tabs" role="tablist">${tabs.map(([k,l])=>`<a role="tab" href="#/ipad/${p.id}/${k}" class="${k===tab?'on':''}" aria-selected="${k===tab}">${l}</a>`).join('')}</div>`+b;
+}
+
+/* ---------- REGISTRASI ---------- */
+function pReg(tab){
+ if(!can('register'))return noAccess();
+ tab=tab||'baru';
+ const tabs=[['baru','iPad baru'],['pindah','Pindah tempat'],['persetujuan','Persetujuan & berjalan']];
+ let b='';
+ if(tab==='baru'){
+  const w=S.wiz,d=w.d;if(!d.sec)d.sec=SEC[d.lok][0];
+  const nextNum=String(Math.max(...D.ipads.map(x=>x.num))+1).padStart(3,'0');
+  const step=(n,l)=>`<div class="ws ${w.step===n?'cur':w.step>n?'done':''}"><span class="num">${w.step>n?'✓':n}</span>${l}</div>`;
+  let c='';
+  if(w.step===1)c=`<div class="grid g2">
+   <div class="field"><label>Nama iPad</label><div class="ro mono">${RULES.prefix}${nextNum}</div><span class="hint">Dibuat otomatis dari prefix "${RULES.prefix}"</span></div>
+   <div class="field"><label for="ws">Serial number *</label><input id="ws" value="${esc(d.serial)}" placeholder="Contoh: DMPX017Q7K1" oninput="A.wv('serial',this.value.toUpperCase())"></div>
+   <div class="field"><label for="wm">Model</label><select id="wm" onchange="A.wv('model',this.value)">${opts(MODELS,d.model)}</select></div>
+   <div class="field"><label for="wu">Peruntukan</label><select id="wu" onchange="A.wv('untuk',this.value)">${opts(UNTUK,d.untuk)}</select></div>
+   <div class="field"><label for="wl">Lokasi</label><select id="wl" onchange="A.wv('lok',this.value,1)">${opts(Object.keys(SEC),d.lok)}</select></div>
+   <div class="field"><label for="wse">Section</label><select id="wse" onchange="A.wv('sec',this.value)">${opts(SEC[d.lok],d.sec)}</select></div>
+   <div class="field"><label for="wd">Department</label><select id="wd" onchange="A.wv('dept',this.value)">${opts(DEPTS,d.dept)}</select></div></div>`;
+  if(w.step===2){const G=GUIDES.filter(g=>g.scn!=='reset');c=`<div class="note tone-info">Skenario: <b>iPad baru</b>. Panduan berikut akan dijalankan setelah iPad disimpan.</div><ol class="steps">${G.map(g=>`<li><span><b>${g.t}</b>${g.req?'':' <span class="subtle">(opsional)</span>'}</span></li>`).join('')}</ol>`}
+  if(w.step===3)c=`<dl class="dl"><dt>Nama</dt><dd class="mono">${RULES.prefix}${nextNum}</dd><dt>Serial</dt><dd class="mono">${esc(d.serial)}</dd><dt>Model</dt><dd>${d.model}</dd><dt>Lokasi</dt><dd>${d.lok} · ${esc(d.sec)}</dd><dt>Department</dt><dd>${d.dept}</dd><dt>Peruntukan</dt><dd>${d.untuk}</dd><dt>Status awal</dt><dd>${badge('Setup')}</dd></dl>`;
+  b=`<div class="card"><div class="wsteps">${step(1,'Identitas')}${step(2,'Konfigurasi')}${step(3,'Siap dipakai')}</div>${c}
+  <div class="spread" style="margin-top:var(--sp-6)"><button class="btn btn-sec" ${w.step===1?'disabled':''} onclick="A.wstep(-1)">Kembali</button>${w.step<3?`<button class="btn" onclick="A.wstep(1)">Lanjut ${ic('arrow')}</button>`:`<button class="btn btn-ok" onclick="A.wsave()">${ic('check')}Simpan & mulai konfigurasi</button>`}</div></div>`;
+ }
+ if(tab==='pindah'){
+  const m=S.mv;const L=D.ipads.filter(x=>!['Loss','Retired','Setup'].includes(x.status));if(!m.ipad)m.ipad=L[0].id;if(!m.sec)m.sec=SEC[m.lok][0];const p=byId(m.ipad);
+  b=`<div class="grid g12"><div class="card stack"><div class="card-h"><div><h2>Tujuan baru</h2><p>${can('mutasiDirect')?'Perubahan langsung diterapkan.':'Perlu persetujuan Super Admin.'}</p></div></div>
+   <div class="field"><label for="mi">iPad</label><select id="mi" onchange="A.mv('ipad',this.value)">${L.map(x=>`<option value="${x.id}" ${x.id===m.ipad?'selected':''}>${x.name} · ${x.lok} · ${esc(x.sec)}</option>`).join('')}</select></div>
+   <div class="field"><label for="ml">Lokasi tujuan</label><select id="ml" onchange="A.mv('lok',this.value,1)">${opts(Object.keys(SEC),m.lok)}</select></div>
+   <div class="field"><label for="ms">Section tujuan</label><select id="ms" onchange="A.mv('sec',this.value)">${opts(SEC[m.lok],m.sec)}</select></div>
+   <div class="field"><label for="md">Department tujuan</label><select id="md" onchange="A.mv('dept',this.value)">${opts(DEPTS,m.dept)}</select></div>
+   <label class="row" style="font-weight:500"><input type="checkbox" ${m.reset?'checked':''} onchange="A.mv('reset',this.checked)"> Reset & konfigurasi ulang iPad</label>
+   <button class="btn" onclick="A.mvSave()">${can('mutasiDirect')?'Pindahkan sekarang':'Ajukan mutasi'}</button></div>
+   <div class="card"><div class="card-h"><h2>Perbandingan</h2></div><div class="tw"><table><thead><tr><th></th><th>Sekarang</th><th>Tujuan</th></tr></thead><tbody>
+   <tr><td class="muted">Lokasi</td><td>${p.lok}</td><td><b>${m.lok}</b></td></tr><tr><td class="muted">Section</td><td>${esc(p.sec)}</td><td><b>${esc(m.sec)}</b></td></tr><tr><td class="muted">Department</td><td>${esc(p.dept)}</td><td><b>${esc(m.dept)}</b></td></tr><tr><td class="muted">Status setelah pindah</td><td>${badge(p.status)}</td><td>${m.reset?badge('Setup'):badge(p.status)}</td></tr></tbody></table></div>
+   ${m.reset?`<div class="note tone-warn" style="margin:var(--sp-4) 0 0">Saat reset, Activation Lock memakai Apple ID lokasi lama (<span class="mono">{{apple_id:lama}}</span>).</div>`:''}</div></div>`;
+ }
+ if(tab==='persetujuan'){
+  const P=D.mutasi;const st=D.ipads.filter(x=>x.status==='Setup');
+  b=`<div class="grid g2"><section class="card"><div class="card-h"><div><h2>Mutasi & perubahan status</h2><p>${can('approve')?'Anda dapat menyetujui atau menolak':'Hanya Super Admin yang dapat menyetujui'}</p></div></div>
+  ${S.preq.map(r=>`<div class="todo"><span class="t"><b>${byId(r.ipad).name}: ${r.from} → ${r.to}</b><small>Perubahan status · diajukan ${esc(r.by)}</small></span>${can('approve')?`<button class="btn btn-sm btn-ok" onclick="A.preq('${r.id}',1)">Setujui</button><button class="btn btn-sm btn-sec" onclick="A.preq('${r.id}',0)">Tolak</button>`:badge('Pending')}</div>`).join('')}
+  ${P.map(m=>`<div class="todo"><span class="t"><b><span class="mono">${m.id}</span> · ${byId(m.ipad).name}</b><small>${m.from} → ${m.to}${m.reset?' · dengan reset':''} · ${esc(m.by)}</small></span>${m.status==='Pending'&&can('approve')?`<button class="btn btn-sm btn-ok" onclick="A.mut('${m.id}',1)">Setujui</button><button class="btn btn-sm btn-sec" onclick="A.mut('${m.id}',0)">Tolak</button>`:badge(m.status)}</div>`).join('')}</section>
+  <section class="card"><div class="card-h"><div><h2>Konfigurasi berjalan</h2><p>${st.length} iPad</p></div></div>${st.map(x=>`<div class="todo"><span class="t"><b>${x.name}</b><small>${x.lok} · ${esc(x.sec)} · ${x.scn==='reset'?'reset':'baru'}</small><div class="bar"><i style="width:${x.prog}%"></i></div></span><a class="btn btn-sm btn-soft" href="#/konfigurasi/${x.id}">${x.prog}% · Lanjut</a></div>`).join('')}</section></div>`;
+ }
+ return head('Registrasi iPad','Daftarkan iPad baru, pindahkan lokasi, dan kelola persetujuan.')+
+ `<div class="tabs" role="tablist">${tabs.map(([k,l])=>`<a role="tab" href="#/registrasi/${k}" class="${k===tab?'on':''}" aria-selected="${k===tab}">${l}</a>`).join('')}</div>`+b;
+}
+
+/* ---------- KONFIGURASI ---------- */
+function passErr(v,id){
+ if(!/^\d{6}$/.test(v))return 'Harus 6 digit angka.';
+ if(v==='123456')return 'Tidak boleh 123456.';
+ if(/^(\d)\1{5}$/.test(v))return 'Tidak boleh angka yang sama berulang.';
+ if('0123456789'.includes(v)||'9876543210'.includes(v))return 'Tidak boleh angka berurutan.';
+ if(D.ipads.some(x=>x.id!==id&&pc(x)===v))return 'Passcode sudah dipakai iPad lain.';
+ return '';
+}
+function guidesFor(p){return GUIDES.filter(g=>condOk(g.cond,p)).map(g=>Object.assign({},g,{steps:g.steps.filter(s=>condOk(s.cond,p))})).filter(g=>g.steps.length)}
+function resolveVar(name,p,lama){
+ const lok=lama?(p.fromLokasi||p.lok):p.lok,un=lama?(p.fromUntuk||p.untuk):p.untuk,c=D.vars.filter(v=>v.name===name);
+ return c.find(v=>v.scope==='lokasi+peruntukan'&&v.lok===lok&&v.untuk===un)||c.find(v=>v.scope==='lokasi'&&v.lok===lok)||c.find(v=>v.scope==='peruntukan'&&v.untuk===un)||c.find(v=>v.scope==='umum');
+}
+function rt(text,p){
+ const f=s=>esc(s).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/\{\{([\w:]+)\}\}/g,(m,v)=>{const k=v.replace(':lama','');if(SYSV[k])return `<span class="sysv">${esc(SYSV[k](p))}</span>`;const d=VARDEFS.find(x=>x.k===k),r=resolveVar(k,p,v.endsWith(':lama'));return `<button class="var" onclick="A.var('${v}','${p.id}')">${ic(d&&d.secret?'lock':'qr')}${r?(d&&d.secret?'••••••':esc(r.val)):'⚠ '+k+' belum diatur'}</button>`});
+ const L=String(text).split('\n');return f(L[0])+L.slice(1).map(x=>`<span class="subl">${f(x)}</span>`).join('');
+}
+const cfgInit=id=>{const st=S.cfg[id]=S.cfg[id]||{};st.s=st.s||{};st.g=st.g||{};st.v=st.v||{};return st};
+const curVal=(p,f)=>({ios:p.ios,wifi:p.wifi,ip:p.ip,appleStatus:p.apple,irepUser:p.irepUser,conmasId:p.conmasId,note:p.note})[f.target]||'';
+const fval=(p,f,st)=>st.v[f.k]??(f.target==='wifi'?(p.wifi||(resolveVar('wifi_ssid',p)||{}).val||''):curVal(p,f));
+const canDone=(p,g,st)=>g.steps.every(s=>st.s[s.id])&&g.fields.every(f=>!f.req||(f.target==='passcode'?(!!st.v.passcode||!p.passDefault):!!fval(p,f,st)));
+function pCfg(id){
+ const p=byId(id);if(!p)return p404();
+ if(!can('register'))return noAccess();
+ const st=cfgInit(id),G=guidesFor(p);
+ if(!G.length)return head('Konfigurasi '+p.name,'')+'<div class="empty"><b>Tidak ada panduan yang berlaku untuk iPad ini</b>Atur kondisi di Pengaturan › Panduan konfigurasi.</div>';
+ const cur=Math.min(S.cfgCur[id]??0,G.length-1),g=G[cur],gd=!!st.g[g.id],doneN=G.filter(x=>st.g[x.id]).length,left=G.filter(x=>x.req&&!st.g[x.id]).length,fin=!left&&!p.passDefault;
+ const fld=f=>{const i='cf_'+f.k,dis=gd?'disabled':'',cv=fval(p,f,st),v=st.v[f.k]??'';let inp;
+  if(f.target==='wifi')inp=`<select id="${i}" ${dis} onchange="A.setV('${id}','${f.k}',this.value)">${opts(WIFIS,cv,'— pilih SSID —')}</select>`;
+  else if(f.target==='appleStatus')inp=`<select id="${i}" ${dis} onchange="A.setV('${id}','${f.k}',this.value)">${opts(['OK','Need Verification','Wrong Password'],cv||'OK')}</select>`;
+  else if(f.target==='passcode')inp=`<input id="np" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password" ${dis} value="${esc(v)}" placeholder="6 digit, unik, bukan 123456" oninput="A.passChk(this.value,'${id}')">`;
+  else if(f.target==='note')inp=`<textarea id="${i}" rows="2" ${dis} oninput="A.setV('${id}','${f.k}',this.value)">${esc(cv)}</textarea>`;
+  else inp=`<input id="${i}" ${dis} value="${esc(cv)}" placeholder="${f.target==='ios'?'mis. '+RULES.targetIos:''}" oninput="A.setV('${id}','${f.k}',this.value)">`;
+  return `<div class="field"><label for="${f.target==='passcode'?'np':i}">${esc(f.label)}${f.req?' *':''}</label>${inp}${f.target==='ios'?`<span class="hint">Target: ${RULES.targetIos}</span>`:f.target==='passcode'?`<span class="hint">6 digit, tidak berulang/berurutan, unik antar iPad. Disimpan terenkripsi.</span><span class="err" id="perr" role="alert">${v?passErr(v,id):''}</span>`:''}</div>`};
+ const stepRow=s=>{const x=st.s[s.id];return `<li class="${x==='done'?'ok':x==='skip'?'skip':''}"><div style="flex:1;min-width:0">${rt(s.text,p)}${x==='skip'?'<span class="subl">Ditandai: layar tidak muncul</span>':''}</div>${gd?'':`<div class="row">${x?`<button class="btn btn-sm btn-sec" onclick="A.stepMark('${id}','${s.id}',null)">Batal</button>`:`<button class="btn btn-sm" onclick="A.stepMark('${id}','${s.id}','done')">${ic('check')}Selesai</button>${s.skip?`<button class="btn btn-sm btn-sec" title="Layar ini tidak muncul di iPad ini" onclick="A.stepMark('${id}','${s.id}','skip')">Tidak muncul</button>`:''}`}</div>`}</li>`};
+ return head(`Konfigurasi ${p.name}`,`${p.scn==='reset'?'Reset (pindah tempat)'+(p.fromLokasi?' dari '+p.fromLokasi:''):'iPad baru'} · ${p.lok} · ${esc(p.sec)} · ${p.untuk}`,`<span class="subtle">${p.prog}% selesai</span><button class="btn btn-ok" ${fin?'':'disabled'} onclick="A.cfgFinish('${id}')" title="${fin?'':'Selesaikan semua item wajib & ganti passcode dulu'}">${ic('check')}Selesai, iPad siap dipakai</button>`,`<a href="#/registrasi/persetujuan">Registrasi</a> › Konfigurasi`)+
+ `<div class="bar mb"><i style="width:${p.prog}%"></i></div>
+ <div class="cfg"><div class="card" style="padding:var(--sp-3)"><p class="subtle" style="margin:0 var(--sp-2) var(--sp-2)">${doneN} dari ${G.length} item selesai · ${left?left+' wajib tersisa':'semua wajib selesai ✓'}</p><nav class="cfgl" aria-label="Checklist panduan">${G.map((x,i)=>`<button class="${i===cur?'cur':''}" onclick="A.cfgGo('${id}',${i})"><span class="dot ${st.g[x.id]?'ok':''}">${st.g[x.id]?ic('check'):''}</span><span>${esc(x.t)}${x.req?'':' <span class="subtle">· opsional</span>'}</span></button>`).join('')}</nav>${p.passDefault?'<div class="note tone-warn" style="margin-top:var(--sp-3)">Passcode masih 123456, wajib diganti sebelum selesai.</div>':''}<a class="btn btn-sec btn-block" style="margin-top:var(--sp-3)" href="#/registrasi/persetujuan">Simpan &amp; lanjut nanti</a></div>
+ <div class="card"><div class="card-h"><div><span class="subtle">Item ${cur+1} dari ${G.length}</span><h2 style="font-size:var(--fs-xl)">${esc(g.t)}</h2></div><div class="row">${gd?badge('Selesai'):''}${can('cfgSettings')?`<button class="btn btn-sm btn-sec" onclick="A.editGuide('${g.id}')">Edit panduan ini</button>`:''}</div></div>
+ ${g.descr?`<p>${rt(g.descr,p)}</p>`:''}
+ <ol class="steps">${g.steps.map(stepRow).join('')}</ol>
+ ${g.fields.length?`<h3 style="margin:0 0 var(--sp-2)">Isian</h3><div class="stack mb">${g.fields.map(fld).join('')}</div>`:''}
+ ${Object.keys(g.auto).length&&!gd?`<p class="subtle">Saat ditandai selesai, Wi-Fi / Apple ID untuk ${p.lok} · ${p.untuk} otomatis tersimpan ke data iPad.</p>`:''}
+ <div class="spread"><button class="btn btn-sec" ${cur===0?'disabled':''} onclick="A.cfgGo('${id}',${cur-1})">Sebelumnya</button>
+ <div class="row">${gd?`<button class="btn btn-sec" onclick="A.cfgUndo('${id}')">Batalkan tanda selesai</button>${cur<G.length-1?`<button class="btn" onclick="A.cfgGo('${id}',${cur+1})">Berikutnya</button>`:''}`:`${!g.req&&cur<G.length-1?`<button class="btn btn-sec" onclick="A.cfgGo('${id}',${cur+1})">Lewati</button>`:''}<button class="btn" id="cfg-done" ${canDone(p,g,st)?'':'disabled'} onclick="A.guideDone('${id}')">${ic('check')}Tandai selesai &amp; lanjut</button>`}</div></div>
+ ${!gd&&!canDone(p,g,st)?'<p class="subtle" style="text-align:right;margin:var(--sp-2) 0 0">Tandai semua langkah (Selesai / Tidak muncul) dan isi isian wajib dulu.</p>':''}</div></div>`;
+}
+/* ---------- EDITOR PANDUAN (Pengaturan) ---------- */
+function geDraft(){const ge=S.ge=S.ge||{id:GUIDES[0].id,draft:null,dirty:0,pv:{scn:'baru',lok:'Hirose',untuk:'i-Reporter'}};if(!ge.draft||ge.draft.id!==ge.id){const g=GUIDES.find(x=>x.id===ge.id)||GUIDES[0];ge.id=g.id;ge.draft=clone(g);ge.dirty=0}return ge}
+const CONDS=[['scn','Skenario',[['baru','iPad baru'],['reset','Reset / pindah']]],['lok','Lokasi',Object.keys(SEC).map(x=>[x,x])],['untuk','Peruntukan',UNTUK.map(x=>[x,x])]];
+const condRow=(c,w)=>`<div class="condrow">${CONDS.map(([k,l,o])=>{const v=c[k]||[];return `<span class="row"><span class="subtle">${l}:</span><button type="button" class="chip ${v.length?'':'on'}" onclick="A.geCond('${w}','${k}',null)">Semua</button>${o.map(([x,n])=>`<button type="button" class="chip ${v.includes(x)?'on':''}" aria-pressed="${v.includes(x)}" onclick="A.geCond('${w}','${k}','${x}')">${n}</button>`).join('')}</span>`}).join('')}</div>`;
+function pGuideEd(){
+ const ge=geDraft(),g=ge.draft,i=GUIDES.findIndex(x=>x.id===g.id),pv=ge.pv,ok=condOk(g.cond,pv),sh=g.steps.filter(s=>condOk(s.cond,pv)).length;
+ const vo=`<option value="">+ Variabel</option><optgroup label="Variabel (mengikuti lokasi & peruntukan)">${VARDEFS.map(v=>`<option value="${v.k}">${esc(v.label)}${v.secret?' (rahasia)':''}</option>`).join('')}</optgroup><optgroup label="Variabel di lokasi LAMA (Activation Lock)">${VARDEFS.map(v=>`<option value="${v.k}:lama">${esc(v.label)} (lokasi lama)</option>`).join('')}</optgroup><optgroup label="Otomatis dari data iPad">${Object.keys(SYSV).map(k=>`<option value="${k}">${k}</option>`).join('')}</optgroup>`;
+ return `<div class="note tone-info">Panduan bisa diubah tanpa coding. Pakai <b>kondisi</b> (skenario / lokasi / peruntukan) supaya iPad hanya menampilkan item dan langkah yang relevan, dan centang <b>boleh "Tidak muncul"</b> untuk layar Setup Assistant yang kadang tidak tampil. Gunakan <b>**tebal**</b> dan sisipkan variabel.</div>
+ <div class="cfg"><div class="card" style="padding:var(--sp-3)"><p class="subtle" style="margin:0 var(--sp-2) var(--sp-2)">Urutan = urutan checklist</p><nav class="cfgl">${GUIDES.map((x,n)=>`<button class="${x.id===g.id?'cur':''}" onclick="A.geSel('${x.id}')"><span class="mono subtle">${String(n+1).padStart(2,'0')}</span><span>${esc(x.id===g.id?g.t:x.t)}<span class="sub subtle" style="display:block;font-size:var(--fs-xs)">${x.steps.length} langkah · ${x.req?'wajib':'opsional'}${(x.cond.scn||[]).length?' · '+x.cond.scn.join('/'):''}${(x.cond.untuk||[]).length?' · '+x.cond.untuk.join('/'):''}</span></span></button>`).join('')}</nav>
+  <div class="row" style="margin-top:var(--sp-3)"><button class="btn btn-sm" onclick="A.geAdd()">${ic('plus')}Tambah item</button><button class="btn btn-sm btn-sec" aria-label="Naik" ${i<1?'disabled':''} onclick="A.geMove(-1)">▲</button><button class="btn btn-sm btn-sec" aria-label="Turun" ${i>=GUIDES.length-1?'disabled':''} onclick="A.geMove(1)">▼</button></div></div>
+ <div class="card"><div class="card-h"><h2>Edit item ${i+1}${ge.dirty?' <span class="badge tone-warn plain">belum disimpan</span>':''}</h2><div class="row"><button class="btn btn-sm btn-sec" onclick="A.geDup()">Duplikat</button><button class="btn btn-sm btn-sec" onclick="A.geDel()">Hapus</button><button class="btn btn-sm" onclick="A.geSave()">Simpan</button></div></div>
+  <div class="stack"><div class="field"><label for="ge-t">Judul *</label><input id="ge-t" maxlength="160" value="${esc(g.t)}" oninput="A.geSet('t',this.value)"></div>
+  <div class="field"><label for="ge-d">Deskripsi (opsional)</label><textarea id="ge-d" rows="2" oninput="A.geSet('descr',this.value)">${esc(g.descr)}</textarea></div>
+  <label class="row" style="font-weight:500"><input type="checkbox" ${g.req?'checked':''} onchange="A.geSet('req',this.checked?1:0)"> Wajib diselesaikan</label>
+  <div><div class="lbl">Item ini berlaku untuk</div>${condRow(g.cond,'g')}</div>
+  <div class="lbl">Langkah-langkah <span class="subtle" style="font-weight:400">· baris pertama = instruksi utama, Enter = baris rincian</span></div>
+  ${g.steps.map((s,n)=>`<div class="srow"><span class="mono subtle">${n+1}</span><div style="flex:1;min-width:0"><textarea aria-label="Langkah ${n+1}" rows="${Math.max(2,s.text.split('\n').length)}" oninput="A.geStep(${n},'text',this.value)">${esc(s.text)}</textarea><div class="row" style="margin-top:6px"><select aria-label="Sisipkan variabel" style="width:auto" onchange="A.geIns(${n},this.value)">${vo}</select><label class="row" style="font-size:var(--fs-sm)"><input type="checkbox" ${s.skip?'checked':''} onchange="A.geStep(${n},'skip',this.checked?1:0)"> boleh "Tidak muncul"</label></div>${condRow(s.cond,String(n))}</div><div class="stack" style="gap:4px"><button class="btn btn-sm btn-sec" aria-label="Naik" ${n?'':'disabled'} onclick="A.geStepMove(${n},-1)">▲</button><button class="btn btn-sm btn-sec" aria-label="Turun" ${n>=g.steps.length-1?'disabled':''} onclick="A.geStepMove(${n},1)">▼</button><button class="btn btn-sm btn-sec" aria-label="Hapus langkah" onclick="A.geStepDel(${n})">${ic('x')}</button></div></div>`).join('')}
+  <div><button class="btn btn-sm btn-sec" onclick="A.geStepAdd()">${ic('plus')}Tambah langkah</button></div>
+  <div class="lbl">Isian saat konfigurasi <span class="subtle" style="font-weight:400">· disimpan ke data iPad</span></div>
+  ${g.fields.map((f,n)=>`<div class="addrow"><input aria-label="Label" value="${esc(f.label)}" oninput="A.geField(${n},'label',this.value)"><select aria-label="Disimpan ke" onchange="A.geField(${n},'target',this.value)">${Object.entries(TARGETS).map(([k,l])=>`<option value="${k}" ${k===f.target?'selected':''}>${l}</option>`).join('')}</select><label class="row"><input type="checkbox" ${f.req?'checked':''} onchange="A.geField(${n},'req',this.checked?1:0)"> Wajib</label><button class="btn btn-sm btn-sec" aria-label="Hapus isian" onclick="A.geFieldDel(${n})">${ic('x')}</button></div>`).join('')}
+  <div><button class="btn btn-sm btn-sec" onclick="A.geFieldAdd()">${ic('plus')}Tambah isian</button></div>
+  <div class="note ${ok?'tone-ok':'tone-warn'}"><b>Pratinjau</b> · skenario <select aria-label="Skenario" style="width:auto" onchange="A.gePv('scn',this.value)">${opts(['baru','reset'],pv.scn)}</select> lokasi <select aria-label="Lokasi" style="width:auto" onchange="A.gePv('lok',this.value)">${opts(Object.keys(SEC),pv.lok)}</select> peruntukan <select aria-label="Peruntukan" style="width:auto" onchange="A.gePv('untuk',this.value)">${opts(UNTUK,pv.untuk)}</select><br>${ok?`Item ini <b>tampil</b> dengan ${sh} dari ${g.steps.length} langkah.`:'Item ini <b>tidak tampil</b> untuk kombinasi tersebut.'}</div></div></div></div>`;
+}
+
+/* ---------- LAPOR MASALAH ---------- */
+function pLapor(){
+ const pre=(location.hash.split('ipad=')[1]||'');
+ const L=vis().filter(x=>!['Retired','Loss'].includes(x.status));
+ const T=visT().filter(t=>S.tf==='semua'||(S.tf==='aktif'&&t.status!=='Selesai')||(S.tf==='eskalasi'&&isEsk(t))||(S.tf==='selesai'&&t.status==='Selesai'));
+ const c=k=>visT().filter(t=>k==='semua'||(k==='aktif'&&t.status!=='Selesai')||(k==='eskalasi'&&isEsk(t))||(k==='selesai'&&t.status==='Selesai')).length;
+ return head('Lapor Masalah','Laporkan kendala iPad dan pantau penanganannya.')+
+ `<div class="grid g12"><form class="card stack" onsubmit="A.ticket(event)"><div class="card-h"><div><h2>Buat laporan baru</h2><p>Tim iPad akan menindaklanjuti</p></div></div>
+  <div class="field"><label for="ti">iPad *</label><select id="ti" required>${L.map(x=>`<option value="${x.id}" ${x.id===pre?'selected':''}>${x.name} · ${esc(x.sec)}</option>`).join('')}</select></div>
+  <div class="grid g2"><div class="field"><label for="tj">Jenis masalah</label><select id="tj">${opts(['Hardware','Software','Jaringan','Akun','Lainnya'],'Hardware')}</select></div>
+  <div class="field"><label for="tp">Prioritas</label><select id="tp">${opts(['Rendah','Sedang','Tinggi'],'Sedang')}</select></div></div>
+  <div class="field"><label for="td">Deskripsi *</label><textarea id="td" required placeholder="Ceritakan apa yang terjadi, kapan, dan sudah dicoba apa saja."></textarea></div>
+  <div class="field"><label for="tf">Foto (opsional)</label><input id="tf" type="file" accept="image/*" style="padding:var(--sp-2)"></div>
+  <button class="btn">Kirim laporan</button></form>
+ <section class="card"><div class="card-h"><div><h2>Daftar tiket</h2><p>Tiket lewat ${RULES.eskalasi} hari otomatis tereskalasi</p></div></div>
+  <div class="chips" role="group" aria-label="Filter tiket">${[['aktif','Aktif'],['eskalasi','Eskalasi'],['selesai','Selesai'],['semua','Semua']].map(([k,l])=>`<button class="chip ${S.tf===k?'on':''}" aria-pressed="${S.tf===k}" onclick="A.tf('${k}')">${l} · ${c(k)}</button>`).join('')}</div>
+  ${T.length?`<div class="tw"><table><thead><tr><th>Tiket</th><th>iPad</th><th>Masalah</th><th>Prioritas</th><th>Status</th><th></th></tr></thead><tbody>${T.map(t=>`<tr><td class="mono">${t.id}<span class="sub">${t.age} hari</span></td><td><a href="#/ipad/${t.ipad}">${byId(t.ipad).name}</a></td><td>${esc(t.desc)}<span class="sub">${t.jenis} · ${esc(t.by)}</span></td><td>${badge(t.prio)}</td><td>${badge(isEsk(t)?'Eskalasi':t.status)}</td><td>${can('register')&&t.status!=='Selesai'?`<button class="btn btn-sm" onclick="A.handle('${t.id}')">Tangani</button>`:''}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty"><b>Tidak ada tiket</b>Belum ada tiket di kategori ini.</div>'}
+ </section></div>`;
+}
+
+/* ---------- PENGATURAN ---------- */
+function pSet(tab){
+ if(!can('cfgSettings'))return noAccess();
+ const all=[['aturan','Aturan sistem',1],['master','Master data',1],['department','Department',1],['lokasi','Lokasi & section',1],['user','User & role',1],['variabel','Variabel',0],['panduan','Panduan konfigurasi',0],['audit','Audit log',1]];
+ const tabs=all.filter(t=>!t[2]||can('settings'));
+ tab=tab&&tabs.some(t=>t[0]===tab)?tab:tabs[0][0];
+ let b='';
+ if(tab==='aturan')b=`<form class="card" onsubmit="A.saveRules(event)"><div class="grid g2">
+  ${[['eskalasi','Eskalasi tiket (hari)'],['belumDicek','Batas belum dicek (hari)'],['umurMax','Umur maksimal iPad (tahun)'],['targetIos','Target versi iOS'],['idleLock','Kunci data rahasia saat idle (menit)'],['alertN','Alert jika buka credential ≥ (kali)'],['alertMin','… dalam rentang (menit)'],['prefix','Prefix nama iPad']].map(([k,l])=>`<div class="field"><label for="r-${k}">${l}</label><input id="r-${k}" name="${k}" value="${esc(RULES[k])}"></div>`).join('')}
+  </div><div class="row" style="margin-top:var(--sp-6);justify-content:flex-end"><button class="btn">Simpan perubahan</button></div></form>`;
+ if(tab==='master')b=`<div class="grid g3">${[['Model iPad',MODELS],['Peruntukan',UNTUK],['Status iPad',STATUSES]].map(([t,a])=>`<div class="card"><div class="card-h"><h2>${t}</h2><button class="btn btn-sm btn-soft" onclick="A.toast('Item ditambahkan (simulasi)')">${ic('plus')}Tambah</button></div>${a.map(x=>`<div class="todo" style="min-height:44px"><span class="t">${t==='Status iPad'?badge(x):esc(x)}</span></div>`).join('')}</div>`).join('')}</div>`;
+ if(tab==='department')b=`<div class="card"><div class="card-h"><div><h2>${DEPTS.length} department</h2></div><button class="btn btn-sm" onclick="A.toast('Department ditambahkan (simulasi)')">${ic('plus')}Tambah</button></div><div class="tw"><table><thead><tr><th>Department</th><th>Jumlah iPad</th><th>Admin</th></tr></thead><tbody>${DEPTS.map(d=>`<tr><td><b>${d}</b></td><td>${D.ipads.filter(x=>x.dept===d).length}</td><td>${D.users.filter(u=>u.dept===d).map(u=>esc(u.name)).join(', ')||'<span class="subtle">–</span>'}</td></tr>`).join('')}</tbody></table></div></div>`;
+ if(tab==='lokasi')b=`<div class="grid g3">${Object.entries(SEC).map(([l,a])=>`<div class="card"><div class="card-h"><div><h2>${l}</h2><p>${a.length} section · ${D.ipads.filter(x=>x.lok===l).length} iPad</p></div></div><div class="chips">${a.map(s=>`<span class="badge tone-neu plain">${esc(s)}</span>`).join('')}</div></div>`).join('')}</div>`;
+ if(tab==='user')b=`<div class="card mb"><div class="card-h"><div><h2>${D.users.length} user</h2></div><button class="btn btn-sm" onclick="A.toast('Undangan user dikirim (simulasi)')">${ic('plus')}Tambah user</button></div><div class="tw"><table><thead><tr><th>Nama</th><th>Username</th><th>Role</th><th>Department</th><th>Status</th></tr></thead><tbody>${D.users.map(u=>`<tr><td><b>${esc(u.name)}</b></td><td class="mono">${u.user}</td><td>${ROLES[u.role]}</td><td>${esc(u.dept)}</td><td>${badge(u.aktif?'OK':'Loss').replace('>OK<','>Aktif<')}</td></tr>`).join('')}</tbody></table></div></div>
+  <div class="card"><div class="card-h"><h2>Hak akses per role</h2></div><div class="tw"><table><thead><tr><th>Fitur</th><th>Super Admin</th><th>Admin iPad</th><th>Admin Dept</th></tr></thead><tbody>
+  ${[['Lihat iPad','Semua','Semua','Dept sendiri'],['Registrasi & konfigurasi','✓','✓','–'],['Mutasi','Langsung','Perlu approval','–'],['Approve mutasi / Retired / Loss→Available','✓','–','–'],['Credential Apple ID & Gmail','✓','✓','–'],['Credential passcode / unlock / i-Reporter','✓','✓','Dept sendiri'],['User, master, aturan, audit','✓','–','–']].map(r=>`<tr>${r.map((c,i)=>i?`<td>${c==='✓'?`<span class="badge tone-ok">Ya</span>`:c==='–'?'<span class="subtle">Tidak</span>':c}</td>`:`<td><b>${c}</b></td>`).join('')}</tr>`).join('')}</tbody></table></div></div>`;
+ if(tab==='variabel')b=`<div class="card"><div class="card-h"><div><h2>Nilai variabel</h2><p>Prioritas: <b>lokasi + peruntukan</b> › <b>lokasi</b> › <b>peruntukan</b> › <b>umum</b>. Variabel rahasia disamarkan; membukanya tercatat di audit.</p></div><button class="btn btn-sm" onclick="A.varNew()">${ic('plus')}Tambah nilai</button></div><div class="note tone-info">Variabel otomatis dari data iPad: ${Object.keys(SYSV).map(k=>'<span class="mono">{{'+k+'}}</span>').join(', ')}. Tambahkan <span class="mono">:lama</span> (mis. <span class="mono">{{apple_id:lama}}</span>) untuk memakai nilai di lokasi sebelumnya.</div><div class="tw"><table><thead><tr><th>Variabel</th><th>Cakupan</th><th>Berlaku untuk</th><th>Nilai</th><th></th></tr></thead><tbody>${D.vars.map((v,i)=>{const d=VARDEFS.find(x=>x.k===v.name);return `<tr><td><span class="mono">{{${v.name}}}</span><span class="sub">${esc(d?d.label:'')}</span></td><td>${badge('Setup').replace('>Setup<','>'+v.scope+'<')}</td><td>${[v.lok,v.untuk].filter(Boolean).join(' · ')||'Semua'}</td><td class="mono">${d&&d.secret?'••••••••':esc(v.val)}</td><td><button class="btn btn-sm btn-sec" aria-label="Hapus nilai" onclick="A.varDel(${i})">${ic('x')}</button></td></tr>`}).join('')}</tbody></table></div></div>`;
+ if(tab==='panduan')b=pGuideEd();
+ if(tab==='audit')b=`${S.credAlert?`<div class="note tone-bad spread"><span><b>Alert:</b> Admin iPad 1 membuka credential berkali-kali dalam waktu singkat.</span><button class="btn btn-sm btn-sec" onclick="A.ackAlert()">Tandai sudah ditinjau</button></div>`:''}<div class="card"><div class="tw"><table><thead><tr><th>Waktu</th><th>User</th><th>Aktivitas</th><th>Objek</th></tr></thead><tbody>${D.audit.map(a=>`<tr><td class="mono">${a.t}</td><td>${esc(a.who)}</td><td>${esc(a.act)}</td><td>${esc(a.obj)}</td></tr>`).join('')}</tbody></table></div></div>`;
+ return head('Pengaturan','Atur aturan sistem, data master, user, dan panduan konfigurasi.')+
+ `<div class="tabs" role="tablist">${tabs.map(([k,l])=>`<a role="tab" href="#/pengaturan/${k}" class="${k===tab?'on':''}" aria-selected="${k===tab}">${l}</a>`).join('')}</div>`+b;
+}
+
+/* ---------- AKUN & 404 ---------- */
+function pAkun(){const u=me();return head('Akun','Profil dan keamanan akun Anda.')+
+ `<div class="grid g12"><div class="card" style="text-align:center"><span class="avatar" style="width:72px;height:72px;font-size:var(--fs-xl);margin:0 auto var(--sp-3)">${u.name.split(' ').map(w=>w[0]).join('').slice(0,2)}</span><h2 style="font-size:var(--fs-xl)">${esc(u.name)}</h2><p class="muted">${ROLES[S.role]}${S.role==='admin_dept'?' · '+esc(S.dept):''}</p><span class="mono subtle">@${u.user}</span></div>
+ <form class="card stack" onsubmit="A.chgPass(event)"><div class="card-h"><div><h2>Ganti password</h2><p>Minimal 8 karakter, kombinasi huruf dan angka</p></div></div>
+ <div class="field"><label for="op">Password saat ini</label><input id="op" type="password" required autocomplete="current-password"></div>
+ <div class="field"><label for="p1">Password baru</label><input id="p1" type="password" required autocomplete="new-password"></div>
+ <div class="field"><label for="p2">Ulangi password baru</label><input id="p2" type="password" required autocomplete="new-password"><span class="err" id="pe" role="alert"></span></div>
+ <div class="row" style="justify-content:flex-end"><button class="btn">Simpan password</button></div></form></div>`}
+function p404(){return `<div class="card e404"><b>404</b><h1 style="margin-top:var(--sp-4)">Halaman tidak ditemukan</h1><p class="muted">Halaman yang Anda cari tidak ada atau Anda tidak punya akses.</p><a class="btn" href="#/dashboard">Kembali ke Dashboard</a></div>`}
+
+/* ---------- MODAL & TOAST ---------- */
+function modal(title,body,foot,wide){
+ $('#modal-root').innerHTML=`<div class="overlay" onclick="if(event.target===this)A.close()"><div class="modal ${wide?'wide printable':''}" role="dialog" aria-modal="true" aria-labelledby="mt"><div class="modal-h"><h3 id="mt">${title}</h3><button class="ibtn" aria-label="Tutup" onclick="A.close()">${ic('x')}</button></div><div class="modal-b">${body}</div><div class="modal-f">${foot}</div></div></div>`;
+ const f=$('#modal-root .modal-b input,#modal-root .modal-b select,#modal-root .modal-b textarea');(f||$('#modal-root .modal-f .btn')).focus();
+}
+
+/* ---------- EXPORT (CSV & XLSX) ---------- */
+const expBtns=(ctx,pdf)=>`<button class="btn btn-sec" onclick="A.exp('xlsx','${ctx}')">${ic('down')}Excel</button><button class="btn btn-sec" onclick="A.exp('csv','${ctx}')">${ic('down')}CSV</button>`+(pdf?`<button class="btn btn-sec" onclick="A.exp('pdf')">PDF</button>`:'');
+const tfMatch=k=>t=>k==='semua'||(k==='aktif'&&t.status!=='Selesai')||(k==='eskalasi'&&isEsk(t))||(k==='selesai'&&t.status==='Selesai');
+
+function expData(ctx){
+ const L=vis();
+ if(ctx==='daftar'){
+  const rows=S.sel.size?L.filter(x=>S.sel.has(x.id)):monList();
+  return{file:'ipad-daftar',sheet:'Daftar iPad',rows,cols:[
+   ['Nama iPad',p=>p.name,12],['Serial number',p=>p.serial,16],['Model',p=>p.model,20],['Lokasi',p=>p.lok,10],
+   ['Section',p=>p.sec,16],['Department',p=>p.dept,14],['Peruntukan',p=>p.untuk,12],['Status',p=>p.status,11],
+   ['Versi iOS',p=>p.ios,10],['Tahun beli',p=>p.year,11],['Umur (tahun)',p=>age(p),13],
+   ['Terakhir dicek (hari)',p=>p.check,19],['Progres konfigurasi (%)',p=>p.prog,22]]};
+ }
+ if(ctx==='reconfig')return{file:'ipad-reconfig',sheet:'Re-Config',rows:L.filter(x=>x.status==='Setup'),cols:[
+  ['Nama iPad',p=>p.name,12],['Serial number',p=>p.serial,16],['Skenario',p=>p.scn==='reset'?'Reset':'Baru',10],
+  ['Lokasi',p=>p.lok,10],['Section',p=>p.sec,16],['Department',p=>p.dept,14],['Progres (%)',p=>p.prog,12],
+  ['Passcode',p=>p.passDefault?'Masih default':'Sudah diganti',15]]};
+ if(ctx==='ios')return{file:'ipad-update-ios',sheet:'Update iOS',rows:L.filter(x=>cmpV(x.ios,RULES.targetIos)<0&&!['Loss','Retired'].includes(x.status)),cols:[
+  ['Nama iPad',p=>p.name,12],['Serial number',p=>p.serial,16],['Versi sekarang',p=>p.ios,15],['Target iOS',()=>RULES.targetIos,12],
+  ['Lokasi',p=>p.lok,10],['Section',p=>p.sec,16],['Status',p=>p.status,11]]};
+ if(ctx==='apple'){
+  if(!can('credAll'))return null;
+  return{file:'ipad-apple-id',sheet:'Apple ID',rows:L,cols:[
+   ['Nama iPad',p=>p.name,12],['Apple ID (disamarkan)',p=>{const a=cred(p,'apple');return a.slice(0,4)+'••••@'+a.split('@')[1]},30],
+   ['Lokasi',p=>p.lok,10],['Department',p=>p.dept,14],['Status akun',p=>p.apple,18]]};
+ }
+ if(ctx==='tiket')return{file:'tiket-'+S.tf,sheet:'Tiket '+S.tf,rows:visT().filter(tfMatch(S.tf)),cols:[
+  ['No. tiket',t=>t.id,10],['iPad',t=>byId(t.ipad).name,10],['Lokasi',t=>byId(t.ipad).lok+' · '+byId(t.ipad).sec,22],
+  ['Jenis',t=>t.jenis,11],['Prioritas',t=>t.prio,10],['Status',t=>isEsk(t)?'Eskalasi':t.status,10],
+  ['Umur (hari)',t=>t.age,11],['Deskripsi',t=>t.desc,40],['Pelapor',t=>t.by,18]]};
+ if(ctx==='audit'){
+  if(!can('settings'))return null;
+  return{file:'audit-log',sheet:'Audit Log',rows:D.audit,cols:[
+   ['Waktu',a=>a.t,12],['User',a=>a.who,18],['Aktivitas',a=>a.act,28],['Objek',a=>a.obj,32]]};
+ }
+ return null;
+}
+
+/* CSV: UTF-8 BOM + pemisah ';' (cocok Excel regional Indonesia) + anti formula injection */
+function toCsv(rows){
+ const q=v=>{if(typeof v==='number')return String(v);v=String(v??'');
+  if(v.length>1&&/^[=+\-@\t\r]/.test(v))v="'"+v;
+  return /[";\r\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
+ return '\uFEFF'+rows.map(r=>r.map(q).join(';')).join('\r\n');
+}
+
+/* XLSX: Office Open XML + ZIP (store) tanpa library */
+const xe=v=>String(v??'').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g,'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const colL=i=>{let s='';i++;while(i){const m=(i-1)%26;s=String.fromCharCode(65+m)+s;i=Math.floor((i-1)/26)}return s};
+const CRC=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+const crc32=b=>{let c=0xFFFFFFFF;for(let i=0;i<b.length;i++)c=CRC[(c^b[i])&255]^(c>>>8);return(c^0xFFFFFFFF)>>>0};
+
+function zip(files,type){
+ const enc=new TextEncoder(),parts=[],central=[];let off=0;
+ const d=new Date(),tm=(d.getHours()<<11)|(d.getMinutes()<<5)|(d.getSeconds()>>1),dt=((d.getFullYear()-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate();
+ for(const f of files){
+  const name=enc.encode(f.name),data=enc.encode(f.data),crc=crc32(data);
+  const h=new DataView(new ArrayBuffer(30));
+  h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x0800,true);h.setUint16(8,0,true);
+  h.setUint16(10,tm,true);h.setUint16(12,dt,true);h.setUint32(14,crc,true);h.setUint32(18,data.length,true);
+  h.setUint32(22,data.length,true);h.setUint16(26,name.length,true);h.setUint16(28,0,true);
+  parts.push(new Uint8Array(h.buffer),name,data);
+  const c=new DataView(new ArrayBuffer(46));
+  c.setUint32(0,0x02014b50,true);c.setUint16(4,20,true);c.setUint16(6,20,true);c.setUint16(8,0x0800,true);
+  c.setUint16(10,0,true);c.setUint16(12,tm,true);c.setUint16(14,dt,true);c.setUint32(16,crc,true);
+  c.setUint32(20,data.length,true);c.setUint32(24,data.length,true);c.setUint16(28,name.length,true);c.setUint32(42,off,true);
+  central.push(new Uint8Array(c.buffer),name);
+  off+=30+name.length+data.length;
+ }
+ const size=central.reduce((a,b)=>a+b.length,0),e=new DataView(new ArrayBuffer(22));
+ e.setUint32(0,0x06054b50,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);
+ e.setUint32(12,size,true);e.setUint32(16,off,true);
+ return new Blob([...parts,...central,new Uint8Array(e.buffer)],{type});
+}
+
+function toXlsx(sheet,cols,body){
+ const sn=sheet.replace(/[\[\]:*?\/\\]/g,'').slice(0,31)||'Data';
+ const n=body.length+1,lastC=colL(cols.length-1);
+ const css=getComputedStyle(document.documentElement);
+ const argb=v=>'FF'+(css.getPropertyValue(v).trim()||'#1E40AF').replace('#','').toUpperCase();
+ const cell=(v,r,c,s)=>{const ref=colL(c)+r,st=s?` s="${s}"`:'';
+  return typeof v==='number'&&isFinite(v)?`<c r="${ref}"${st}><v>${v}</v></c>`:`<c r="${ref}" t="inlineStr"${st}><is><t xml:space="preserve">${xe(v)}</t></is></c>`};
+ const rows=[cols.map(c=>c[0]),...body].map((r,i)=>`<row r="${i+1}">${r.map((v,j)=>cell(v,i+1,j,i?0:1)).join('')}</row>`).join('');
+ const NS='http://schemas.openxmlformats.org',X='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+ return zip([
+  {name:'[Content_Types].xml',data:`${X}<Types xmlns="${NS}/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`},
+  {name:'_rels/.rels',data:`${X}<Relationships xmlns="${NS}/package/2006/relationships"><Relationship Id="rId1" Type="${NS}/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`},
+  {name:'xl/workbook.xml',data:`${X}<workbook xmlns="${NS}/spreadsheetml/2006/main" xmlns:r="${NS}/officeDocument/2006/relationships"><sheets><sheet name="${xe(sn)}" sheetId="1" r:id="rId1"/></sheets><definedNames><definedName name="_xlnm._FilterDatabase" localSheetId="0" hidden="1">'${xe(sn.replace(/'/g,"''"))}'!$A$1:$${lastC}$${n}</definedName></definedNames></workbook>`},
+  {name:'xl/_rels/workbook.xml.rels',data:`${X}<Relationships xmlns="${NS}/package/2006/relationships"><Relationship Id="rId1" Type="${NS}/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="${NS}/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`},
+  {name:'xl/styles.xml',data:`${X}<styleSheet xmlns="${NS}/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="${argb('--slate-0')}"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="${argb('--blue-700')}"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`},
+  {name:'xl/worksheets/sheet1.xml',data:`${X}<worksheet xmlns="${NS}/spreadsheetml/2006/main"><sheetViews><sheetView tabSelected="1" workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>${cols.map((c,i)=>`<col min="${i+1}" max="${i+1}" width="${c[2]||14}" customWidth="1"/>`).join('')}</cols><sheetData>${rows}</sheetData><autoFilter ref="A1:${lastC}${n}"/></worksheet>`}
+ ],'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+}
+
+function download(blob,name){
+ const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;
+ document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+}
+
+/* ---------- ROUTER ---------- */
+const ROUTES=[[/^#\/(dashboard)?$/,()=>pDash()],[/^#\/monitoring(?:\/(\w+))?$/,pMon],[/^#\/ipad\/(\w+)(?:\/(\w+))?$/,pDetail],[/^#\/registrasi(?:\/(\w+))?$/,pReg],[/^#\/konfigurasi\/(\w+)$/,pCfg],[/^#\/lapor(?:\?.*)?$/,pLapor],[/^#\/pengaturan(?:\/(\w+))?$/,pSet],[/^#\/akun$/,pAkun]];
+function render(){
+ document.body.classList.toggle('dark',S.dark);
+ const app=$('#app');
+ if(!S.auth){app.innerHTML=pLogin();return}
+ const h=location.hash||'#/dashboard';
+ for(const [re,fn] of ROUTES){const m=h.match(re);if(m){app.innerHTML=shell(fn(...m.slice(1)),h);return}}
+ app.innerHTML=shell(p404(),h);
+}
+
+/* ---------- ACTIONS ---------- */
+let revealTimers={};
+const A={
+ toast(msg,tone='ok'){const el=document.createElement('div');el.className='toast tone-'+tone;el.textContent=msg;$('#toasts').append(el);setTimeout(()=>el.remove(),3500)},
+ close(){$('#modal-root').innerHTML=''},
+ go(h){location.hash=h},
+ login(e){e.preventDefault();S.auth=true;S.role=$('#lr').value;location.hash='#/dashboard';render();A.toast('Berhasil masuk sebagai '+ROLES[S.role])},
+ logout(){S.auth=false;S.notif=false;render()},
+ forgot(){modal('Lupa password',`<div class="field"><label for="fe">Email kantor</label><input id="fe" type="email" placeholder="nama@hirose.co.id"><span class="hint">Kami kirim link untuk membuat password baru.</span></div>`,`<button class="btn btn-sec" onclick="A.close()">Batal</button><button class="btn" onclick="A.close();A.toast('Link reset password dikirim (simulasi)')">Kirim link</button>`)},
+ role(v){S.role=v;S.sel.clear();S.f.dept='';S.notif=false;render();A.toast('Sekarang melihat sebagai '+ROLES[v],'info')},
+ dark(){S.dark=!S.dark;render()},
+ notif(){S.notif=!S.notif;render()},
+ gsearch(q){S.f.q=q;if(location.hash.startsWith('#/monitoring'))render();else location.hash='#/monitoring'},
+ setF(k,v){S.f[k]=v;$('#mon-res').innerHTML=monRes()},
+ view(v){S.view=v;$('#mon-res').innerHTML=monRes()},
+ sel(id,on){on?S.sel.add(id):S.sel.delete(id);$('#mon-res').innerHTML=monRes()},
+ selAll(on){monList().forEach(x=>on?S.sel.add(x.id):S.sel.delete(x.id));$('#mon-res').innerHTML=monRes()},
+ clearSel(){S.sel.clear();$('#mon-res').innerHTML=monRes()},
+ exp(t){A.toast('Export '+t+' tidak tersedia di mockup','warn')},
+ bulkStatus(){modal(`Ubah status ${S.sel.size} iPad`,`<div class="field"><label for="bs">Status baru</label><select id="bs">${opts(STATUSES.filter(s=>s!=='Setup'),'Available')}</select><span class="hint">Retired & Loss→Available perlu persetujuan Super Admin.</span></div>`,`<button class="btn btn-sec" onclick="A.close()">Batal</button><button class="btn" onclick="A.applyStatus([...S.sel],$('#bs').value)">Terapkan</button>`)},
+ statusModal(id){const p=byId(id);modal(`Ubah status ${p.name}`,`<p>Status sekarang: ${badge(p.status)}</p><div class="field"><label for="bs">Status baru</label><select id="bs">${opts(STATUSES.filter(s=>s!==p.status&&s!=='Setup'),'')}</select><span class="hint">Retired & Loss→Available perlu persetujuan Super Admin.</span></div>`,`<button class="btn btn-sec" onclick="A.close()">Batal</button><button class="btn" onclick="A.applyStatus(['${id}'],$('#bs').value)">Simpan</button>`)},
+ applyStatus(ids,to){let req=0,done=0;ids.forEach(id=>{const p=byId(id);const need=(to==='Retired'||(p.status==='Loss'&&to==='Available'))&&!can('approve');if(need){S.preq.push({id:'PS-'+Date.now()+id,ipad:id,from:p.status,to,by:me().name});req++}else{p.status=to;log('Ubah status → '+to,p.name);done++}});S.sel.clear();A.close();render();if(done)A.toast(`${done} iPad diubah ke ${to}`);if(req)A.toast(`${req} perubahan diajukan ke Super Admin`,'info')},
+ bulkCheck(){S.sel.forEach(id=>{byId(id).check=0});A.toast(S.sel.size+' iPad ditandai sudah dicek');S.sel.clear();render()},
+ labels(ids){ids=ids||[...S.sel];modal('Label QR (60 mm)',`<div class="labels">${ids.map(id=>{const p=byId(id);return `<div class="label">${qr(p.id,72)}<div><b>${p.name}</b><div class="mono subtle">${p.serial}</div><div class="subtle">${p.lok} · ${esc(p.sec)}</div></div></div>`}).join('')}</div>`,`<button class="btn btn-sec" onclick="A.close()">Tutup</button><button class="btn" onclick="window.print()">Cetak</button>`,1)},
+ iosDone(id){byId(id).ios=RULES.targetIos;byId(id).iosAt=ISO;log('Update iOS',byId(id).name);render();A.toast(byId(id).name+' sudah iOS '+RULES.targetIos)},
+ appleOk(id){byId(id).apple='OK';render();A.toast('Apple ID '+byId(id).name+' terverifikasi')},
+ reveal(id,k,l){modal('Buka data rahasia',`<div class="note tone-warn">Akses ke <b>${l}</b> akan tercatat di audit log.</div><div class="stack"><div class="field"><label for="rr">Alasan membuka *</label><textarea id="rr" placeholder="Contoh: konfigurasi ulang setelah reset"></textarea></div><div class="field"><label for="rp">Konfirmasi password Anda *</label><input id="rp" type="password" autocomplete="current-password"><span class="err" id="re" role="alert"></span></div></div>`,`<button class="btn btn-sec" onclick="A.close()">Batal</button><button class="btn" onclick="A.doReveal('${id}','${k}','${l}')">Tampilkan</button>`)},
+ doReveal(id,k,l){const r=$('#rr').value.trim(),pw=$('#rp').value;if(r.length<5){$('#re').textContent='Isi alasan minimal 5 karakter.';return}if(!pw){$('#re').textContent='Password wajib diisi.';return}
+  A.close();const p=byId(id);log('Membuka credential',p.name+' · '+l);S.revealLog.push(Date.now());if(S.revealLog.filter(t=>Date.now()-t<RULES.alertMin*60000).length>=RULES.alertN)S.credAlert++;
+  const v=$('#cv-'+k),tm=$('#ct-'+k);if(!v)return;v.textContent=cred(p,k);let s=10;clearInterval(revealTimers[k]);tm.textContent='Disembunyikan dalam '+s+' dtk';
+  revealTimers[k]=setInterval(()=>{s--;if(s<=0){clearInterval(revealTimers[k]);v.textContent='••••••••';tm.textContent=''}else tm.textContent='Disembunyikan dalam '+s+' dtk'},1000)},
+ reconfig(id){const p=byId(id);p.status='Setup';p.scn='reset';p.prog=0;p.fromLokasi=p.lok;p.fromUntuk=p.untuk;p.passDefault=true;S.cfg[id]={};S.cfgCur[id]=0;log('Mulai Re-Config',p.name);location.hash='#/konfigurasi/'+id},
+ wv(k,v,rr){S.wiz.d[k]=v;if(k==='lok'){S.wiz.d.sec=SEC[v][0]}if(rr)render()},
+ wstep(d){if(d>0&&S.wiz.step===1&&!S.wiz.d.serial.trim()){A.toast('Serial number wajib diisi','bad');$('#ws').focus();return}if(d>0&&S.wiz.step===1&&D.ipads.some(x=>x.serial===S.wiz.d.serial.trim())){A.toast('Serial number sudah terdaftar','bad');return}S.wiz.step+=d;render()},
+ wsave(){const d=S.wiz.d;const n=String(Math.max(...D.ipads.map(x=>x.num))+1).padStart(3,'0');const p=ip(n,'Setup',d.lok,d.sec,d.dept,{serial:d.serial.trim(),model:d.model,untuk:d.untuk,year:NOW_YEAR,check:0,passDefault:true});D.ipads.push(p);log('Registrasi iPad',p.name);S.wiz={step:1,d:{lok:'Hirose',sec:'',dept:'Production',untuk:'i-Reporter',model:'iPad (10th gen)',serial:''}};A.toast(p.name+' tersimpan. Lanjutkan konfigurasi.');location.hash='#/konfigurasi/'+p.id},
+ mv(k,v,rr){S.mv[k]=v;if(k==='lok')S.mv.sec=SEC[v][0];render()},
+ mvSave(){const m=S.mv,p=byId(m.ipad);const from=p.lok+' · '+p.sec,to=m.lok+' · '+m.sec;if(from===to&&p.dept===m.dept){A.toast('Tujuan sama dengan lokasi sekarang','warn');return}
+  const id='MT-'+String(D.mutasi.length+1).padStart(4,'0');
+  if(can('mutasiDirect')){applyMove(p,m);D.mutasi.unshift({id,ipad:p.id,from,to,dept:m.dept,reset:m.reset,status:'Approved',by:me().name});log('Mutasi langsung',id+' · '+p.name);A.toast(p.name+' dipindahkan ke '+to);location.hash=m.reset?'#/konfigurasi/'+p.id:'#/ipad/'+p.id}
+  else{D.mutasi.unshift({id,ipad:p.id,from,to,dept:m.dept,reset:m.reset,status:'Pending',by:me().name,_m:{...m}});log('Mengajukan mutasi',id+' · '+p.name);A.toast('Mutasi '+id+' diajukan ke Super Admin','info');location.hash='#/registrasi/persetujuan'}},
+ mut(id,ok){const m=D.mutasi.find(x=>x.id===id);m.status=ok?'Approved':'Rejected';if(ok){const [lok,sec]=m.to.split(' · ');applyMove(byId(m.ipad),{lok,sec,dept:m.dept,reset:m.reset})}log(ok?'Menyetujui mutasi':'Menolak mutasi',id);render();A.toast('Mutasi '+id+(ok?' disetujui':' ditolak'),ok?'ok':'warn')},
+ preq(id,ok){const r=S.preq.find(x=>x.id===id);S.preq=S.preq.filter(x=>x.id!==id);if(ok){byId(r.ipad).status=r.to}log(ok?'Menyetujui perubahan status':'Menolak perubahan status',byId(r.ipad).name+' → '+r.to);render();A.toast(ok?'Perubahan status disetujui':'Perubahan status ditolak',ok?'ok':'warn')},
+ var(name,id,show){const p=byId(id),lama=name.endsWith(':lama'),k=name.replace(':lama',''),d=VARDEFS.find(x=>x.k===k),v=resolveVar(k,p,lama),hid=d&&d.secret&&!show;if(show)log('Membuka variabel rahasia',p.name+' · '+k);modal('Variabel {{'+esc(name)+'}}',v?`<div style="text-align:center">${hid?`<p class="mono" style="font-size:var(--fs-lg)">••••••••</p><button class="btn" onclick="A.var('${name}','${id}',1)">${ic('eye')}Tampilkan (tercatat di audit)</button>`:`${qr(v.val,160)}<p class="mono" style="font-size:var(--fs-lg);margin:var(--sp-3) 0 var(--sp-1)">${esc(v.val)}</p>`}<p class="subtle">${esc(d?d.label:k)} · cakupan: ${v.scope}${lama?' · lokasi sebelumnya ('+esc(p.fromLokasi||p.lok)+')':''}</p></div>`:'<div class="empty"><b>Nilai belum diatur</b>Atur di Pengaturan › Variabel.</div>',`<button class="btn" onclick="A.close()">Tutup</button>`)},
+ cfgGo(id,i){S.cfgCur[id]=i;render()},
+ stepMark(id,sid,s){const st=cfgInit(id);if(s)st.s[sid]=s;else delete st.s[sid];render()},
+ setV(id,k,v){cfgInit(id).v[k]=v;A.chk(id)},
+ chk(id){const p=byId(id),g=guidesFor(p)[S.cfgCur[id]??0],b=$('#cfg-done');if(b&&g)b.disabled=!canDone(p,g,cfgInit(id))},
+ passChk(v,id){const e=passErr(v,id);$('#perr').textContent=v.length?e:'';cfgInit(id).v.passcode=e?'':v;A.chk(id)},
+ guideDone(id){const p=byId(id),st=cfgInit(id),G=guidesFor(p),g=G[S.cfgCur[id]??0];
+  g.fields.forEach(f=>{const v=fval(p,f,st);({ios:()=>{p.ios=v;p.iosAt=ISO},wifi:()=>{p.wifi=v},appleStatus:()=>{p.apple=v},ip:()=>{p.ip=v},irepUser:()=>{p.irepUser=v},conmasId:()=>{p.conmasId=v},note:()=>{p.note=v},passcode:()=>{if(st.v.passcode){p.pass=st.v.passcode;p.passDefault=false}}})[f.target]()});
+  if(g.auto.wifi){const w=resolveVar(g.auto.wifi,p);if(w)p.wifi=w.val}
+  if(g.auto.appleId){const a=resolveVar(g.auto.appleId,p);if(a)p.appleId=a.val}
+  st.g[g.id]=1;p.prog=Math.round(G.filter(x=>st.g[x.id]).length/G.length*100);if((S.cfgCur[id]??0)<G.length-1)S.cfgCur[id]=(S.cfgCur[id]??0)+1;render();A.toast(g.t+' selesai')},
+ cfgUndo(id){const p=byId(id),st=cfgInit(id),G=guidesFor(p),g=G[S.cfgCur[id]??0];delete st.g[g.id];p.prog=Math.round(G.filter(x=>st.g[x.id]).length/G.length*100);render();A.toast('Tanda selesai dibatalkan','info')},
+ rcSave(id){const p=byId(id);p.rc={done:RECONFIG.map((_,i)=>$('#rc'+i).checked),plan:$('#rp').value,actual:$('#ra').value};log('Simpan Re-Config',p.name);render();A.toast('Re-Config disimpan')},
+ varNew(){modal('Tambah nilai variabel',`<div class="stack"><div class="field"><label for="vn">Variabel</label><select id="vn">${VARDEFS.map(v=>`<option value="${v.k}">${esc(v.label)}</option>`).join('')}</select></div><div class="field"><label for="vs">Cakupan</label><select id="vs">${['umum','lokasi','peruntukan','lokasi+peruntukan'].map(x=>`<option>${x}</option>`).join('')}</select></div><div class="field"><label for="vl">Lokasi (bila cakupan memakai lokasi)</label><select id="vl">${opts(Object.keys(SEC),'')}</select></div><div class="field"><label for="vu">Peruntukan (bila cakupan memakai peruntukan)</label><select id="vu">${opts(UNTUK,'')}</select></div><div class="field"><label for="vv">Nilai</label><input id="vv"></div></div>`,`<button class="btn btn-sec" onclick="A.close()">Batal</button><button class="btn" onclick="A.varSave()">Simpan</button>`)},
+ varSave(){const n=$('#vn').value,s=$('#vs').value,v=$('#vv').value.trim();if(!v)return A.toast('Nilai wajib diisi','bad');const o={name:n,scope:s,val:v};if(s.includes('lokasi'))o.lok=$('#vl').value;if(s.includes('peruntukan'))o.untuk=$('#vu').value;D.vars=D.vars.filter(x=>!(x.name===n&&x.scope===s&&x.lok===o.lok&&x.untuk===o.untuk));D.vars.push(o);log('Ubah variabel',n);A.close();render();A.toast('Nilai variabel disimpan')},
+ varDel(i){const v=D.vars[i];D.vars.splice(i,1);log('Hapus nilai variabel',v.name);render()},
+ editGuide(gid){S.ge={id:gid,draft:null,dirty:0,pv:(S.ge&&S.ge.pv)||{scn:'baru',lok:'Hirose',untuk:'i-Reporter'}};location.hash='#/pengaturan/panduan'},
+ geSel(id){const ge=geDraft();if(ge.dirty&&!confirm('Perubahan belum disimpan. Buang?'))return;ge.id=id;ge.draft=null;render()},
+ geSet(k,v){const ge=geDraft();ge.draft[k]=v;ge.dirty=1},
+ geStep(n,k,v){const ge=geDraft();ge.draft.steps[n][k]=v;ge.dirty=1},
+ geCond(w,k,x){const ge=geDraft(),c=w==='g'?ge.draft.cond:ge.draft.steps[+w].cond;if(x===null)c[k]=[];else{const a=c[k]||[];c[k]=a.includes(x)?a.filter(y=>y!==x):[...a,x]}ge.dirty=1;render()},
+ geIns(n,v){if(!v)return;const ge=geDraft();ge.draft.steps[n].text+=(ge.draft.steps[n].text?' ':'')+'{{'+v+'}}';ge.dirty=1;render()},
+ geStepAdd(){const ge=geDraft();ge.draft.steps.push({id:nid('s'),text:'',skip:0,cond:{}});ge.dirty=1;render()},
+ geStepDel(n){const ge=geDraft();ge.draft.steps.splice(n,1);ge.dirty=1;render()},
+ geStepMove(n,d){const ge=geDraft(),s=ge.draft.steps;[s[n],s[n+d]]=[s[n+d],s[n]];ge.dirty=1;render()},
+ geField(n,k,v){const ge=geDraft(),f=ge.draft.fields[n];f[k]=v;if(k==='target'){f.k=v==='note'?'note_'+n:v;ge.dirty=1;render()}else ge.dirty=1},
+ geFieldAdd(){const ge=geDraft();ge.draft.fields.push({k:'note_'+ge.draft.fields.length,label:'Catatan',target:'note',req:0});ge.dirty=1;render()},
+ geFieldDel(n){const ge=geDraft();ge.draft.fields.splice(n,1);ge.dirty=1;render()},
+ gePv(k,v){geDraft().pv[k]=v;render()},
+ geSave(){const ge=geDraft(),d=clone(ge.draft);d.steps=d.steps.filter(s=>s.text.trim());if(!d.steps.length)return A.toast('Minimal 1 langkah','bad');if(!d.t.trim())return A.toast('Judul wajib diisi','bad');GUIDES[GUIDES.findIndex(x=>x.id===d.id)]=d;ge.draft=clone(d);ge.dirty=0;log('Ubah panduan',d.t);render();A.toast('Panduan disimpan')},
+ geAdd(){const ge=geDraft();if(ge.dirty&&!confirm('Perubahan belum disimpan. Buang?'))return;const g={id:nid('g'),t:'Item baru',descr:'',req:1,cond:{},steps:[{id:nid('s'),text:'Tulis langkah pertama di sini',skip:0,cond:{}}],fields:[],auto:{}};GUIDES.push(g);ge.id=g.id;ge.draft=null;render()},
+ geDup(){const ge=geDraft(),d=clone(ge.draft);d.id=nid('g');d.t+=' (salinan)';d.steps.forEach(s=>s.id=nid('s'));GUIDES.splice(GUIDES.findIndex(x=>x.id===ge.draft.id)+1,0,d);ge.id=d.id;ge.draft=null;render();A.toast('Item diduplikat')},
+ geDel(){const ge=geDraft();if(GUIDES.length<2||!confirm('Hapus item "'+ge.draft.t+'"?'))return;GUIDES.splice(GUIDES.findIndex(x=>x.id===ge.draft.id),1);ge.id=GUIDES[0].id;ge.draft=null;render()},
+ geMove(d){const ge=geDraft();if(ge.dirty)return A.toast('Simpan atau batalkan perubahan dulu','bad');const i=GUIDES.findIndex(x=>x.id===ge.id);[GUIDES[i],GUIDES[i+d]]=[GUIDES[i+d],GUIDES[i]];render()},
+ cfgFinish(id){const p=byId(id);p.status='Available';p.prog=100;p.check=0;log('Konfigurasi selesai',p.name);A.toast(p.name+' siap dipakai');location.hash='#/ipad/'+id},
+ tf(k){S.tf=k;render()},
+ ticket(e){e.preventDefault();const id='TK-'+String(D.tickets.length+1).padStart(4,'0');D.tickets.unshift({id,ipad:$('#ti').value,jenis:$('#tj').value,prio:$('#tp').value,desc:$('#td').value.trim(),status:'Open',age:0,by:me().name});log('Membuat tiket',id+' · '+byId($('#ti').value).name);S.tf='aktif';render();A.toast('Laporan '+id+' terkirim')},
+ handle(id){const t=D.tickets.find(x=>x.id===id),p=byId(t.ipad);modal(`Tangani ${id}`,`<div class="note tone-info"><b>${p.name}</b> · ${esc(t.desc)}</div><div class="stack"><div class="field"><label for="hs">Status tiket</label><select id="hs">${opts(['Open','Proses','Selesai'],t.status)}</select></div><div class="field"><label for="hi">Status iPad</label><select id="hi">${opts(STATUSES.filter(s=>s!=='Setup'),p.status)}</select></div><div class="field"><label for="hn">Catatan penanganan</label><textarea id="hn" placeholder="Apa yang sudah dilakukan?"></textarea></div></div>`,`<button class="btn btn-sec" onclick="A.close()">Batal</button><button class="btn" onclick="A.saveHandle('${id}')">Simpan</button>`)},
+ saveHandle(id){const t=D.tickets.find(x=>x.id===id);t.status=$('#hs').value;const to=$('#hi').value;const p=byId(t.ipad);A.close();if(to!==p.status)A.applyStatus([p.id],to);log('Update tiket → '+t.status,id);render();A.toast(id+' diperbarui')},
+ saveRules(e){e.preventDefault();const f=new FormData(e.target);for(const [k,v] of f){RULES[k]=isNaN(v)||k==='targetIos'?v:+v}log('Ubah aturan sistem','Pengaturan');A.toast('Aturan sistem disimpan')},
+ ackAlert(){S.credAlert=0;log('Meninjau alert credential','Audit');render();A.toast('Alert ditandai sudah ditinjau')},
+ chgPass(e){e.preventDefault();const a=$('#p1').value,b=$('#p2').value,er=$('#pe');if(a.length<8||!/\d/.test(a)||!/[a-z]/i.test(a)){er.textContent='Minimal 8 karakter, kombinasi huruf dan angka.';return}if(a!==b){er.textContent='Password baru tidak sama.';return}er.textContent='';e.target.reset();A.toast('Password berhasil diganti')}
+};
+function applyMove(p,m){if(m.reset){p.fromLokasi=p.lok;p.fromUntuk=p.untuk}p.lok=m.lok;p.sec=m.sec;p.dept=m.dept;if(m.reset){p.status='Setup';p.scn='reset';p.prog=0;p.passDefault=true;S.cfg[p.id]={};S.cfgCur[p.id]=0}}
+window.A=A;window.S=S;window.$=$;
+
+document.addEventListener('keydown',e=>{
+ if(e.key==='Escape'){if($('#modal-root').innerHTML)A.close();else if(S.notif)A.notif()}
+ if(e.key==='/'&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)&&$('#gs')){e.preventDefault();$('#gs').focus()}
+});
+window.addEventListener('hashchange',()=>{S.notif=false;render();window.scrollTo(0,0)});
+render();
+})();
+</script>
+</body>
+</html>
