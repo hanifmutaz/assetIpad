@@ -13,6 +13,7 @@
     "seed": "tsx db/seed.ts",
     "create-superadmin": "tsx scripts/create-superadmin.ts",
     "import-ipad": "tsx scripts/import-ipad.ts",
+    "import-irep": "tsx scripts/import-irep.ts",
     "gen-keys": "tsx scripts/gen-keys.ts",
     "rotate-keys": "tsx scripts/rotate-keys.ts",
     "audit:deps": "npm audit --omit=dev --audit-level=high"

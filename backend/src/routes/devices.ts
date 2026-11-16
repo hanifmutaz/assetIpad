@@ -73,6 +73,26 @@ router.get('/', ah(async (req, res) => {
   });
 }));
 
+// Ringkasan KPI untuk halaman Monitoring (mengikuti scope department user, sama seperti daftar)
+router.get('/summary', ah(async (req, res) => {
+  const R = await getRules();
+  const sc = deviceScope(req.user!, 'd', 2);
+  const r = await one<Record<string, number>>(`SELECT
+      count(*) FILTER (WHERE d.status IN ('Setup','Available','Repair'))::int AS active,
+      count(*) FILTER (WHERE d.status = 'Available')::int AS available,
+      count(*) FILTER (WHERE d.status = 'Setup')::int AS setup,
+      count(*) FILTER (WHERE d.status = 'Repair')::int AS repair,
+      count(*) FILTER (WHERE d.status = 'Damaged')::int AS damaged,
+      count(*) FILTER (WHERE d.status IN ('Available','Repair') AND (d.last_check IS NULL OR d.last_check < current_date - $1::int))::int AS stale,
+      count(*) FILTER (WHERE d.status IN ('Available','Repair') AND d.apple_status <> 'Done')::int AS apple,
+      count(*) FILTER (WHERE d.status IN ('Available','Repair') AND d.passcode_default)::int AS pcdefault,
+      count(*) FILTER (WHERE d.status IN ('Available','Repair') AND (
+        d.last_check IS NULL OR d.last_check < current_date - $1::int OR d.apple_status <> 'Done' OR d.passcode_default))::int AS attention,
+      count(*)::int AS total
+    FROM device d WHERE ${sc.sql}`, [R.staleDays, ...sc.params]);
+  res.json({ ...r, staleDays: R.staleDays });
+}));
+
 router.get('/picker', ah(async (req, res) => {
   const st = String(req.query.status ?? '').split(',').filter((x): x is Status => (STATUS as readonly string[]).includes(x));
   const sc = deviceScope(req.user!, 'd', 2);
@@ -197,6 +217,7 @@ router.post('/bulk', requirePerm('device.status'), ah(async (req, res) => {
 // ---------------------------------------------------------------- registrasi iPad baru (Admin iPad)
 router.post('/', requirePerm('device.register'), upload.single('photo'), ah(async (req, res) => {
   const b = z.object({
+    purpose: z.string().min(1).max(60).optional(),
     serial: z.string().transform(normSerial).refine((s) => SERIAL_RE.test(s), 'Format serial tidak valid (8 sampai 14 huruf/angka)'),
     model: z.string().min(1).max(80), capacity: z.string().max(20).optional(), color: z.string().max(40).optional(),
     sectionId: z.coerce.number().int(), departmentId: z.coerce.number().int(), purpose: z.string().min(1).max(60),
@@ -279,7 +300,7 @@ router.patch('/:id', requirePerm('device.edit'), ah(async (req, res) => {
     userName: z.string().trim().min(1).max(120).optional(),
     reconfig: z.object({ done: z.array(z.boolean()).max(50), plan: z.string().max(10).nullable().optional(), actual: z.string().max(10).nullable().optional() }).optional(),
   }).parse(req.body);
-  const MAP: Record<string, string> = { name: 'name', serial: 'serial', wifi: 'wifi', ip: 'ip', conmasId: 'conmas_id', ireporterUser: 'ireporter_user', ios: 'ios', iosUpdated: 'ios_updated', appleStatus: 'apple_status', note: 'note', reconfig: 'reconfig', userName: 'user_name' };
+  const MAP: Record<string, string> = { name: 'name', purpose: 'purpose', serial: 'serial', wifi: 'wifi', ip: 'ip', conmasId: 'conmas_id', ireporterUser: 'ireporter_user', ios: 'ios', iosUpdated: 'ios_updated', appleStatus: 'apple_status', note: 'note', reconfig: 'reconfig', userName: 'user_name' };
   await tx(async (c) => {
     const cur = (await c.query('SELECT *, host(ip) ip_txt FROM device WHERE id=$1 FOR UPDATE', [id])).rows[0];
     if (!cur) throw notFound();
@@ -289,6 +310,7 @@ router.patch('/:id', requirePerm('device.edit'), ah(async (req, res) => {
       if (!/^TEMP[0-9]{4,}$/.test(cur.serial)) throw conflict('Serial hanya bisa diubah untuk iPad dengan serial sementara (TEMPxxxx)');
       if ((await c.query('SELECT 1 FROM device WHERE serial=$1 AND id<>$2', [b.serial, id])).rowCount) throw conflict('Serial sudah terdaftar di iPad lain', 'SERIAL_DUP');
     }
+    if (b.purpose !== undefined && b.purpose !== cur.purpose && !(await getMaster('purpose')).includes(b.purpose)) throw bad('Peruntukan tidak terdaftar di master data');
     if (b.name && b.name !== cur.name && !b.force) {
       const dup = await c.query("SELECT 1 FROM device WHERE name=$1 AND id<>$2 AND status IN ('Setup','Available','Repair')", [b.name, id]);
       if (dup.rowCount) throw conflict(`Nama ${b.name} sudah dipakai iPad aktif lain`, 'NAME_DUP');

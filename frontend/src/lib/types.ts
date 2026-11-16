@@ -2,7 +2,7 @@ export type Role = 'superadmin' | 'admin_ipad' | 'admin_dept';
 export type Perm =
   | 'device.viewAll' | 'device.register' | 'device.edit' | 'device.config' | 'device.status' | 'device.check'
   | 'transfer.request' | 'approval.decide' | 'guide.edit' | 'var.edit' | 'cred.all' | 'cred.dept'
-  | 'ticket.create' | 'ticket.handleAll' | 'ticket.handleDept' | 'export' | 'settings.master' | 'users.manage' | 'audit.view';
+  | 'ticket.create' | 'ticket.handleAll' | 'ticket.handleDept' | 'export' | 'settings.master' | 'users.manage' | 'audit.view' | 'irep.view' | 'irep.manage';
 export interface Me {
   user: { id: string; email: string; name: string; role: Role; roleLabel: string; phone: string | null; mustChangePassword: boolean; departments: string[] };
   perms: Perm[];

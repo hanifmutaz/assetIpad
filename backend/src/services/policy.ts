@@ -24,6 +24,8 @@ export const PERMS = {
   'settings.master': ['superadmin'],
   'users.manage': ['superadmin'],
   'audit.view': ['superadmin'],
+  'irep.view': ['superadmin', 'admin_ipad', 'admin_dept'],
+  'irep.manage': ['superadmin', 'admin_ipad'],
 } as const satisfies Record<string, readonly Role[]>;
 export type Perm = keyof typeof PERMS;
 export const can = (u: AuthUser | undefined, p: Perm): boolean => !!u && (PERMS[p] as readonly Role[]).includes(u.role);

@@ -8,6 +8,7 @@ interface Dash {
   kpi: { active: number; available: number; newMonth: number; openTickets: number; ticketsThisMonth: number; ticketsLastMonth: number; cfgDevices: number; cfgPct: number };
   actions: Partial<Record<'esk' | 'stale' | 'apple' | 'pcdefault' | 'cfg' | 'mt' | 'sr' | 'alerts', number>>;
   departments: { name: string; n: number }[];
+  deptPurpose: { name: string; purpose: string; n: number }[];
   tickets: { id: number; code: string; device_name: string; type: string; created_at: string; state: string }[];
   replace: { id: string; name: string | null; model: string; arrival: string | null; old_model: boolean; too_old: boolean }[];
   activity: { at: string; by_name: string; action: string; device_id: string; device: string }[];
@@ -29,6 +30,10 @@ export default function Dashboard() {
   const total = Object.values(d.status).reduce((x, y) => x + y, 0);
   const sMax = Math.max(1, ...STATUSES.map((s) => d.status[s] ?? 0));
   const dMax = Math.max(1, ...d.departments.map((x) => x.n));
+  const purposes = [...new Set(d.deptPurpose.map((x) => x.purpose))].sort((a, b) => (a === 'i-Reporter' ? -1 : b === 'i-Reporter' ? 1 : a.localeCompare(b)));
+  const PCOL = ['var(--color-primary)', 'var(--s-info-dot)', 'var(--s-warn-dot)', 'var(--s-ok-dot)'];
+  const pcol = (p: string) => PCOL[purposes.indexOf(p) % PCOL.length];
+  const byDept = d.departments.map((x) => ({ ...x, parts: d.deptPurpose.filter((y) => y.name === x.name) })).filter((x) => x.n > 0);
   const scope = me?.departments.length ? ` department ${me.departments.join(', ')}` : ' di Hirose, SGP, dan Systech';
   const esk = meta?.rules.escalateDays ?? 3;
   const approvals = (a.mt ?? 0) + (a.sr ?? 0);
@@ -72,8 +77,11 @@ export default function Dashboard() {
           {STATUSES.map((s) => { const n = d.status[s] ?? 0; return <div className="hb" key={s}><span><Badge s={s} /></span><div className="hb-track"><i className={`tone-${TONE[s] ?? 'neu'}`} style={{ width: `${(n / sMax) * 100}%`, background: 'var(--d)' }} /></div><b>{n}</b></div>; })}
         </section>
         <section className="card">
-          <div className="card-h"><div><h2>iPad per department</h2><p>Jumlah unit aktif</p></div></div>
-          {d.departments.length ? d.departments.map((x) => <div className="hb" key={x.name}><span title={x.name}>{x.name}</span><div className="hb-track"><i className="brand" style={{ width: `${(x.n / dMax) * 100}%` }} /></div><b>{x.n}</b></div>) : <Empty msg="Belum ada data." />}
+          <div className="card-h"><div><h2>iPad per department</h2><p>Unit aktif, dipecah per peruntukan (i-Reporter, Dashboard, dll)</p></div></div>
+          {byDept.length ? <>
+            <div className="legend" style={{ display: 'flex', gap: 'var(--sp-4)', flexWrap: 'wrap', marginBottom: 'var(--sp-3)', fontSize: 'var(--fs-sm)' }}>{purposes.map((p) => <span key={p}><i style={{ display: 'inline-block', width: 10, height: 10, borderRadius: 2, background: pcol(p), marginRight: 6 }} />{p} <b className="mono">{d.deptPurpose.filter((y) => y.purpose === p).reduce((a, y) => a + y.n, 0)}</b></span>)}</div>
+            {byDept.map((x) => <div className="hb" key={x.name}><span title={x.name}>{x.name}</span><div className="hb-track" style={{ display: 'flex', width: `${(x.n / dMax) * 100}%`, minWidth: 8 }}>{x.parts.map((y) => <i key={y.purpose} title={`${y.purpose}: ${y.n}`} style={{ width: `${(y.n / x.n) * 100}%`, background: pcol(y.purpose) }} />)}</div><b>{x.n}</b></div>)}
+          </> : <Empty msg="Belum ada data." />}
         </section>
         <section className="card">
           <div className="card-h"><div><h2>Aktivitas terbaru</h2><p>Dari riwayat perangkat</p></div></div>

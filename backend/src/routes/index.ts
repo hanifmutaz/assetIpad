@@ -8,6 +8,7 @@ import { router as tickets } from './tickets.js';
 import { router as transfers } from './transfers.js';
 import { router as settings } from './settings.js';
 import { router as users } from './users.js';
+import { router as irep } from './irep.js';
 
 export const router = express.Router();
 router.use('/', config);
@@ -19,3 +20,4 @@ router.use('/tickets', tickets);
 router.use('/transfers', transfers);
 router.use('/settings', settings);
 router.use('/users', users);
+router.use('/irep', irep);

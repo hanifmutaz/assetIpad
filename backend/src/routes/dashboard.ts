@@ -14,7 +14,7 @@ router.get('/', ah(async (req, res) => {
   const S = `($1::boolean OR d.department_id = ANY($2::int[]))`;
   const P = [all, u.dept_ids];
   const oldModels = await getMaster('old_model');
-  const [st, f, tk, months, lok, latest, tickets, old, acts, pend, setupDevs] = await Promise.all([
+  const [st, f, tk, months, lok, lokPurpose, latest, tickets, old, acts, pend, setupDevs] = await Promise.all([
     q(`SELECT d.status, count(*)::int n FROM device d WHERE ${S} GROUP BY d.status`, P),
     q(`SELECT
         count(*) FILTER (WHERE d.status IN ('Available','Repair') AND (d.last_check IS NULL OR d.last_check < current_date - $3::int))::int stale,
@@ -34,6 +34,8 @@ router.get('/', ah(async (req, res) => {
        FROM m ORDER BY m.m`, P),
     q(`SELECT dp.name, count(d.id)::int n FROM department dp LEFT JOIN device d ON d.department_id=dp.id AND d.status IN ('Setup','Available','Repair')
        WHERE ($1::boolean OR dp.id = ANY($2::int[])) GROUP BY dp.id ORDER BY n DESC, dp.name`, P),
+    q(`SELECT dp.name, d.purpose, count(d.id)::int n FROM department dp JOIN device d ON d.department_id=dp.id AND d.status IN ('Setup','Available','Repair')
+       WHERE ($1::boolean OR dp.id = ANY($2::int[])) GROUP BY dp.id, d.purpose ORDER BY dp.name, d.purpose`, P),
     q(`SELECT d.id, d.name, d.serial, d.model, d.arrival, d.status FROM device d WHERE ${S} ORDER BY d.arrival DESC NULLS LAST, d.created_at DESC LIMIT 5`, P),
     q(`SELECT t.id, 'TK-'||lpad(t.id::text,4,'0') code, COALESCE(d.name,d.serial) device_name, t.type, t.created_at,
         CASE WHEN t.status='Closed' THEN 'Closed' WHEN t.status='Eskalasi' OR t.created_at < now() - make_interval(days => $3) THEN 'Eskalasi' ELSE t.status END state
@@ -64,7 +66,7 @@ router.get('/', ah(async (req, res) => {
       ...(can(u, 'device.config') ? { cfg: by.Setup ?? 0 } : {}),
       ...(can(u, 'approval.decide') ? { mt: p.mt, sr: p.sr, alerts: p.al } : {}),
     },
-    trend: months.rows, departments: lok.rows, latest: latest.rows, tickets: tickets.rows, replace: old.rows, activity: acts.rows,
+    trend: months.rows, departments: lok.rows, deptPurpose: lokPurpose.rows, latest: latest.rows, tickets: tickets.rows, replace: old.rows, activity: acts.rows,
     rules: { staleDays: R.staleDays, maxAgeYears: R.maxAgeYears },
   });
 }));

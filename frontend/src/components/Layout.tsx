@@ -9,7 +9,7 @@ import type { Device, Perm } from '../lib/types';
 
 const MENU: [string, string, string, Perm?][] = [
   ['/', 'Dashboard', 'dash'], ['/monitoring', 'Monitoring iPad', 'tab'], ['/registrasi', 'Registrasi iPad', 'plus', 'transfer.request'],
-  ['/lapor', 'Lapor Masalah', 'alert'], ['/pengaturan', 'Pengaturan', 'gear', 'guide.edit'], ['/akun', 'Akun', 'user'],
+  ['/irep', 'Akun i-Reporter', 'users', 'irep.view'], ['/lapor', 'Lapor Masalah', 'alert'], ['/pengaturan', 'Pengaturan', 'gear', 'guide.edit'], ['/akun', 'Akun', 'user'],
 ];
 
 export default function Layout() {
@@ -17,6 +17,7 @@ export default function Layout() {
   const nav = useNavigate();
   const { pathname } = useLocation();
   const [dark, setDark] = useState(document.body.classList.contains('dark'));
+  const [collapsed, setCollapsed] = useState(() => { try { return localStorage.getItem('ipadNavMin') === '1'; } catch { return false; } });
   const [bell, setBell] = useState(false);
   const [q, setQ] = useState('');
   const [res, setRes] = useState<Device[] | null>(null);
@@ -38,12 +39,13 @@ export default function Layout() {
   }, [q]);
   if (!me) return null;
   const toggleDark = () => { const on = document.body.classList.toggle('dark'); localStorage.setItem('ipadDark', on ? '1' : ''); setDark(on); };
+  const toggleNav = () => { const on = !collapsed; setCollapsed(on); try { localStorage.setItem('ipadNavMin', on ? '1' : ''); } catch { /* storage diblokir: abaikan */ } };
   const go = (to: string) => { setRes(null); setQ(''); nav(to); };
   const items = notif.data ?? [];
   const isOn = (to: string) => (to === '/' ? pathname === '/' : pathname.startsWith(to) || (to === '/monitoring' && pathname.startsWith('/devices')));
   return (
-    <div className="shell">
-      <aside className="side" aria-label="Navigasi utama">
+    <div className={`shell${collapsed ? ' collapsed' : ''}`}>
+      <aside className="side" id="side-nav" aria-label="Navigasi utama">
         <div className="brand"><Logo /><span className="brand-t"><b>iPad Asset</b><small>Management · v3.0</small></span></div>
         <nav className="nav">{MENU.filter((m) => !m[3] || can(m[3])).map(([to, l, i]) => (
           <Link key={to} to={to} className={isOn(to) ? 'on' : ''} aria-current={isOn(to) ? 'page' : undefined} title={l}><Ic n={i} /><span>{l}</span></Link>
@@ -52,6 +54,7 @@ export default function Layout() {
       </aside>
       <div className="main">
         <header className="top">
+          <button className="ibtn nav-toggle" onClick={toggleNav} aria-label={collapsed ? 'Perluas navigasi' : 'Ciutkan navigasi'} aria-expanded={!collapsed} aria-controls="side-nav" title={collapsed ? 'Perluas navigasi' : 'Ciutkan navigasi'}><Ic n="menu" /></button>
           <div className="gs" role="search">
             <Ic n="search" />
             <input ref={searchRef} type="search" placeholder="Cari iPad, serial, atau section… (tekan /)" aria-label="Pencarian global" value={q} onChange={(e) => setQ(e.target.value)}

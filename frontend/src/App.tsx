@@ -14,6 +14,7 @@ import ConfigWizard from './pages/ConfigWizard';
 import Lapor from './pages/Lapor';
 import Settings from './pages/Settings';
 import Akun from './pages/Akun';
+import IReporter from './pages/IReporter';
 import NotFound from './pages/NotFound';
 import { PrintReport, PrintLabels } from './pages/Print';
 
@@ -61,6 +62,7 @@ export default function App() {
         <Route path="lapor" element={<Lapor />} />
         <Route path="pengaturan" element={<Navigate to="/pengaturan/panduan" replace />} />
         <Route path="pengaturan/:tab" element={<Guard perm="guide.edit"><Settings /></Guard>} />
+        <Route path="irep" element={<Guard perm="irep.view"><IReporter /></Guard>} />
         <Route path="akun" element={<Akun />} />
         <Route path="*" element={<NotFound />} />
       </Route>

@@ -82,6 +82,14 @@ code{font-family:var(--font-mono);font-size:var(--fs-xs)}
 .nav a.on::before{content:"";position:absolute;left:-12px;top:8px;bottom:8px;width:3px;border-radius:0 2px 2px 0;background:var(--color-primary)}
 .side-foot{margin-top:auto;border-top:1px solid var(--color-side-border);padding:var(--sp-4) var(--sp-1) 0;display:flex;flex-direction:column;gap:2px;font-size:var(--fs-xs);color:var(--color-side-muted)}
 .side-foot b{color:var(--color-text);font-weight:600;font-size:var(--fs-sm)}
+/* Navbar diminimalkan (tombol di .top, pilihan disimpan di localStorage 'ipadNavMin') */
+.side{transition:width .18s ease}
+.shell.collapsed{--side-w:68px}
+.shell.collapsed .brand-t,.shell.collapsed .nav a span,.shell.collapsed .side-foot{display:none}
+.shell.collapsed .brand{padding-left:0;justify-content:center}
+.shell.collapsed .logo{height:22px}
+.shell.collapsed .nav a{justify-content:center;padding:0}
+.nav-toggle{margin-left:calc(var(--sp-2)*-1)}
 .main{flex:1;min-width:0;display:flex;flex-direction:column}
 .top{height:var(--top-h);background:var(--color-surface);border-bottom:1px solid var(--color-border);display:flex;align-items:center;gap:var(--sp-4);padding:0 var(--sp-6);position:sticky;top:0;z-index:15}
 .gs{flex:1;max-width:440px;position:relative;color:var(--color-text-subtle)}
@@ -206,8 +214,9 @@ input[type=file]{padding:var(--sp-2)}
 .addrow{display:flex;gap:var(--sp-2);align-items:center;margin-top:var(--sp-3);flex-wrap:wrap}.addrow input:not([type=checkbox]){flex:1;min-width:140px}.addrow select{flex:1;min-width:140px}
 
 /* Tabs */
-.tabs{display:flex;gap:var(--sp-5);border-bottom:1px solid var(--color-border);margin-bottom:var(--sp-5);overflow-x:auto}
-.tabs a,.tabs button{min-height:42px;padding:0 2px;display:flex;align-items:center;gap:var(--sp-2);border:0;background:none;font:inherit;font-weight:500;color:var(--color-text-muted);text-decoration:none;border-bottom:2px solid transparent;margin-bottom:-1px;cursor:pointer;white-space:nowrap}
+/* overflow-y:hidden + tanpa margin negatif: sebelumnya tab (margin-bottom:-1px) meluber 1px ke bawah, jadi overflow-x:auto memunculkan scrollbar vertikal */
+.tabs{display:flex;gap:var(--sp-5);border-bottom:1px solid var(--color-border);margin-bottom:var(--sp-5);overflow-x:auto;overflow-y:hidden}
+.tabs a,.tabs button{min-height:42px;padding:0 2px;display:flex;align-items:center;gap:var(--sp-2);border:0;background:none;font:inherit;font-weight:500;color:var(--color-text-muted);text-decoration:none;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;flex-shrink:0}
 .tabs a:hover,.tabs button:hover{color:var(--color-text)}
 .tabs .on,.tabs .active{color:var(--color-primary);border-bottom-color:var(--color-primary);font-weight:600}
 .chips{display:flex;gap:var(--sp-2);flex-wrap:wrap;margin-bottom:var(--sp-4)}
@@ -350,6 +359,7 @@ ol.steps li.ok{background:var(--color-primary-soft)}ol.steps li.skip{opacity:.6}
  .brand{padding-left:0;justify-content:center}
  .logo{height:22px}
  .nav a{justify-content:center;padding:0}
+ .nav-toggle{display:none}
  .g2{grid-template-columns:1fr}.login{grid-template-columns:1fr}.login-hero{display:none}
 }
 @media (max-width:600px){

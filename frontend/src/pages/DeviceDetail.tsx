@@ -71,7 +71,7 @@ export default function DeviceDetail() {
 function InfoTab({ data }: { data: Detail }) {
   const { device: d, perms } = data;
   const { dialog, toast } = useUi();
-  const { meta } = useAuth();
+  const { meta, can } = useAuth();
   const run = useRun();
   const [name, setName] = useState(d.name ?? '');
   const saveName = async (force = false): Promise<void> => {
@@ -81,9 +81,15 @@ function InfoTab({ data }: { data: Detail }) {
       toast(errMsg(e), 'err');
     }
   };
+  const irep = useApi<{ id: number; kind: string; username: string; lokasi: string; active: boolean; verification: string }[]>(can('irep.view') ? `/irep/by-device/${d.id}` : null);
   const [serial, setSerial] = useState('');
   const saveSerial = async () => {
     try { await patch(`/devices/${d.id}`, { version: d.version, serial: serial.trim() }); toast('Serial disimpan'); void run(async () => undefined); } catch (e) { toast(errMsg(e), 'err'); }
+  };
+  const changePurpose = async (to: string) => {
+    if (to === d.purpose) return;
+    if (!(await dialog({ title: 'Ubah peruntukan?', body: `${d.purpose} → ${to}. Peruntukan menentukan Apple ID dan langkah konfigurasi, pastikan iPad sudah disesuaikan.`, ok: 'Ubah' }))) return;
+    try { await patch(`/devices/${d.id}`, { version: d.version, purpose: to }); toast('Peruntukan diubah'); void run(async () => undefined); } catch (e) { toast(errMsg(e), 'err'); }
   };
   const lateCheck = !!meta && ageDays(d.last_check) > meta.rules.staleDays;
   return (
@@ -96,8 +102,9 @@ function InfoTab({ data }: { data: Detail }) {
           <dt>Lokasi</dt><dd>{d.lokasi}</dd>
           <dt>Section</dt><dd>{d.section}</dd>
           <dt>Department</dt><dd>{d.department}</dd>
-          <dt>Peruntukan</dt><dd>{d.purpose}</dd>
+          <dt>Peruntukan</dt><dd>{perms.canEdit ? <select aria-label="Peruntukan" value={d.purpose} onChange={(e) => void changePurpose(e.target.value)}>{(meta?.master.purpose ?? [d.purpose]).map((x) => <option key={x}>{x}</option>)}</select> : d.purpose}</dd>
           <dt>Pengguna</dt><dd>{d.user_name}</dd>
+          {(irep.data?.length ?? 0) > 0 && <><dt>Akun i-Reporter</dt><dd>{irep.data!.map((a) => <span key={a.id} style={{ marginRight: 8 }}><span className="mono">{a.username}</span> <small className="muted">({a.kind}{a.kind === 'lama' && !a.active ? ', tidak aktif' : ''})</small></span>)}</dd></>}
           <dt>Tgl datang</dt><dd>{fmtDate(d.arrival)}{d.vendor ? ` · ${d.vendor}` : ''}</dd>
           {'price' in d && <><dt>Harga</dt><dd>{rp(d.price)}</dd></>}
           <dt>Status</dt><dd><Badge s={d.status} /></dd>

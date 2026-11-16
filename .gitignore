@@ -7,3 +7,5 @@ uploads/
 *.log
 *.dump
 import-report-*.csv
+USER-CONMAS*.xlsx
+import-irep-report-*.csv

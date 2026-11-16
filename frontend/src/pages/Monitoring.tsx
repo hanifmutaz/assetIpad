@@ -28,12 +28,30 @@ export default function Monitoring() {
         </>}
         {can('device.register') && <button className="btn" onClick={() => nav('/registrasi')}><Ic n="plus" /> Registrasi iPad</button>}
       </PageHead>
+      <MonitoringKpi />
       <Tabs items={T} value={tab} onChange={(t) => setSp(t === 'list' ? {} : { tab: t })} />
       {tab === 'list' && <DeviceList />}
       {tab === 'reconfig' && <Reconfig />}
       {tab === 'ios' && <IosTab />}
       {tab === 'apple' && <AppleTab />}
     </>
+  );
+}
+
+interface Summary { active: number; available: number; setup: number; repair: number; damaged: number; stale: number; apple: number; pcdefault: number; attention: number; total: number; staleDays: number }
+
+/** KPI ringkas di atas Monitoring; ikut scope department user dan otomatis segar setelah aksi (useRun meng-invalidate semua query). */
+function MonitoringKpi() {
+  const { data: k, error } = useApi<Summary>('/devices/summary');
+  if (error || !k) return null;
+  const pct = k.active ? Math.round((k.available / k.active) * 100) : 0;
+  return (
+    <div className="grid g4 mb" aria-label="Ringkasan iPad">
+      <div className="card kpi hero"><span className="l">iPad aktif</span><span className="v">{k.active}</span><span className="h">{k.setup} setup · dari {k.total} unit terdaftar</span></div>
+      <div className="card kpi"><span className="l">Siap dipakai</span><span className="v">{k.available}</span><span className="h">{pct}% dari iPad aktif</span><div className="bar"><i style={{ width: `${pct}%` }} /></div></div>
+      <div className="card kpi"><span className="l">Repair / rusak</span><span className="v">{k.repair + k.damaged}</span><span className="h">{k.repair} repair · {k.damaged} damaged</span></div>
+      <div className="card kpi"><span className="l">Perlu tindakan</span><span className="v">{k.attention}</span><span className="h">{k.stale} belum dicek ({k.staleDays}+ hari) · {k.apple} Apple ID · {k.pcdefault} passcode default</span></div>
+    </div>
   );
 }
 
