@@ -272,17 +272,23 @@ router.patch('/:id', requirePerm('device.edit'), ah(async (req, res) => {
   const b = z.object({
     version: z.number().int(), force: z.boolean().optional(),
     name: z.string().trim().min(1).max(40).optional(),
+    serial: z.string().transform(normSerial).refine((v) => SERIAL_RE.test(v), 'Format serial tidak valid (8 sampai 14 huruf/angka)').optional(),
     wifi: nul(z.string().max(60)), ip: nul(z.string().ip({ version: 'v4' })), conmasId: nul(z.string().max(64)), ireporterUser: nul(z.string().max(64)),
     ios: nul(z.string().regex(/^\d+(\.\d+){0,2}$/)), iosUpdated: nul(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)),
     appleStatus: z.enum(APPLE_ST).optional(), note: nul(z.string().max(500)),
     userName: z.string().trim().min(1).max(120).optional(),
     reconfig: z.object({ done: z.array(z.boolean()).max(50), plan: z.string().max(10).nullable().optional(), actual: z.string().max(10).nullable().optional() }).optional(),
   }).parse(req.body);
-  const MAP: Record<string, string> = { name: 'name', wifi: 'wifi', ip: 'ip', conmasId: 'conmas_id', ireporterUser: 'ireporter_user', ios: 'ios', iosUpdated: 'ios_updated', appleStatus: 'apple_status', note: 'note', reconfig: 'reconfig', userName: 'user_name' };
+  const MAP: Record<string, string> = { name: 'name', serial: 'serial', wifi: 'wifi', ip: 'ip', conmasId: 'conmas_id', ireporterUser: 'ireporter_user', ios: 'ios', iosUpdated: 'ios_updated', appleStatus: 'apple_status', note: 'note', reconfig: 'reconfig', userName: 'user_name' };
   await tx(async (c) => {
     const cur = (await c.query('SELECT *, host(ip) ip_txt FROM device WHERE id=$1 FOR UPDATE', [id])).rows[0];
     if (!cur) throw notFound();
     if (cur.version !== b.version) throw conflict('Data iPad sudah diubah orang lain. Muat ulang halaman.', 'STALE');
+    if (b.serial !== undefined && b.serial !== cur.serial) {
+      // Serial hanya boleh diganti kalau masih serial sementara hasil import (TEMPxxxx).
+      if (!/^TEMP[0-9]{4,}$/.test(cur.serial)) throw conflict('Serial hanya bisa diubah untuk iPad dengan serial sementara (TEMPxxxx)');
+      if ((await c.query('SELECT 1 FROM device WHERE serial=$1 AND id<>$2', [b.serial, id])).rowCount) throw conflict('Serial sudah terdaftar di iPad lain', 'SERIAL_DUP');
+    }
     if (b.name && b.name !== cur.name && !b.force) {
       const dup = await c.query("SELECT 1 FROM device WHERE name=$1 AND id<>$2 AND status IN ('Setup','Available','Repair')", [b.name, id]);
       if (dup.rowCount) throw conflict(`Nama ${b.name} sudah dipakai iPad aktif lain`, 'NAME_DUP');

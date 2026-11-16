@@ -1,92 +1,87 @@
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
-import { qs } from '../lib/api';
 import { Ic } from '../components/icons';
-import { Badge, Flag, Empty, Loading, ErrorBox, PageHead, useApi, fmtDate, fmtDT } from '../components/ui';
+import { Badge, Empty, Loading, ErrorBox, PageHead, TONE, useApi, fmtDT, today } from '../components/ui';
 
 interface Dash {
+  status: Record<string, number>;
   kpi: { active: number; available: number; newMonth: number; openTickets: number; ticketsThisMonth: number; ticketsLastMonth: number; cfgDevices: number; cfgPct: number };
   actions: Partial<Record<'esk' | 'stale' | 'apple' | 'pcdefault' | 'cfg' | 'mt' | 'sr' | 'alerts', number>>;
-  trend: { month: string; tickets: number; damaged: number }[];
   departments: { name: string; n: number }[];
-  latest: { id: string; name: string | null; serial: string; model: string; arrival: string | null; status: string }[];
   tickets: { id: number; code: string; device_name: string; type: string; created_at: string; state: string }[];
   replace: { id: string; name: string | null; model: string; arrival: string | null; old_model: boolean; too_old: boolean }[];
   activity: { at: string; by_name: string; action: string; device_id: string; device: string }[];
   rules: { staleDays: number; maxAgeYears: number };
 }
+const STATUSES = ['Setup', 'Available', 'Repair', 'Damaged', 'Loss', 'Retired'];
+const ddmmyyyy = (iso: string) => iso.split('-').reverse().join('-');
+
+interface Todo { n: number; tone: string; t: string; d: string; to: string; cta: string }
 
 export default function Dashboard() {
-  const { me } = useAuth();
+  const { me, can, meta } = useAuth();
   const nav = useNavigate();
   const { data: d, loading, error, reload } = useApi<Dash>('/dashboard');
   if (loading) return <Loading />;
   if (error || !d) return <ErrorBox error={error} onRetry={reload} />;
   const k = d.kpi;
   const a = d.actions;
-  const diff = k.ticketsThisMonth - k.ticketsLastMonth;
-  const mon = (f: Record<string, string>) => nav(`/monitoring${qs(f)}`);
-  const mx = Math.max(1, ...d.trend.flatMap((r) => [r.tickets, r.damaged]));
-  const dmx = Math.max(1, ...d.departments.map((x) => x.n));
-  const Act = ({ l, v, go }: { l: string; v?: number; go: () => void }) => (v === undefined ? null : <button className={`kpi ${v ? 'act' : 'zero'}`} onClick={go}><span className="kl">{l}</span><b>{v}</b></button>);
-  const Big = ({ l, v, icon, col, foot, go }: { l: string; v: string | number; icon: string; col: string; foot: React.ReactNode; go: () => void }) => (
-    <button className="kpi" onClick={go}><div className="kbig"><div><span className="kl">{l}</span><b>{v}</b></div><span className="kic" style={{ background: col }}><Ic n={icon} s={24} /></span></div>{foot}</button>
-  );
+  const total = Object.values(d.status).reduce((x, y) => x + y, 0);
+  const sMax = Math.max(1, ...STATUSES.map((s) => d.status[s] ?? 0));
+  const dMax = Math.max(1, ...d.departments.map((x) => x.n));
+  const scope = me?.departments.length ? ` department ${me.departments.join(', ')}` : ' di Hirose, SGP, dan Systech';
+  const esk = meta?.rules.escalateDays ?? 3;
+  const approvals = (a.mt ?? 0) + (a.sr ?? 0);
+  const todo: Todo[] = [
+    ...(a.alerts ? [{ n: a.alerts, tone: 'bad', t: 'Alert akses credential', d: 'Ada yang membuka data rahasia berkali-kali dalam waktu singkat', to: '/pengaturan/audit', cta: 'Tinjau' }] : []),
+    ...(a.esk ? [{ n: a.esk, tone: 'bad', t: 'Tiket tereskalasi', d: `Lebih dari ${esk} hari belum selesai`, to: '/lapor?f=eskalasi', cta: 'Tangani' }] : []),
+    ...(approvals ? [{ n: approvals, tone: 'warn', t: 'Menunggu persetujuan Anda', d: 'Mutasi & perubahan status', to: '/registrasi?tab=status', cta: 'Review' }] : []),
+    ...(a.apple ? [{ n: a.apple, tone: 'warn', t: 'Apple ID bermasalah', d: 'Perlu verifikasi ulang', to: '/monitoring?flag=apple', cta: 'Lihat' }] : []),
+    ...(a.pcdefault ? [{ n: a.pcdefault, tone: 'warn', t: 'Passcode masih default', d: 'Wajib diganti sebelum dipakai', to: '/monitoring?flag=pcdefault', cta: 'Ganti' }] : []),
+    ...(a.cfg ? [{ n: a.cfg, tone: 'info', t: 'Konfigurasi belum selesai', d: `${a.cfg} iPad masih berstatus Setup`, to: '/monitoring?status=Setup', cta: 'Lanjutkan' }] : []),
+    ...(a.stale ? [{ n: a.stale, tone: 'neu', t: 'Belum dicek fisik', d: `Lebih dari ${d.rules.staleDays} hari`, to: '/monitoring?flag=stale', cta: 'Lihat' }] : []),
+  ];
   return (
     <>
-      <PageHead title="Dashboard">{me?.departments.length ? <span className="muted">Department: {me.departments.join(', ')}</span> : null}</PageHead>
-      <div className="kpis">
-        <Big l="Total iPad aktif" v={k.active} icon="tab" col="#5048e5" go={() => mon({})} foot={<div className="ktr"><span className="up">▲ {k.newMonth}</span> unit baru bulan ini</div>} />
-        <Big l="Available" v={k.available} icon="check" col="#14b8a6" go={() => mon({ status: 'Available' })} foot={<div className="ktr">{k.active ? Math.round((k.available / k.active) * 100) : 0}% dari unit aktif</div>} />
-        <Big l="Tiket aktif" v={k.openTickets} icon="alert" col="#d14343" go={() => nav('/lapor')} foot={<div className="ktr"><span className={diff > 0 ? 'dn' : 'up'}>{diff > 0 ? '▲' : '▼'} {Math.abs(diff)}</span> vs bulan lalu</div>} />
-        <Big l="Progress konfigurasi" v={`${k.cfgPct}%`} icon="gear" col="#ffb020" go={() => mon({ status: 'Setup' })} foot={<><div className="kbar"><i style={{ width: `${k.cfgPct}%` }} /></div><div className="ktr" style={{ marginTop: 8 }}>{k.cfgDevices} iPad sedang dikonfigurasi</div></>} />
+      <PageHead title={`Halo, ${me?.name.split(' ')[0] ?? ''}`} sub={`Ringkasan ${total} iPad${scope} · data per ${ddmmyyyy(today())}`}>
+        {can('device.register') ? <Link className="btn" to="/registrasi"><Ic n="plus" />Registrasi iPad</Link> : <Link className="btn" to="/lapor"><Ic n="alert" />Lapor masalah</Link>}
+      </PageHead>
+      <div className="grid g4 mb">
+        <div className="card kpi hero"><span className="l">iPad aktif</span><span className="v">{k.active}</span><span className="h">dari {total} unit terdaftar</span></div>
+        <div className="card kpi"><span className="l">Siap dipakai</span><span className="v">{k.available}</span><span className="h">{k.active ? Math.round((k.available / k.active) * 100) : 0}% dari iPad aktif</span></div>
+        <div className="card kpi"><span className="l">Tiket aktif</span><span className="v">{k.openTickets}</span><span className="h">{a.esk ?? 0} tereskalasi · {k.ticketsThisMonth} tiket bulan ini</span></div>
+        <div className="card kpi"><span className="l">Progres konfigurasi</span><span className="v">{k.cfgPct}%</span><span className="h">{k.cfgDevices} iPad sedang dikonfigurasi</span><div className="bar"><i style={{ width: `${k.cfgPct}%` }} /></div></div>
       </div>
-      <div className="sect">Butuh tindakan</div>
-      <div className="kpis">
-        <Act l="Tiket eskalasi" v={a.esk} go={() => nav('/lapor?f=eskalasi')} />
-        <Act l="Mutasi menunggu persetujuan" v={a.mt} go={() => nav('/registrasi?tab=status')} />
-        <Act l="Perubahan status menunggu" v={a.sr} go={() => nav('/registrasi?tab=status')} />
-        <Act l="Konfigurasi belum selesai" v={a.cfg} go={() => mon({ status: 'Setup' })} />
-        <Act l="Passcode masih default" v={a.pcdefault} go={() => mon({ flag: 'pcdefault' })} />
-        <Act l={`Belum dicek > ${d.rules.staleDays} hari`} v={a.stale} go={() => mon({ flag: 'stale' })} />
-        <Act l="Apple ID bermasalah" v={a.apple} go={() => mon({ flag: 'apple' })} />
-        <Act l="Alert akses credential" v={a.alerts} go={() => nav('/pengaturan/audit')} />
-      </div>
-      <div className="g21">
-        <div className="card"><h3>Tiket & kerusakan <small>6 bulan terakhir</small></h3>
-          <div className="chart" role="img" aria-label="Tren tiket dan kerusakan">{d.trend.map((r) => (
-            <div className="col" key={r.month}><div className="bars">
-              <div className="b1" style={{ height: `${(r.tickets / mx) * 85}%` }}><span>{r.tickets}</span></div>
-              <div className="b2" style={{ height: `${(r.damaged / mx) * 85}%` }}><span>{r.damaged}</span></div>
-            </div><small className="muted">{new Date(`${r.month}-01T00:00:00`).toLocaleDateString('id-ID', { month: 'short', year: '2-digit' })}</small></div>
-          ))}</div>
-          <div className="legend"><span><i style={{ background: 'var(--pri)' }} />Tiket masuk</span><span><i style={{ background: '#cbd5e1' }} />Masuk Repair / Damaged / Loss</span></div>
-        </div>
-        <div className="card"><h3>iPad aktif per department</h3>
-          {d.departments.length ? d.departments.map((x) => <div className="hbar" key={x.name}><span title={x.name}>{x.name}</span><div className="b" style={{ width: `${(x.n / dmx) * 60}%` }} /><b>{x.n}</b></div>) : <Empty msg="Belum ada data." />}
-        </div>
-      </div>
-      <div className="g12">
-        <div className="card"><h3>iPad terbaru</h3>
-          <div className="lst">{d.latest.map((x) => (
-            <div key={x.id}><span className="ico"><Ic n="tab" s={22} /></span><span style={{ flex: 1 }}><button className="link" onClick={() => nav(`/devices/${x.id}`)}><b>{x.name ?? x.serial}</b></button><small>{x.model} · datang {fmtDate(x.arrival)}</small></span><Badge s={x.status} /></div>
-          ))}</div>
-        </div>
-        <div className="card cardt"><h3>Tiket terbaru</h3>
-          {d.tickets.length ? <div className="tw"><table><thead><tr><th>ID</th><th>iPad</th><th>Masalah</th><th>Tanggal</th><th>Status</th></tr></thead><tbody>
-            {d.tickets.map((t) => <tr key={t.id} className="click" onClick={() => nav(`/lapor?t=${t.id}&f=semua`)}><td>{t.code}</td><td>{t.device_name}</td><td>{t.type}</td><td>{fmtDate(t.created_at)}</td><td><Badge s={t.state} /></td></tr>)}
+      <div className="g12 mb">
+        <section className="card">
+          <div className="card-h"><div><h2>Perlu Anda tangani</h2><p>Diurutkan dari yang paling mendesak</p></div></div>
+          {todo.length ? todo.map((x) => (
+            <div className="todo" key={x.t}><span className={`n tone-${x.tone}`}>{x.n}</span><span className="t"><b>{x.t}</b><small>{x.d}</small></span><Link className={`btn btn-sm ${x.tone === 'bad' ? '' : 'btn-soft'}`} to={x.to}>{x.cta}</Link></div>
+          )) : <div className="empty"><b>Semua beres</b>Tidak ada yang perlu ditangani sekarang.</div>}
+        </section>
+        <section className="card">
+          <div className="card-h"><div><h2>Tiket terbaru</h2><p>{k.openTickets} tiket aktif</p></div><Link className="btn btn-sm btn-sec" to="/lapor">Lihat semua</Link></div>
+          {d.tickets.length ? <div className="tw"><table><thead><tr><th>Tiket</th><th>iPad</th><th>Masalah</th><th>Status</th></tr></thead><tbody>
+            {d.tickets.slice(0, 5).map((t) => <tr key={t.id} className="click" onClick={() => nav(`/lapor?t=${t.id}&f=semua`)}><td className="mono">{t.code}</td><td>{t.device_name}</td><td>{t.type}</td><td><Badge s={t.state} /></td></tr>)}
           </tbody></table></div> : <Empty msg="Belum ada tiket." />}
-        </div>
+        </section>
       </div>
-      <div className="g2">
-        <div className="card"><h3>Kandidat replace <small>Model lama atau umur &gt; {d.rules.maxAgeYears} tahun</small></h3>
-          {d.replace.length ? <table><thead><tr><th>iPad</th><th>Model</th><th>Datang</th><th>Alasan</th></tr></thead><tbody>
-            {d.replace.map((x) => <tr key={x.id}><td><button className="link" onClick={() => nav(`/devices/${x.id}`)}>{x.name ?? '-'}</button></td><td>{x.model}</td><td>{fmtDate(x.arrival)}</td><td>{x.old_model && <Flag>model lama</Flag>} {x.too_old && <Flag>umur</Flag>}</td></tr>)}
-          </tbody></table> : <Empty msg="Tidak ada kandidat replace." />}
-        </div>
-        <div className="card"><h3>Aktivitas terbaru</h3>
-          {d.activity.length ? d.activity.map((h, i) => <div className="hist" key={i}><button className="link" onClick={() => nav(`/devices/${h.device_id}`)}>{h.device}</button>: {h.action}<br /><small>{fmtDT(h.at)} · {h.by_name}</small></div>) : <Empty msg="Belum ada aktivitas." />}
-        </div>
+      <div className="grid g3">
+        <section className="card">
+          <div className="card-h"><div><h2>Status iPad</h2><p>Komposisi seluruh unit</p></div></div>
+          {STATUSES.map((s) => { const n = d.status[s] ?? 0; return <div className="hb" key={s}><span><Badge s={s} /></span><div className="hb-track"><i className={`tone-${TONE[s] ?? 'neu'}`} style={{ width: `${(n / sMax) * 100}%`, background: 'var(--d)' }} /></div><b>{n}</b></div>; })}
+        </section>
+        <section className="card">
+          <div className="card-h"><div><h2>iPad per department</h2><p>Jumlah unit aktif</p></div></div>
+          {d.departments.length ? d.departments.map((x) => <div className="hb" key={x.name}><span title={x.name}>{x.name}</span><div className="hb-track"><i className="brand" style={{ width: `${(x.n / dMax) * 100}%` }} /></div><b>{x.n}</b></div>) : <Empty msg="Belum ada data." />}
+        </section>
+        <section className="card">
+          <div className="card-h"><div><h2>Aktivitas terbaru</h2><p>Dari riwayat perangkat</p></div></div>
+          {d.activity.length ? <ul className="tl">{d.activity.slice(0, 5).map((h, i) => (
+            <li key={i}><b>{h.by_name}</b> <span className="muted">{h.action.toLowerCase()}</span><br /><Link className="subtle" to={`/devices/${h.device_id}`}>{h.device}</Link> <span className="subtle">· {fmtDT(h.at)}</span></li>
+          ))}</ul> : <Empty msg="Belum ada aktivitas." />}
+          {d.replace.length > 0 && <div className="note tone-warn" style={{ margin: 'var(--sp-2) 0 0' }}>Kandidat replace (model lama / umur ≥ {d.rules.maxAgeYears} tahun): {d.replace.map((x, i) => <span key={x.id}>{i ? ', ' : ''}<Link to={`/devices/${x.id}`}>{x.name ?? '-'}</Link></span>)}</div>}
+        </section>
       </div>
     </>
   );

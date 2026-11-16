@@ -11,24 +11,27 @@ export default function Akun() {
   if (!me) return null;
   return (
     <>
-      <PageHead title="Akun saya" />
+      <PageHead title="Akun" sub="Profil dan keamanan akun Anda." />
       <div className="g12">
         <div className="card" style={{ textAlign: 'center' }}>
           <span className="avatar lg">{initials(me.name)}</span>
-          <h3 style={{ margin: '14px 0 6px', fontSize: 22 }}>{me.name}</h3>
-          <p className="muted" style={{ margin: 0 }}>{me.roleLabel}</p><p className="muted" style={{ margin: '4px 0 0' }}>{me.email}</p>
-          {me.departments.length > 0 && <div className="chips" style={{ justifyContent: 'center', marginTop: 14 }}>{me.departments.map((d) => <span key={d} className="chip">{d}</span>)}</div>}
+          <h2 style={{ fontSize: 'var(--fs-xl)' }}>{me.name}</h2>
+          <p className="muted" style={{ margin: 0 }}>{me.roleLabel}{me.departments.length ? ` · ${me.departments.join(', ')}` : ''}</p>
+          <span className="mono subtle">{me.email}</span>
         </div>
-        <div className="card"><h3>Profil<small>Email & role diatur Super Admin.</small></h3>
-          <div className="grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
-            <Field label="Nama" req id="ak_n"><input id="ak_n" value={p.name} maxLength={120} onChange={(e) => setP({ ...p, name: e.target.value })} /></Field>
-            <Field label="Email"><RO>{me.email}</RO></Field>
-            <Field label="No. HP / Ext." id="ak_p"><input id="ak_p" value={p.phone} maxLength={40} onChange={(e) => setP({ ...p, phone: e.target.value })} /></Field>
+        <div className="stack">
+          <div className="card stack">
+            <div className="card-h"><div><h2>Profil</h2><p>Email & role diatur Super Admin.</p></div></div>
+            <div className="grid g2" style={{ marginBottom: 0 }}>
+              <Field label="Nama" req id="ak_n"><input id="ak_n" value={p.name} maxLength={120} onChange={(e) => setP({ ...p, name: e.target.value })} /></Field>
+              <Field label="Email"><RO>{me.email}</RO></Field>
+              <Field label="No. HP / Ext." id="ak_p"><input id="ak_p" value={p.phone} maxLength={40} onChange={(e) => setP({ ...p, phone: e.target.value })} /></Field>
+            </div>
+            <div className="row" style={{ justifyContent: 'flex-end' }}><button className="btn" onClick={() => void run(() => put('/me', p), 'Profil disimpan').then(() => refresh())}>Simpan profil</button></div>
           </div>
-          <div className="cfoot" style={{ marginTop: 24 }}><button className="btn" onClick={() => void run(() => put('/me', p), 'Profil disimpan').then(() => refresh())}>Simpan profil</button></div>
+          <div className="card"><div className="card-h"><div><h2>Ganti password</h2><p>Semua sesi lain akan dikeluarkan.</p></div></div><ChangePassword /></div>
         </div>
       </div>
-      <div className="card" style={{ maxWidth: 520 }}><h3>Ganti password<small>Semua sesi lain akan dikeluarkan.</small></h3><ChangePassword /></div>
     </>
   );
 }

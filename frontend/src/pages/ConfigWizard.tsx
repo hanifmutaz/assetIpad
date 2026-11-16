@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { post } from '../lib/api';
 import type { GField, Step } from '../lib/types';
 import { useAuth } from '../lib/auth';
 import { Ic } from '../components/icons';
 import GuideText, { type GuideCtx, type VarInfo } from '../components/GuideText';
 import { WizBar } from './Registrasi';
-import { Badge, Field, RO, Loading, ErrorBox, Empty, PageHead, Progress, useApi, useUi, useRun } from '../components/ui';
+import { Badge, Field, Loading, ErrorBox, Empty, PageHead, useApi, useUi, useRun } from '../components/ui';
 
 interface GState { done?: boolean; doneBy?: string; steps?: Record<string, 'done' | 'skip'> }
 interface Cfg {
@@ -65,56 +65,57 @@ export default function ConfigWizard() {
     const curV = ({ ios: d.ios, ip: d.ip, ireporterUser: d.ireporter_user, conmasId: d.conmas_id } as Record<string, string | null>)[f.target];
     return <input id={idx} disabled={dis} value={vals[f.k] ?? curV ?? ''} onChange={(e) => set(e.target.value)} placeholder={f.target === 'ios' ? `mis. ${data.targetIOS}` : ''} />;
   };
+  const pct = N ? Math.round((data.progress.done / N) * 100) : 0;
+  const fin = !data.progress.requiredLeft && !d.passcode_default;
+  const sub = `${data.run.scenario === 'reset' ? `${meta?.scenarios.reset ?? 'Reset'}${data.run.fromLokasi ? ` dari ${data.run.fromLokasi}` : ''}` : meta?.scenarios.baru ?? 'iPad baru'} · ${d.lokasi} · ${d.section} · ${d.purpose}`;
   return (
     <>
-      <PageHead title="Konfigurasi iPad"><span className="flag i">{meta?.scenarios[data.run.scenario]}{data.run.fromLokasi ? ` dari ${data.run.fromLokasi}` : ''}</span></PageHead>
-      <WizBar a="done" b="cur" c="" />
-      <div className="card"><div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))' }}>
-        <Field label="Nama"><RO>{d.name}</RO></Field><Field label="Serial"><RO>{d.serial}</RO></Field><Field label="Lokasi · Section"><RO>{d.lokasi} · {d.section}</RO></Field>
-        <Field label="Department"><RO>{d.department}</RO></Field><Field label="Peruntukan"><RO>{d.purpose}</RO></Field><Field label="Pengguna"><RO>{d.user_name}</RO></Field>
-      </div></div>
-      <div className="cfgw">
-        <div className="card"><h3>Checklist</h3>
-          <Progress n={data.progress.done} t={N} wide />
-          <p className="muted" style={{ margin: '6px 0 10px' }}>{data.progress.done} dari {N} selesai{data.progress.requiredLeft ? ` · ${data.progress.requiredLeft} wajib tersisa` : ' · semua wajib selesai ✓'}</p>
-          <div className="cfgl">{guides.map((x, k) => (
+      <PageHead title={`Konfigurasi ${d.name ?? d.serial}`} sub={sub} crumb={<><Link to="/registrasi?tab=status">Registrasi</Link> › Konfigurasi</>}>
+        <span className="subtle">{pct}% selesai</span>
+        <button className="btn btn-ok" disabled={!fin} title={fin ? '' : 'Selesaikan semua item wajib & ganti passcode dulu'} onClick={() => void finish()}><Ic n="check" />Selesai, iPad siap dipakai</button>
+      </PageHead>
+      <div className="bar mb"><i style={{ width: `${pct}%` }} /></div>
+      <div className="cfg">
+        <div className="card" style={{ padding: 'var(--sp-3)' }}>
+          <p className="subtle" style={{ margin: '0 var(--sp-2) var(--sp-2)' }}>{data.progress.done} dari {N} item selesai · {data.progress.requiredLeft ? `${data.progress.requiredLeft} wajib tersisa` : 'semua wajib selesai ✓'}</p>
+          <nav className="cfgl" aria-label="Checklist panduan">{guides.map((x, k) => (
             <button key={x.id} className={k === i ? 'cur' : ''} aria-current={k === i ? 'step' : undefined} onClick={() => go(k)}>
-              <span className={`dot ${x.state.done ? 'ok' : ''}`}>{x.state.done ? '✓' : k + 1}</span><span style={{ flex: 1 }}>{x.title}{!x.required && <small className="muted"> (opsional)</small>}</span>
+              <span className={`dot ${x.state.done ? 'ok' : ''}`}>{x.state.done && <Ic n="check" s={13} />}</span><span>{x.title}{!x.required && <> <span className="subtle">· opsional</span></>}</span>
             </button>
-          ))}</div>
-          {d.passcode_default && <div className="note" style={{ margin: '12px 0 0' }}>Passcode masih 123456, wajib diganti sebelum selesai.</div>}
-          <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <button className="btn ok" disabled={!!data.progress.requiredLeft || d.passcode_default} onClick={() => void finish()}>✓ Selesai, iPad siap dipakai</button>
-            <button className="btn sec" onClick={() => nav('/registrasi?tab=status')}>Simpan & lanjut nanti</button>
-          </div>
+          ))}</nav>
+          {d.passcode_default && <div className="note tone-warn" style={{ marginTop: 'var(--sp-3)' }}>Passcode masih 123456, wajib diganti sebelum selesai.</div>}
+          <button className="btn btn-sec btn-block" style={{ marginTop: 'var(--sp-3)' }} onClick={() => nav('/registrasi?tab=status')}>Simpan &amp; lanjut nanti</button>
         </div>
         <div className="card">
-          <div className="toolbar" style={{ margin: 0 }}><span className="muted" style={{ fontSize: 12, textTransform: 'uppercase', flex: 1 }}>Langkah {i + 1} dari {N}</span>
-            {can('guide.edit') && <button className="btn sec sm" onClick={() => nav(`/pengaturan/panduan?g=${g.id}`)}><Ic n="edit" s={14} /> Edit panduan ini</button>}</div>
-          <h3 style={{ fontSize: 20, marginTop: 6 }}>{g.title} {g.state.done && <Badge s="Done" />}</h3>
-          {g.descr && <p style={{ marginTop: -4 }}><GuideText text={g.descr} ctx={ctx} /></p>}
+          <div className="card-h">
+            <div><span className="subtle">Item {i + 1} dari {N}</span><h2 style={{ fontSize: 'var(--fs-xl)' }}>{g.title}</h2></div>
+            <div className="row">{g.state.done && <Badge s="Done" />}{can('guide.edit') && <button className="btn btn-sm btn-sec" onClick={() => nav(`/pengaturan/panduan?g=${g.id}`)}>Edit panduan ini</button>}</div>
+          </div>
+          {g.descr && <p><GuideText text={g.descr} ctx={ctx} /></p>}
           <ol className="steps">{g.steps.map((s) => {
             const state = st[s.id];
             return (
               <li key={s.id} className={state === 'done' ? 'ok' : state === 'skip' ? 'skip' : ''}>
-                <div className="stepbody"><GuideText text={s.text} ctx={ctx} />{state === 'skip' && <div><small className="muted">Ditandai: layar tidak muncul</small></div>}</div>
-                {!g.state.done && <div className="stepact">
-                  {state ? <button className="btn sec sm" onClick={() => mark(s.id, null)}>Batal</button> : <>
-                    <button className="btn sm" onClick={() => mark(s.id, 'done')}>✓ Selesai</button>
-                    {s.skippable && <button className="btn sec sm" title="Layar ini tidak muncul di iPad ini" onClick={() => mark(s.id, 'skip')}>Tidak muncul</button>}
+                <div className="stepbody"><GuideText text={s.text} ctx={ctx} />{state === 'skip' && <span className="subl">Ditandai: layar tidak muncul</span>}</div>
+                {!g.state.done && <div className="row" style={{ gap: 'var(--sp-2)' }}>
+                  {state ? <button className="btn btn-sm btn-sec" onClick={() => mark(s.id, null)}>Batal</button> : <>
+                    <button className="btn btn-sm" onClick={() => mark(s.id, 'done')}><Ic n="check" />Selesai</button>
+                    {s.skippable && <button className="btn btn-sm btn-sec" title="Layar ini tidak muncul di iPad ini" onClick={() => mark(s.id, 'skip')}>Tidak muncul</button>}
                   </>}
                 </div>}
               </li>
             );
           })}</ol>
-          {g.fields.length > 0 && <><div className="st">Isian</div><div className="grid">{g.fields.map((f) => <Field key={f.k} label={f.label} req={f.required} id={`cf_${f.k}`} hint={f.target === 'ios' ? `Target: ${data.targetIOS}` : f.target === 'passcode' ? 'Disimpan terenkripsi; ditolak bila lemah / sama dengan iPad lain' : undefined}>{input(f)}</Field>)}</div></>}
-          {Object.keys(g.auto ?? {}).length > 0 && !g.state.done && <p className="muted" style={{ fontSize: 12, margin: '10px 0 0' }}>Saat ditandai selesai, Wi-Fi / Apple ID untuk {d.lokasi} · {d.purpose} otomatis tersimpan ke data iPad.</p>}
-          <div className="toolbar" style={{ margin: '20px 0 0' }}>
-            <button className="btn sec" disabled={!i} onClick={() => go(i - 1)}>‹ Sebelumnya</button><span style={{ flex: 1 }} />
-            {g.state.done ? <><button className="btn sec" onClick={() => void run(() => post(`/devices/${d.id}/config/undo`, { guideId: g.id }))}>Batalkan tanda selesai</button>{i < N - 1 && <button className="btn" onClick={() => go(i + 1)}>Berikutnya ›</button>}</>
-              : <>{!g.required && i < N - 1 && <button className="btn sec" onClick={() => go(i + 1)}>Lewati</button>}<button className="btn" disabled={!allSub} onClick={() => void complete()}>✓ Tandai selesai & lanjut</button></>}
+          {g.fields.length > 0 && <><h3 style={{ margin: '0 0 var(--sp-2)' }}>Isian</h3><div className="stack mb">{g.fields.map((f) => <Field key={f.k} label={f.label} req={f.required} id={`cf_${f.k}`} hint={f.target === 'ios' ? `Target: ${data.targetIOS}` : f.target === 'passcode' ? '6 digit, tidak berulang/berurutan, unik antar iPad. Disimpan terenkripsi.' : undefined}>{input(f)}</Field>)}</div></>}
+          {Object.keys(g.auto ?? {}).length > 0 && !g.state.done && <p className="subtle">Saat ditandai selesai, Wi-Fi / Apple ID untuk {d.lokasi} · {d.purpose} otomatis tersimpan ke data iPad.</p>}
+          <div className="spread">
+            <button className="btn btn-sec" disabled={!i} onClick={() => go(i - 1)}>Sebelumnya</button>
+            <div className="row">
+              {g.state.done ? <><button className="btn btn-sec" onClick={() => void run(() => post(`/devices/${d.id}/config/undo`, { guideId: g.id }))}>Batalkan tanda selesai</button>{i < N - 1 && <button className="btn" onClick={() => go(i + 1)}>Berikutnya</button>}</>
+                : <>{!g.required && i < N - 1 && <button className="btn btn-sec" onClick={() => go(i + 1)}>Lewati</button>}<button className="btn" disabled={!allSub} onClick={() => void complete()}><Ic n="check" />Tandai selesai &amp; lanjut</button></>}
+            </div>
           </div>
-          {!allSub && !g.state.done && <p className="muted" style={{ textAlign: 'right', margin: '6px 0 0', fontSize: 12 }}>Tandai semua langkah (Selesai / Tidak muncul) dulu.</p>}
+          {!allSub && !g.state.done && <p className="subtle" style={{ textAlign: 'right', margin: 'var(--sp-2) 0 0' }}>Tandai semua langkah (Selesai / Tidak muncul) dan isi isian wajib dulu.</p>}
         </div>
       </div>
     </>

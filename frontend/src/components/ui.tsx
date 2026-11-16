@@ -143,10 +143,15 @@ export function useRun() {
 }
 
 // ------------------------------------------------------------ small components
-const SYM: Record<string, string> = { Setup: '⚙', Available: '✓', Repair: '⚒', Damaged: '✕', Loss: '?', Retired: '⊘', Open: '●', Proses: '▶', Eskalasi: '▲', Closed: '✓', Approved: '✓', Rejected: '✕', Pending: '◷', Delay: '!', Done: '✓', 'Need Verification': '!', 'Wrong Password': '✕' };
-export const Badge = ({ s }: { s: string }) => <span className={`badge b-${s.replace(/\s/g, '')}`}><span aria-hidden="true">{SYM[s] ?? ''}</span>{s}</span>;
+export const TONE: Record<string, string> = {
+  Setup: 'info', Proses: 'info', Pending: 'info', Available: 'ok', Done: 'ok', Closed: 'ok', Approved: 'ok', Terbaru: 'ok',
+  Open: 'warn', 'Need Verification': 'warn', 'Perlu update': 'warn', Repair: 'rep',
+  Damaged: 'bad', Rejected: 'bad', Eskalasi: 'bad', Delay: 'bad', 'Wrong Password': 'bad', 'Model tidak support': 'bad',
+  Loss: 'neu', Retired: 'ret',
+};
+export const Badge = ({ s }: { s: string }) => <span className={`badge tone-${TONE[s] ?? 'neu'}`}>{s}</span>;
 export const Flag = ({ c = 'w', children }: { c?: 'w' | 'b' | 'g' | 'i'; children: ReactNode }) => <span className={`flag ${c}`}>{children}</span>;
-export const Empty = ({ msg, btn, onClick }: { msg: string; btn?: string | null; onClick?: () => void }) => <div className="empty"><p>{msg}</p>{btn && <button className="btn sec" onClick={onClick}>{btn}</button>}</div>;
+export const Empty = ({ msg, btn, onClick }: { msg: string; btn?: string | null; onClick?: () => void }) => <div className="empty"><b>{msg}</b>{btn && <button className="btn sec" onClick={onClick}>{btn}</button>}</div>;
 export const Loading = () => <div className="loading"><span className="spin" /> Memuat…</div>;
 export const ErrorBox = ({ error, onRetry }: { error: unknown; onRetry?: () => void }) => <div className="note bad">{errMsg(error)} {onRetry && <button className="link" onClick={onRetry}>Coba lagi</button>}</div>;
 export const Progress = ({ n, t, wide }: { n: number; t: number; wide?: boolean }) => (
@@ -175,10 +180,15 @@ export function Modal({ title, onClose, children, footer }: { title: ReactNode; 
   );
 }
 export const Field = ({ label, req, id, children, hint }: { label: string; req?: boolean; id?: string; children: ReactNode; hint?: ReactNode }) => (
-  <div><label htmlFor={id} className={req ? 'req' : ''}>{label}</label>{children}{hint && <small className="hint">{hint}</small>}</div>
+  <div className="field"><label htmlFor={id} className={req ? 'req' : ''}>{label}</label>{children}{hint && <span className="hint">{hint}</span>}</div>
 );
 export const RO = ({ children }: { children?: ReactNode }) => <div className="ro">{children ?? '-'}</div>;
-export const PageHead = ({ title, children }: { title: ReactNode; children?: ReactNode }) => <div className="phead"><h2>{title}</h2><div className="pact">{children}</div></div>;
+export const PageHead = ({ title, sub, crumb, children }: { title: ReactNode; sub?: ReactNode; crumb?: ReactNode; children?: ReactNode }) => (
+  <>
+    {crumb && <div className="crumb">{crumb}</div>}
+    <div className="ph"><div><h1>{title}</h1>{sub && <p>{sub}</p>}</div>{children && <div className="row">{children}</div>}</div>
+  </>
+);
 
 export const uid = () =>
   globalThis.crypto?.randomUUID ? crypto.randomUUID() : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;

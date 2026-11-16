@@ -22,7 +22,7 @@ export default function Settings() {
   const cur = T.some((t) => t[0] === tab) ? tab! : T[0]?.[0] ?? 'aturan';
   return (
     <>
-      <PageHead title="Pengaturan" />
+      <PageHead title="Pengaturan" sub="Aturan sistem, master data, pengguna, dan panduan konfigurasi." />
       <Tabs items={T} value={cur} onChange={(t) => nav(`/pengaturan/${t}`)} />
       {cur === 'panduan' && <Guides />}{cur === 'variabel' && <Vars />}{cur === 'user' && <Users />}{cur === 'department' && <Departments />}
       {cur === 'lokasi' && <Lokasi />}{cur === 'master' && <Master />}{cur === 'aturan' && <Rules />}{cur === 'audit' && <Audit />}

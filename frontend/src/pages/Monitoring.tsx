@@ -4,7 +4,7 @@ import { useAuth } from '../lib/auth';
 import { post, qs } from '../lib/api';
 import type { Device } from '../lib/types';
 import { Ic } from '../components/icons';
-import { Badge, Flag, Empty, Loading, ErrorBox, PageHead, Progress, Tabs, useApi, useRun, useUi, rp, fmtDate, cmpVer, today } from '../components/ui';
+import { Badge, Flag, Empty, Loading, ErrorBox, PageHead, Progress, Tabs, useApi, useRun, useUi, rp, fmtDate, ageDays, cmpVer, today } from '../components/ui';
 
 const STATUS = ['Setup', 'Available', 'Repair', 'Damaged', 'Loss', 'Retired'];
 const FLAGS: Record<string, string> = { stale: 'Belum dicek lama', apple: 'Apple ID bermasalah', old: 'Kandidat replace', pcdefault: 'Passcode masih default' };
@@ -20,13 +20,13 @@ export default function Monitoring() {
   const exportQs = qs(Object.fromEntries(FKEYS.map((k) => [k, sp.get(k)])));
   return (
     <>
-      <PageHead title="Monitoring iPad">
+      <PageHead title="Monitoring iPad" sub="Pantau status, lokasi, dan kondisi semua iPad.">
         {tab === 'list' && can('export') && <>
-          <a className="btn txt" href={`/api/devices/export.xlsx${exportQs}`}><Ic n="dl" s={16} /> Excel</a>
-          <button className="btn txt" onClick={() => window.open(`/cetak/laporan${exportQs}`, '_blank', 'noopener')}><Ic n="print" s={16} /> PDF</button>
-          <a className="btn txt" href={`/api/devices/export.csv${exportQs}`}><Ic n="dl" s={16} /> CSV</a>
+          <a className="btn btn-sec" href={`/api/devices/export.xlsx${exportQs}`}><Ic n="dl" /> Excel</a>
+          <button className="btn btn-sec" onClick={() => window.open(`/cetak/laporan${exportQs}`, '_blank', 'noopener')}>PDF</button>
+          <a className="btn btn-sec" href={`/api/devices/export.csv${exportQs}`}>CSV</a>
         </>}
-        {can('device.register') && <button className="btn" onClick={() => nav('/registrasi')}><Ic n="plus" s={16} /> Registrasi iPad</button>}
+        {can('device.register') && <button className="btn" onClick={() => nav('/registrasi')}><Ic n="plus" /> Registrasi iPad</button>}
       </PageHead>
       <Tabs items={T} value={tab} onChange={(t) => setSp(t === 'list' ? {} : { tab: t })} />
       {tab === 'list' && <DeviceList />}
@@ -60,18 +60,6 @@ function DeviceList() {
   const sortBy = (k: string) => setF({ sort: k, dir: f.sort === k && f.dir !== 'desc' ? 'desc' : 'asc' });
   const open = (d: Device) => nav(d.status === 'Setup' && can('device.config') ? `/registrasi/konfigurasi/${d.id}` : `/devices/${d.id}`);
   const showPrice = can('device.viewAll');
-  const COLS: [string, string, (d: Device) => React.ReactNode][] = [
-    ['name', 'Nama', (d) => <b>{d.name ?? d.serial}</b>],
-    ['serial', 'Serial', (d) => d.serial],
-    ['loc', 'Lokasi · Section', (d) => `${d.lokasi} · ${d.section}`],
-    ['dept', 'Department', (d) => d.department],
-    ['model', 'Model', (d) => <>{d.model}<br /><small className="muted">{d.capacity} · {d.purpose}</small></>],
-    ['user', 'Pengguna', (d) => d.user_name],
-    ['ios', 'iOS', (d) => <>{d.ios ?? '-'}{d.ios && R && cmpVer(d.ios, R.targetIOS) < 0 && <> <Flag>lama</Flag></>}</>],
-    ['lastCheck', 'Terakhir dicek', (d) => fmtDate(d.last_check)],
-    ...(showPrice ? [['price', 'Harga', (d: Device) => rp(d.price)] as [string, string, (d: Device) => React.ReactNode]] : []),
-    ['status', 'Status', (d) => <>{d.status === 'Setup' && d.cfg ? <Progress n={d.cfg.done} t={d.cfg.total} /> : <Badge s={d.status} />}{d.passcode_default && d.status !== 'Setup' && <> <Flag c="b">passcode default</Flag></>}</>],
-  ];
   const bulk = async (action: 'status' | 'check') => {
     let body: Record<string, unknown> = {};
     if (action === 'status') {
@@ -85,60 +73,76 @@ function DeviceList() {
   };
   const allOn = rows.length > 0 && rows.every((d) => sel.includes(d.id));
   const bulkOK = can('device.status');
+  const sortable = (k: string, l: string) => <button className="sortb" onClick={() => sortBy(k)}>{l} {f.sort === k ? (f.dir === 'desc' ? '▼' : '▲') : ''}</button>;
+  const stale = (d: Device) => !!R && ageDays(d.last_check) > R.staleDays;
   return (
-    <>
-      <div className="card">
-        <div className="toolbar" style={{ margin: 0 }}>
-          <div className="sbox"><Ic n="search" /><input type="search" aria-label="Cari iPad" placeholder="Cari nama / serial / section / department / pengguna" value={q} onChange={(e) => setQ(e.target.value)} /></div>
-          <select aria-label="Lokasi" value={f.lokasiId} onChange={(e) => setF({ lokasiId: e.target.value, sectionId: '' })}><option value="">Semua lokasi</option>{meta?.lokasi.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}</select>
-          <select aria-label="Section" value={f.sectionId} onChange={(e) => setF({ sectionId: e.target.value })}><option value="">Semua section</option>{secs.map((s) => <option key={s.id} value={s.id}>{f.lokasiId ? s.name : `${s.l} · ${s.name}`}</option>)}</select>
-          <select aria-label="Department" value={f.departmentId} onChange={(e) => setF({ departmentId: e.target.value })}><option value="">Semua department</option>{meta?.departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select>
-          <select aria-label="Peruntukan" value={f.purpose} onChange={(e) => setF({ purpose: e.target.value })}><option value="">Semua peruntukan</option>{meta?.master.purpose?.map((p) => <option key={p}>{p}</option>)}</select>
-          <select aria-label="Status" value={f.status} onChange={(e) => setF({ status: e.target.value })}><option value="">Semua status</option>{STATUS.map((s) => <option key={s}>{s}</option>)}</select>
-        </div>
-        <div className="toolbar" style={{ margin: '14px 0 0' }}>
-          {f.flag && <span className="chip">Filter: {FLAGS[f.flag]}<button aria-label="Hapus filter" onClick={() => setF({ flag: '' })}>✕</button></span>}
-          <span style={{ flex: 1 }} />
-          <span className="lchips">{([['table', 'list', 'Tabel'], ['grid', 'grid', 'Kartu']] as const).map(([k, i, l]) => <button key={k} className={`lc ${view === k ? 'on' : ''}`} aria-pressed={view === k} onClick={() => { setView(k); localStorage.setItem('ipadView', k); }}><Ic n={i} s={13} /> {l}</button>)}</span>
-        </div>
+    <div className="card">
+      <div className="filters" style={{ gridTemplateColumns: '2fr repeat(5,1fr)' }}>
+        <div className="field"><label htmlFor="fq">Cari</label><input id="fq" type="search" placeholder="Nama, serial, section…" value={q} onChange={(e) => setQ(e.target.value)} /></div>
+        <div className="field"><label htmlFor="fl">Lokasi</label><select id="fl" value={f.lokasiId} onChange={(e) => setF({ lokasiId: e.target.value, sectionId: '' })}><option value="">Semua lokasi</option>{meta?.lokasi.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}</select></div>
+        <div className="field"><label htmlFor="fsec">Section</label><select id="fsec" value={f.sectionId} onChange={(e) => setF({ sectionId: e.target.value })}><option value="">Semua section</option>{secs.map((s) => <option key={s.id} value={s.id}>{f.lokasiId ? s.name : `${s.l} · ${s.name}`}</option>)}</select></div>
+        <div className="field"><label htmlFor="fd">Department</label><select id="fd" value={f.departmentId} onChange={(e) => setF({ departmentId: e.target.value })}><option value="">Semua department</option>{meta?.departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select></div>
+        <div className="field"><label htmlFor="fu">Peruntukan</label><select id="fu" value={f.purpose} onChange={(e) => setF({ purpose: e.target.value })}><option value="">Semua</option>{meta?.master.purpose?.map((p) => <option key={p}>{p}</option>)}</select></div>
+        <div className="field"><label htmlFor="fs">Status</label><select id="fs" value={f.status} onChange={(e) => setF({ status: e.target.value })}><option value="">Semua status</option>{STATUS.map((s) => <option key={s}>{s}</option>)}</select></div>
       </div>
+      {f.flag && <div className="chips"><span className="tag">Filter: {FLAGS[f.flag]}<button aria-label="Hapus filter" onClick={() => setF({ flag: '' })}>✕</button></span></div>}
       {error ? <ErrorBox error={error} onRetry={reload} /> : loading ? <Loading /> : !rows.length ? (
-        <div className="card"><Empty msg="Tidak ada iPad yang cocok dengan filter." btn="Reset filter" onClick={() => { setQ(''); setSp({}); }} /></div>
-      ) : view === 'grid' ? (
-        <div className="dgrid">{rows.map((d) => (
-          <button key={d.id} className="dcard" onClick={() => open(d)}>
-            <div className="dt"><span className="ico"><Ic n="tab" s={26} /></span><h4>{d.name ?? d.serial}</h4><p>{d.model} · {d.capacity}</p>
-              <p className="muted" style={{ marginTop: 4, fontSize: 13 }}>{d.lokasi} · {d.section} · {d.department}</p><p style={{ marginTop: 10 }}><Badge s={d.status} /> {d.cfg && <Progress n={d.cfg.done} t={d.cfg.total} />}</p></div>
-            <div className="df"><span><Ic n="clock" s={14} /> {fmtDate(d.last_check)}</span><span>{d.purpose}</span></div>
-          </button>
-        ))}</div>
+        <div className="empty"><b>Tidak ada iPad yang cocok</b>Coba ubah kata kunci atau filter.<br /><button className="btn btn-sec btn-sm" style={{ marginTop: 'var(--sp-3)' }} onClick={() => { setQ(''); setSp({}); }}>Reset filter</button></div>
       ) : (
-        <div className="card cardt">
+        <>
           {bulkOK && sel.length > 0 && (
-            <div className="bulk"><b>{sel.length} dipilih</b>
-              <button className="btn sm" onClick={() => void bulk('status')}>Ubah status</button><button className="btn sm" onClick={() => void bulk('check')}>Tandai sudah dicek</button>
-              <button className="btn sm" onClick={() => window.open(`/cetak/label?ids=${sel.join(',')}`, '_blank', 'noopener')}>Cetak label QR</button>
-              <button className="btn sec sm" onClick={() => setSel([])}>Batal</button></div>
+            <div className="bulk"><b>{sel.length} iPad dipilih</b>
+              <button className="btn btn-sm" onClick={() => void bulk('status')}>Ubah status</button>
+              <button className="btn btn-sm btn-sec" onClick={() => void bulk('check')}><Ic n="check" />Tandai sudah dicek</button>
+              <button className="btn btn-sm btn-sec" onClick={() => window.open(`/cetak/label?ids=${sel.join(',')}`, '_blank', 'noopener')}><Ic n="qr" />Cetak label QR</button>
+              <button className="btn btn-sm btn-link" onClick={() => setSel([])}>Batal</button></div>
           )}
-          <div className="tw"><table>
-            <thead><tr>
-              {bulkOK && <th><input type="checkbox" aria-label="Pilih semua" checked={allOn} onChange={(e) => setSel(e.target.checked ? [...new Set([...sel, ...rows.map((d) => d.id)])] : sel.filter((x) => !rows.some((d) => d.id === x)))} /></th>}
-              {COLS.map(([k, l]) => <th key={k}><button className="sortb" onClick={() => sortBy(k)}>{l} {f.sort === k ? (f.dir === 'desc' ? '▼' : '▲') : '↕'}</button></th>)}<th />
-            </tr></thead>
-            <tbody>{rows.map((d) => (
-              <tr key={d.id}>
-                {bulkOK && <td><input type="checkbox" aria-label={`Pilih ${d.name}`} checked={sel.includes(d.id)} onChange={(e) => setSel(e.target.checked ? [...sel, d.id] : sel.filter((x) => x !== d.id))} /></td>}
-                {COLS.map(([k, , v]) => <td key={k}>{v(d)}</td>)}
-                <td><button className={`btn ${d.status === 'Setup' && can('device.config') ? '' : 'sec'} sm`} onClick={() => open(d)}>{d.status === 'Setup' && can('device.config') ? 'Konfigurasi' : 'Detail'}</button></td>
-              </tr>
-            ))}</tbody>
-          </table></div>
+          <div className="spread" style={{ marginBottom: 'var(--sp-3)' }}>
+            <span className="subtle">Menampilkan <b>{rows.length}</b> dari {data?.total} iPad</span>
+            <div className="seg" role="group" aria-label="Tampilan">
+              <button className={view === 'table' ? 'on' : ''} aria-label="Tabel" aria-pressed={view === 'table'} onClick={() => { setView('table'); localStorage.setItem('ipadView', 'table'); }}><Ic n="list" /></button>
+              <button className={view === 'grid' ? 'on' : ''} aria-label="Kartu" aria-pressed={view === 'grid'} onClick={() => { setView('grid'); localStorage.setItem('ipadView', 'grid'); }}><Ic n="grid" /></button>
+            </div>
+          </div>
+          {view === 'grid' ? (
+            <div className="dgrid">{rows.map((d) => (
+              <button key={d.id} className="dcard" onClick={() => open(d)}>
+                <div className="spread"><b style={{ fontSize: 'var(--fs-lg)' }}>{d.name ?? d.serial}</b><Badge s={d.status} /></div>
+                <span className="mono subtle">{d.serial}</span>
+                <span>{d.lokasi} · {d.section}</span>
+                <span className="subtle">{d.department} · {d.purpose} · iOS {d.ios ?? '-'}</span>
+                {d.status === 'Setup' && d.cfg && <div className="bar"><i style={{ width: `${d.cfg.total ? (d.cfg.done / d.cfg.total) * 100 : 0}%` }} /></div>}
+              </button>
+            ))}</div>
+          ) : (
+            <div className="tw"><table>
+              <thead><tr>
+                {bulkOK && <th><input type="checkbox" aria-label="Pilih semua" checked={allOn} onChange={(e) => setSel(e.target.checked ? [...new Set([...sel, ...rows.map((d) => d.id)])] : sel.filter((x) => !rows.some((d) => d.id === x)))} /></th>}
+                <th>{sortable('name', 'iPad')}</th><th>{sortable('loc', 'Lokasi · Section')}</th><th>{sortable('dept', 'Department')}</th><th>Peruntukan</th><th>{sortable('ios', 'iOS')}</th><th>{sortable('status', 'Status')}</th><th>{sortable('lastCheck', 'Terakhir dicek')}</th>
+                {showPrice && <th>{sortable('price', 'Harga')}</th>}<th />
+              </tr></thead>
+              <tbody>{rows.map((d) => (
+                <tr key={d.id}>
+                  {bulkOK && <td><input type="checkbox" aria-label={`Pilih ${d.name}`} checked={sel.includes(d.id)} onChange={(e) => setSel(e.target.checked ? [...sel, d.id] : sel.filter((x) => x !== d.id))} /></td>}
+                  <td><b>{d.name ?? d.serial}</b><span className="sub mono">{d.serial}</span><span className="sub">{d.model} · {d.capacity} · {d.user_name}</span></td>
+                  <td>{d.lokasi}<span className="sub">{d.section}</span></td>
+                  <td>{d.department}</td>
+                  <td>{d.purpose}</td>
+                  <td className="mono">{d.ios ?? '-'}{d.ios && R && cmpVer(d.ios, R.targetIOS) < 0 ? ' ⚠︎' : ''}</td>
+                  <td><Badge s={d.status} />{d.status === 'Setup' && d.cfg && <span className="sub"><Progress n={d.cfg.done} t={d.cfg.total} /></span>}{d.passcode_default && d.status !== 'Setup' && <span className="sub"><Flag c="b">passcode default</Flag></span>}</td>
+                  <td>{!d.last_check ? '-' : stale(d) ? <span className="badge tone-warn">{ageDays(d.last_check)} hari</span> : `${ageDays(d.last_check)} hari lalu`}</td>
+                  {showPrice && <td className="mono">{rp(d.price)}</td>}
+                  <td><button className={`btn btn-sm ${d.status === 'Setup' && can('device.config') ? '' : 'btn-sec'}`} onClick={() => open(d)}>{d.status === 'Setup' && can('device.config') ? 'Konfigurasi' : 'Detail'}</button></td>
+                </tr>
+              ))}</tbody>
+            </table></div>
+          )}
           <div className="pager"><span>{(page - 1) * per + 1} sampai {Math.min(page * per, data?.total ?? 0)} dari {data?.total} unit</span>
             <select aria-label="Baris per halaman" value={per} onChange={(e) => { setPer(Number(e.target.value)); setPage(1); }}>{[10, 20, 50, 100].map((n) => <option key={n}>{n}</option>)}</select>
-            <button className="btn sec sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>‹</button><span>{page} / {pages}</span><button className="btn sec sm" disabled={page >= pages} onClick={() => setPage(page + 1)}>›</button></div>
-        </div>
+            <button className="btn btn-sec btn-sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>‹</button><span>{page} / {pages}</span><button className="btn btn-sec btn-sm" disabled={page >= pages} onClick={() => setPage(page + 1)}>›</button></div>
+        </>
       )}
-    </>
+    </div>
   );
 }
 
