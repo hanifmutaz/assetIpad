@@ -10,7 +10,7 @@ export interface MappedDevice {
   wifi: string | null; ip: string | null; conmasId: string | null; ireporterUser: string | null;
   appleStatus: 'Done' | 'Need Verification'; appleChanged: string | null; note: string | null;
 }
-export type CredField = 'appleId' | 'applePwd' | 'passcode' | 'unlockPwd' | 'irepPwd' | 'gmail' | 'gmailPwd';
+export type CredField = 'appleId' | 'applePwd' | 'passcode' | 'unlockPwd' | 'irepPwd';
 export type Mapped =
   | { ok: true; no: unknown; device: MappedDevice; creds: Partial<Record<CredField, string>>; warnings: string[] }
   | { ok: false; no: unknown; name: string | null; reason: string };
@@ -95,7 +95,7 @@ export function mapRow(r: Row, opt: MapOpt = {}): Mapped {
   const ipRaw = str(r['IP Address (SGP only)']);
   const ip = /^(\d{1,3}\.){3}\d{1,3}$/.test(ipRaw) ? ipRaw : null;
 
-  const gmail = (k: string): string => {
+  const readCredentialCell = (k: string): string => {
     const raw = str(r[k]);
     const first = firstLine(r[k]);
     if (raw.includes('\n') && first) warnings.push(`${k}: berisi banyak baris, dipakai baris pertama`);
@@ -103,10 +103,10 @@ export function mapRow(r: Row, opt: MapOpt = {}): Mapped {
   };
   const credSrc: [CredField, string][] = [
     ['appleId', 'apple ID user name'], ['applePwd', 'apple pwd'], ['passcode', 'ipad passcode'], ['unlockPwd', 'unlock password'],
-    ['irepPwd', 'pwd ireporter'], ['gmail', 'Gmail id'], ['gmailPwd', 'Password email'],
+    ['irepPwd', 'pwd ireporter'],
   ];
   const creds: Partial<Record<CredField, string>> = {};
-  for (const [f, k] of credSrc) { const v = gmail(k); if (v) creds[f] = v; }
+  for (const [f, k] of credSrc) { const v = readCredentialCell(k); if (v) creds[f] = v; }
   if (!creds.passcode) warnings.push('passcode kosong');
 
   const appleEmail = (creds.appleId ?? '').toLowerCase();

@@ -108,7 +108,7 @@ export default function ConfigWizard() {
               <span className={`dot ${x.state.done ? 'ok' : ''}`}>{x.state.done && <Ic n="check" s={13} />}</span><span>{x.title}{!x.required && <> <span className="subtle">· opsional</span></>}</span>
             </button>
           ))}</nav>
-          {d.passcode_default && <div className="note tone-warn" style={{ marginTop: 'var(--sp-3)' }}>Passcode masih 123456, wajib diganti sebelum selesai.</div>}
+          {d.passcode_default && <div className="note tone-warn" style={{ marginTop: 'var(--sp-3)' }}>Selesaikan langkah Ganti passcode Lock Screen sebelum menutup konfigurasi.</div>}
           <button className="btn btn-sec btn-block" style={{ marginTop: 'var(--sp-3)' }} onClick={() => nav('/registrasi?tab=status')}>Simpan &amp; lanjut nanti</button>
         </div>
         <div className="card">

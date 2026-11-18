@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
 import { post, postForm, qs } from '../lib/api';
 import type { Device } from '../lib/types';
+import { DeviceEquipmentFields, equipmentValues } from '../components/DeviceEquipmentFields';
 import { DevicePlaceFields } from '../components/DevicePlaceFields';
 import { Ic } from '../components/icons';
 import { Badge, Empty, Loading, ErrorBox, PageHead, Progress, Tabs, Field, RO, useApi, useUi, useRun, fmtDate, today, errMsg } from '../components/ui';
@@ -14,7 +15,7 @@ export const WizBar = ({ a, b, c }: { a: string; b: string; c: string }) => {
 type TabK = 'baru' | 'pindah' | 'status';
 
 export default function Registrasi() {
-  const { can } = useAuth();
+  const { can, meta } = useAuth();
   const [sp, setSp] = useSearchParams();
   const T: [TabK, string][] = [...(can('device.register') ? [['baru', 'iPad baru'] as [TabK, string]] : []), ['pindah', 'Pindah tempat'], ['status', 'Persetujuan & berjalan']];
   const tab = (T.some((t) => t[0] === sp.get('tab')) ? sp.get('tab') : T[0]![0]) as TabK;
@@ -22,7 +23,7 @@ export default function Registrasi() {
     <>
       <PageHead title="Registrasi iPad" sub="Daftarkan iPad baru, pindahkan lokasi, dan kelola persetujuan." />
       <Tabs items={T} value={tab} onChange={(t) => setSp({ tab: t })} />
-      {tab === 'baru' && <NewForm />}
+      {tab === 'baru' && (meta ? <NewForm /> : <Loading />)}
       {tab === 'pindah' && <MoveForm deviceId={sp.get('deviceId')} onDone={() => setSp({ tab: 'status' })} />}
       {tab === 'status' && <StatusTab />}
     </>
@@ -34,7 +35,7 @@ function NewForm() {
   const nav = useNavigate();
   const { toast } = useUi();
   const m = meta?.master ?? {};
-  const [v, setV] = useState({ serial: '', model: m.model?.[0] ?? '', capacity: '128GB', color: '', lokasiId: '', sectionId: '', departmentId: '', purpose: m.purpose?.[0] ?? '', userName: '', arrival: today(), vendor: m.vendor?.[0] ?? '', price: '', note: '' });
+  const [v, setV] = useState({ serial: '', model: m.model?.[0] ?? '', capacity: '128GB', color: '', lokasiId: '', sectionId: '', departmentId: '', purpose: m.purpose?.[0] ?? '', userName: '', arrival: today(), vendor: m.vendor?.[0] ?? '', price: '', note: '', ...equipmentValues() });
   const site = meta?.lokasi.find((l) => String(l.id) === v.lokasiId);
   const [photo, setPhoto] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
@@ -68,6 +69,12 @@ function NewForm() {
           <Field label="Foto nota / dus" id="n_f" hint="JPG / PNG / WEBP, maks 5 MB"><input id="n_f" type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => setPhoto(e.target.files?.[0] ?? null)} /></Field>
           <Field label="Nama iPad"><RO>{site && v.arrival ? site.ipad_prefix+'-IPAD-'+v.arrival.slice(2, 4)+'-…' : 'Pilih lokasi dan tanggal datang'}</RO></Field>
         </div>
+        <section className="device-equipment" aria-labelledby="new-equipment-heading">
+          <h3 id="new-equipment-heading">Kelengkapan</h3>
+          <div className="grid">
+            <DeviceEquipmentFields values={v} prefix="new-equipment-" onChange={(x) => setV((old) => ({ ...old, ...x }))} />
+          </div>
+        </section>
         <div style={{ marginTop: 'var(--sp-4)' }}><Field label="Catatan" id="n_n"><textarea id="n_n" rows={2} value={v.note} onChange={set('note')} maxLength={500} /></Field></div>
         <div className="cfoot" style={{ justifyContent: 'space-between' }}><span /><button className="btn" disabled={busy}>{busy ? 'Menyimpan…' : <>Simpan & lanjut ke konfigurasi <Ic n="arrow" /></>}</button></div>
       </form>

@@ -4,18 +4,21 @@
 |---|---|---|---|
 | Lihat iPad, dashboard, export | semua | semua | department sendiri |
 | Registrasi iPad baru + wizard konfigurasi | ✓ | ✓ | ✗ |
-| Edit nama, pengguna, peruntukan, iOS, tanggal datang, harga | ✓ | ✓ | ✗ |
-| Koreksi lokasi, section, department dari Daftar iPad | ✓ | melalui mutasi | ✗ |
+| Edit nama, pengguna, peruntukan, tanggal datang, harga (Detail → Info) | ✓ | ✓ | ✗ |
+| Koreksi lokasi, section, department (Detail → Info) | ✓ | melalui mutasi | ✗ |
 | Edit serial resmi / serial sementara | ✓ / ✓ | ✗ / ✓ | ✗ |
 | Edit INA No. dan nomor awal nama iPad | ✓ | ✗ | ✗ |
 | Pindah tempat (mutasi) | ✓ langsung berlaku | ✓ diajukan | ✗ |
 | Setujui mutasi, Retired, Loss → Available | ✓ | ✗ | ✗ |
-| Ubah status Repair / Damaged / Loss, tandai iOS | ✓ | ✓ | ✗ |
-| Tandai sudah dicek | ✓ | ✓ | ✓ (department sendiri) |
+| Edit versi iOS dan data teknis (Detail → Teknis) | ✓ | ✓ | ✗ |
+| Ubah status perangkat dan re-config (Detail → Konfigurasi) | ✓ | ✓ | ✗ |
+| Tandai sudah dicek (Detail → Info) | ✓ | ✓ | ✗ |
 | Edit panduan konfigurasi | ✓ | ✓ | ✗ |
 | Variabel (Wi-Fi, Apple ID, server ConMas) | kelola | pakai saat konfigurasi | ✗ |
-| Credential passcode / Screen Time / unlock / i-Reporter | ✓ | ✓ | ✓ department sendiri |
-| Credential Apple ID & Gmail | ✓ | ✓ | ✗ |
+| Passcode Lock Screen | lihat / ubah | lihat / ubah | lihat di department sendiri |
+| Passcode Screen Time | lihat / ubah | lihat / ubah | ✗ |
+| Credential unlock / i-Reporter | lihat / ubah | lihat / ubah | status terisi di department sendiri |
+| Apple ID & Password Apple ID | ✓ | ✓ | ✗ |
 | Lapor tiket | ✓ | ✓ | ✓ |
 | Tangani tiket | semua | semua | department sendiri |
 | User & role, department, lokasi, master, aturan, audit log | ✓ | ✗ | ✗ |

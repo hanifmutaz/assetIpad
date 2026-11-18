@@ -2,6 +2,7 @@ import { q, one, type Db } from '../db.js';
 import { encrypt, decrypt, hmac } from '../crypto.js';
 import { bad, notFound } from '../errors.js';
 import type { AuthUser } from '../types.js';
+import { deviceScope } from './access.js';
 import { can, CRED_FIELDS, weakReason } from './policy.js';
 
 export const DEV_FROM = `FROM device d
@@ -11,6 +12,7 @@ export const DEV_FROM = `FROM device d
 export const DEV_COLS = `d.id, d.serial, d.name, d.ina_no, d.model, d.capacity, d.color, d.user_name, d.status, d.purpose, d.arrival, d.vendor, d.price,
   d.wifi, host(d.ip) AS ip, d.conmas_id, d.ireporter_user, d.ios, d.ios_updated, d.last_check, d.apple_status, d.apple_changed,
   d.passcode_changed, d.passcode_default, d.reconfig, d.config_notes, d.retire, d.photo_id, d.note, d.version, d.created_at,
+  d.charger_included, d.cable_included, d.box_included, d.has_warranty, d.warranty_until,
   l.id AS lokasi_id, l.name AS lokasi, s.id AS section_id, s.name AS section, dp.id AS department_id, dp.name AS department`;
 
 export interface DeviceRow {
@@ -18,6 +20,8 @@ export interface DeviceRow {
   status: string; purpose: string; arrival: string | null; vendor: string | null; price: number | null; wifi: string | null; ip: string | null;
   conmas_id: string | null; ireporter_user: string | null; ios: string | null; ios_updated: string | null; last_check: string | null;
   apple_status: string; apple_changed: string | null; passcode_changed: string | null; passcode_default: boolean;
+  charger_included: boolean | null; cable_included: boolean | null; box_included: boolean | null;
+  has_warranty: boolean | null; warranty_until: string | null;
   reconfig: { done: boolean[]; plan?: string | null; actual?: string | null }; config_notes: Record<string, string>;
   retire: Record<string, string> | null; photo_id: string | null; note: string | null; version: number; created_at: string;
   lokasi_id: number; lokasi: string; section_id: number; section: string; department_id: number; department: string;
@@ -94,7 +98,10 @@ export async function setCredential(db: Db, deviceId: string, field: string, val
   if (field === 'passcode') await db.query('UPDATE device SET passcode_changed=current_date, passcode_default=$2 WHERE id=$1', [deviceId, !!weak]);
   if (field === 'appleId' || field === 'applePwd') await db.query('UPDATE device SET apple_changed=current_date WHERE id=$1', [deviceId]);
 }
-export async function readCredential(deviceId: string, field: string): Promise<string> {
-  const r = await one<{ enc: string }>('SELECT enc FROM device_credential WHERE device_id=$1 AND field=$2', [deviceId, field]);
+export async function readCredential(deviceId: string, field: string, user: AuthUser): Promise<string> {
+  const scope = deviceScope(user, 'd', 3);
+  const r = await one<{ enc: string }>(`SELECT c.enc
+    FROM device_credential c JOIN device d ON d.id=c.device_id
+    WHERE d.id=$1 AND c.field=$2 AND ${scope.sql}`, [deviceId, field, ...scope.params]);
   return r ? decrypt(r.enc, `device:${deviceId}:${field}`) : '';
 }

@@ -13,7 +13,7 @@ export const PERMS = {
   'device.editIna': ['superadmin'],
   'device.config': ['superadmin', 'admin_ipad'],
   'device.status': ['superadmin', 'admin_ipad'],
-  'device.check': ['superadmin', 'admin_ipad', 'admin_dept'],
+  'device.check': ['superadmin', 'admin_ipad'],
   'transfer.request': ['superadmin', 'admin_ipad'],
   'approval.decide': ['superadmin'],
   'guide.edit': ['superadmin', 'admin_ipad'],
@@ -55,16 +55,14 @@ export const SCENARIOS = { baru: 'iPad baru', reset: 'Reset / pindah tempat' } a
 export type Scenario = keyof typeof SCENARIOS;
 
 // ---------------------------------------------------------------- credential
-export interface CredMeta { label: string; dept: boolean; sec: boolean; kind: 'email' | 'pwd' | 'passcode' | 'screenTime' | 'basic'; unique?: boolean }
+export interface CredMeta { label: string; dept: boolean; sec: boolean; kind: 'email' | 'pwd' | 'passcode' | 'screenTime' | 'basic'; unique?: boolean; requiresAccessReason?: boolean }
 export const CRED_FIELDS: Record<string, CredMeta> = {
   appleId: { label: 'Apple ID', dept: false, sec: false, kind: 'email' },
   applePwd: { label: 'Password Apple ID', dept: false, sec: true, kind: 'pwd' },
-  passcode: { label: 'Passcode iPad', dept: true, sec: true, kind: 'passcode', unique: true },
-  screenTimePasscode: { label: 'Passcode Screen Time', dept: true, sec: true, kind: 'screenTime' },
+  passcode: { label: 'Passcode Lock Screen', dept: true, sec: true, kind: 'passcode', unique: true },
+  screenTimePasscode: { label: 'Passcode Screen Time', dept: false, sec: true, kind: 'screenTime', requiresAccessReason: true },
   unlockPwd: { label: 'Unlock Password', dept: true, sec: true, kind: 'pwd', unique: true },
   irepPwd: { label: 'Password i-Reporter', dept: true, sec: true, kind: 'basic' },
-  gmail: { label: 'Gmail', dept: false, sec: false, kind: 'email' },
-  gmailPwd: { label: 'Password Gmail', dept: false, sec: true, kind: 'pwd' },
 };
 
 const WEAK = new Set(['123456', '000000', '111111', '654321', '121212', '112233', '123123', 'hiroseindonesia', 'password', 'hirose', 'hirose123']);
@@ -127,7 +125,7 @@ export const FIELD_TARGETS = {
   appleStatus: { label: 'Status Apple ID', type: 'apple' },
   ireporterUser: { label: 'User i-Reporter', type: 'text' },
   conmasId: { label: 'ConMas Device ID', type: 'text' },
-  passcode: { label: 'Passcode iPad (baru, unik)', type: 'secret' },
+  passcode: { label: 'Passcode Lock Screen (baru, unik)', type: 'secret' },
   note: { label: 'Catatan', type: 'note' },
 } as const;
 export type FieldTarget = keyof typeof FIELD_TARGETS;

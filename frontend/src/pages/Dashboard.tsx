@@ -6,7 +6,7 @@ import { Badge, Empty, Loading, ErrorBox, PageHead, TONE, useApi, fmtDT, today }
 interface Dash {
   status: Record<string, number>;
   kpi: { active: number; available: number; newMonth: number; openTickets: number; ticketsThisMonth: number; ticketsLastMonth: number; cfgDevices: number; cfgPct: number };
-  actions: Partial<Record<'esk' | 'stale' | 'apple' | 'pcdefault' | 'cfg' | 'mt' | 'sr' | 'alerts', number>>;
+  actions: Partial<Record<'esk' | 'stale' | 'apple' | 'cfg' | 'mt' | 'sr' | 'alerts', number>>;
   departments: { name: string; n: number }[];
   deptPurpose: { name: string; purpose: string; n: number }[];
   tickets: { id: number; code: string; device_name: string; type: string; created_at: string; state: string }[];
@@ -42,7 +42,6 @@ export default function Dashboard() {
     ...(a.esk ? [{ n: a.esk, tone: 'bad', t: 'Tiket tereskalasi', d: `Lebih dari ${esk} hari belum selesai`, to: '/lapor?f=eskalasi', cta: 'Tangani' }] : []),
     ...(approvals ? [{ n: approvals, tone: 'warn', t: 'Menunggu persetujuan Anda', d: 'Mutasi & perubahan status', to: '/registrasi?tab=status', cta: 'Review' }] : []),
     ...(a.apple ? [{ n: a.apple, tone: 'warn', t: 'Apple ID bermasalah', d: 'Perlu verifikasi ulang', to: '/monitoring?flag=apple', cta: 'Lihat' }] : []),
-    ...(a.pcdefault ? [{ n: a.pcdefault, tone: 'warn', t: 'Passcode masih default', d: 'Wajib diganti sebelum dipakai', to: '/monitoring?flag=pcdefault', cta: 'Ganti' }] : []),
     ...(a.cfg ? [{ n: a.cfg, tone: 'info', t: 'Konfigurasi belum selesai', d: `${a.cfg} iPad masih berstatus Setup`, to: '/monitoring?status=Setup', cta: 'Lanjutkan' }] : []),
     ...(a.stale ? [{ n: a.stale, tone: 'neu', t: 'Belum dicek fisik', d: `Lebih dari ${d.rules.staleDays} hari`, to: '/monitoring?flag=stale', cta: 'Lihat' }] : []),
   ];

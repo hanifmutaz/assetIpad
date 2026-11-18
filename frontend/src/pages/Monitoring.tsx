@@ -1,15 +1,15 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useLocation, useNavigate, useNavigationType, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
-import { post, qs } from '../lib/api';
+import { qs } from '../lib/api';
+import { deviceListPositions, type DeviceListNavigationState } from '../lib/deviceListNavigation';
 import type { Device } from '../lib/types';
-import { EditDeviceModal } from '../components/EditDeviceModal';
-import { INVENTORY_PASSCODE_FIELDS, useEditDeviceCredential } from '../components/useEditDeviceCredential';
 import { Ic } from '../components/icons';
-import { Badge, Flag, Empty, Loading, ErrorBox, PageHead, Progress, Tabs, useApi, useRun, useUi, rp, fmtDate, ageDays, cmpVer, today } from '../components/ui';
+import { Badge, Flag, Empty, Loading, ErrorBox, PageHead, Progress, Tabs, useApi, useUi, rp, fmtDate, ageDays, cmpVer, today } from '../components/ui';
 
 const STATUS = ['Setup', 'Available', 'Repair', 'Damaged', 'Loss', 'Retired'];
-const FLAGS: Record<string, string> = { stale: 'Belum dicek lama', apple: 'Apple ID bermasalah', old: 'Kandidat replace', pcdefault: 'Passcode masih default' };
+const FLAGS: Record<string, string> = { stale: 'Belum dicek lama', apple: 'Apple ID bermasalah', old: 'Kandidat replace' };
+const PAGE_SIZES = [10, 20, 50, 100];
 const FKEYS = ['q', 'lokasiId', 'sectionId', 'departmentId', 'purpose', 'status', 'flag', 'sort', 'dir'] as const;
 type TabK = 'list' | 'reconfig' | 'ios' | 'apple';
 
@@ -40,7 +40,7 @@ export default function Monitoring() {
   );
 }
 
-interface Summary { active: number; available: number; setup: number; repair: number; damaged: number; stale: number; apple: number; pcdefault: number; attention: number; total: number; staleDays: number }
+interface Summary { active: number; available: number; setup: number; repair: number; damaged: number; stale: number; apple: number; attention: number; total: number; staleDays: number }
 
 /** KPI ringkas di atas Monitoring; ikut scope department user dan otomatis segar setelah aksi (useRun meng-invalidate semua query). */
 function MonitoringKpi() {
@@ -52,7 +52,7 @@ function MonitoringKpi() {
       <div className="card kpi hero"><span className="l">iPad aktif</span><span className="v">{k.active}</span><span className="h">{k.setup} setup · dari {k.total} unit terdaftar</span></div>
       <div className="card kpi"><span className="l">Siap dipakai</span><span className="v">{k.available}</span><span className="h">{pct}% dari iPad aktif</span><div className="bar"><i style={{ width: `${pct}%` }} /></div></div>
       <div className="card kpi"><span className="l">Repair / rusak</span><span className="v">{k.repair + k.damaged}</span><span className="h">{k.repair} repair · {k.damaged} damaged</span></div>
-      <div className="card kpi"><span className="l">Perlu tindakan</span><span className="v">{k.attention}</span><span className="h">{k.stale} belum dicek ({k.staleDays}+ hari) · {k.apple} Apple ID · {k.pcdefault} passcode default</span></div>
+      <div className="card kpi"><span className="l">Perlu tindakan</span><span className="v">{k.attention}</span><span className="h">{k.stale} belum dicek ({k.staleDays}+ hari) · {k.apple} Apple ID</span></div>
     </div>
   );
 }
@@ -61,13 +61,16 @@ function DeviceList() {
   const { can, meta } = useAuth();
   const nav = useNavigate();
   const [sp, setSp] = useSearchParams();
-  const { dialog, toast } = useUi();
-  const run = useRun();
-  const editCredential = useEditDeviceCredential();
-  const [editing, setEditing] = useState<Device | null>(null);
+  const { toast } = useUi();
   const f = Object.fromEntries(FKEYS.map((k) => [k, sp.get(k) ?? ''])) as Record<(typeof FKEYS)[number], string>;
-  const [page, setPage] = useState(1);
-  const [per, setPer] = useState(20);
+  const { key, search, state } = useLocation();
+  const navigationType = useNavigationType();
+  const tableScroll = useRef<HTMLDivElement>(null);
+  const restored = useRef<string>();
+  const requestedPage = Number(sp.get('page'));
+  const requestedPer = Number(sp.get('per'));
+  const page = Number.isSafeInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+  const per = PAGE_SIZES.includes(requestedPer) ? requestedPer : 20;
   const [viewPref, setView] = useState(() => localStorage.getItem('ipadView'));
   const [narrow, setNarrow] = useState(() => window.matchMedia('(max-width: 900px)').matches);
   useEffect(() => {
@@ -81,14 +84,36 @@ function DeviceList() {
   const [q, setQ] = useState(f.q);
   const { data, loading, error, reload } = useApi<{ total: number; rows: Device[] }>(`/devices${qs({ ...f, page, per })}`);
   const R = meta?.rules;
-  useEffect(() => { setPage(1); setSel([]); }, [sp]);
-  const setF = (o: Partial<typeof f>) => setSp(Object.fromEntries(Object.entries({ ...f, ...o }).filter(([, v]) => v)) as Record<string, string>);
+  const filterKey = JSON.stringify(f);
+  useEffect(() => { setSel([]); }, [filterKey]);
+  const setF = (o: Partial<typeof f>) => {
+    const next = new URLSearchParams(sp);
+    for (const [k, v] of Object.entries(o)) {
+      if (v) next.set(k, v);
+      else next.delete(k);
+    }
+    next.delete('page');
+    setSp(next);
+  };
+  const setPage = (nextPage: number, replace = false) => {
+    const next = new URLSearchParams(sp);
+    if (nextPage === 1) next.delete('page');
+    else next.set('page', String(nextPage));
+    setSp(next, { replace });
+  };
+  const setPer = (nextPer: string) => {
+    const next = new URLSearchParams(sp);
+    next.set('per', nextPer);
+    next.delete('page');
+    setSp(next);
+  };
   useEffect(() => setQ(f.q), [f.q]);
   useEffect(() => {
     if (q === f.q) return;
     const timer = window.setTimeout(() => {
       const next = new URLSearchParams(sp);
       if (q.trim()) next.set('q', q.trim()); else next.delete('q');
+      next.delete('page');
       setSp(next, { replace: true });
     }, 300);
     return () => window.clearTimeout(timer);
@@ -96,38 +121,29 @@ function DeviceList() {
   const secs = useMemo(() => (meta?.lokasi ?? []).filter((l) => !f.lokasiId || String(l.id) === f.lokasiId).flatMap((l) => l.sections.map((s) => ({ ...s, l: l.name }))), [meta, f.lokasiId]);
   const rows = data?.rows ?? [];
   const pages = Math.max(1, Math.ceil((data?.total ?? 0) / per));
-  useEffect(() => { if (data && page > pages) setPage(pages); }, [data, pages, page]);
-  const sortBy = (k: string) => setF({ sort: k, dir: f.sort === k && f.dir !== 'desc' ? 'desc' : 'asc' });
-  const open = (d: Device) => nav(d.status === 'Setup' && can('device.config') ? `/registrasi/konfigurasi/${d.id}` : `/devices/${d.id}`);
-  const showPrice = can('device.viewAll');
-  const editPasscode = async (d: Device) => {
-    const choice = await dialog({
-      title: 'Edit passcode ' + (d.name ?? d.serial),
-      fields: [{ k: 'field', l: 'Jenis passcode', req: true, opts: INVENTORY_PASSCODE_FIELDS.map((f) => ({ value: f.field, label: f.label })) }],
-      ok: 'Lanjut',
+  useEffect(() => { if (data && page > pages) setPage(pages, true); }, [data, pages, page]);
+  const position = (state as DeviceListNavigationState | null)?.deviceListPosition ??
+    (navigationType === 'POP' ? deviceListPositions.get(key) : undefined);
+  useLayoutEffect(() => {
+    if (!data || page > pages || !position || restored.current === key) return;
+    const frame = requestAnimationFrame(() => {
+      if (tableScroll.current) tableScroll.current.scrollLeft = position.left;
+      window.scrollTo({ top: position.top, behavior: 'instant' });
+      restored.current = key;
     });
-    if (!choice || choice === true) return;
-    const field = INVENTORY_PASSCODE_FIELDS.find((f) => f.field === choice.field);
-    if (field && await editCredential(d.id, field)) reload();
+    return () => cancelAnimationFrame(frame);
+  }, [data, key, page, pages, position]);
+  const sortBy = (k: string) => setF({ sort: k, dir: f.sort === k && f.dir !== 'desc' ? 'desc' : 'asc' });
+  const showPrice = can('device.viewAll');
+  const openDetail = (d: Device) => {
+    const position = { top: window.scrollY, left: tableScroll.current?.scrollLeft ?? 0 };
+    deviceListPositions.set(key, position);
+    const detailState: DeviceListNavigationState = { deviceListReturn: { ...position, search } };
+    nav(`/devices/${d.id}`, { state: detailState });
   };
-  const rowActions = (d: Device) => <div className="row">
-    {can('device.edit') && <button className="btn btn-sm btn-sec" onClick={() => setEditing(d)}>Edit</button>}
-    {(can('cred.all') || can('cred.dept')) && <button className="btn btn-sm btn-sec" onClick={() => void editPasscode(d)}>Passcode</button>}
-    <button className="btn btn-sm btn-sec" onClick={() => open(d)}>{d.status === 'Setup' && can('device.config') ? 'Konfigurasi' : 'Detail'}</button>
-  </div>;
-  const bulk = async (action: 'status' | 'check') => {
-    let body: Record<string, unknown> = {};
-    if (action === 'status') {
-      const r = await dialog({ title: `Ubah status ${sel.length} iPad`, body: 'Retired & Loss → Available tidak bisa massal (butuh persetujuan per unit).',
-        fields: [{ k: 'to', l: 'Status baru', opts: ['Available', 'Repair', 'Damaged', 'Loss'], req: true }, { k: 'reason', l: 'Alasan', area: true, req: true }], ok: 'Terapkan', danger: true });
-      if (!r || r === true) return;
-      body = r;
-    }
-    const res = await run(() => post<{ ok: number; skip: string[] }>('/devices/bulk', { ids: sel, action, ...body }));
-    if (res) { toast(`${res.ok} iPad diproses${res.skip.length ? ` · dilewati: ${res.skip.join(', ')}` : ''}`, res.skip.length ? 'warn' : 'ok'); setSel([]); }
-  };
+  const detail = (d: Device) => <button className="btn btn-sm btn-sec" onClick={() => openDetail(d)}>Detail</button>;
   const allOn = rows.length > 0 && rows.every((d) => sel.includes(d.id));
-  const bulkOK = can('device.status');
+  const canPrint = can('device.edit');
   const sortable = (k: string, l: string) => <button className="sortb" onClick={() => sortBy(k)}>{l} {f.sort === k ? (f.dir === 'desc' ? '▼' : '▲') : ''}</button>;
   const stale = (d: Device) => !!R && ageDays(d.last_check) > R.staleDays;
   return (
@@ -140,15 +156,13 @@ function DeviceList() {
         <div className="field"><label htmlFor="fu">Peruntukan</label><select id="fu" value={f.purpose} onChange={(e) => setF({ purpose: e.target.value })}><option value="">Semua</option>{meta?.master.purpose?.map((p) => <option key={p}>{p}</option>)}</select></div>
         <div className="field"><label htmlFor="fs">Status</label><select id="fs" value={f.status} onChange={(e) => setF({ status: e.target.value })}><option value="">Semua status</option>{STATUS.map((s) => <option key={s}>{s}</option>)}</select></div>
       </div>
-      {f.flag && <div className="chips"><span className="tag">Filter: {FLAGS[f.flag]}<button aria-label="Hapus filter" onClick={() => setF({ flag: '' })}>✕</button></span></div>}
+      {FLAGS[f.flag] && <div className="chips"><span className="tag">Filter: {FLAGS[f.flag]}<button aria-label="Hapus filter" onClick={() => setF({ flag: '' })}>✕</button></span></div>}
       {error ? <ErrorBox error={error} onRetry={reload} /> : loading ? <Loading /> : !rows.length ? (
         <div className="empty"><b>Tidak ada iPad yang cocok</b>Coba ubah kata kunci atau filter.<br /><button className="btn btn-sec btn-sm" style={{ marginTop: 'var(--sp-3)' }} onClick={() => { setQ(''); setSp({}); }}>Reset filter</button></div>
       ) : (
         <>
-          {bulkOK && sel.length > 0 && (
+          {canPrint && sel.length > 0 && (
             <div className="bulk"><b>{sel.length} iPad dipilih</b>
-              <button className="btn btn-sm" onClick={() => void bulk('status')}>Ubah status</button>
-              <button className="btn btn-sm btn-sec" onClick={() => void bulk('check')}><Ic n="check" />Tandai sudah dicek</button>
               <button className="btn btn-sm btn-sec" onClick={() => {
                 if (sel.length > 50) { toast('Pilih maksimal 50 iPad per cetakan label.', 'warn'); return; }
                 window.open('/cetak/label?ids='+sel.join(','), '_blank', 'noopener');
@@ -165,48 +179,47 @@ function DeviceList() {
           {view === 'grid' ? (
             <div className="dgrid">{rows.map((d) => (
               <article key={d.id} className="dcard">
-                <div className="spread"><b style={{ fontSize: 'var(--fs-lg)' }}>{d.name ?? d.serial}</b><Badge s={d.status} /></div>
-                <span className="mono subtle">{d.serial} · INA No. {d.ina_no ?? "–"}</span>
+                <div className="spread"><b style={{ fontSize: 'var(--fs-lg)' }}>{d.name ?? 'Tanpa nama'}</b><Badge s={d.status} /></div>
+                <span className="subtle">{d.model} · INA No. <span className="mono">{d.ina_no ?? '–'}</span></span>
                 <span>{d.lokasi} · {d.section}</span>
                 <span className="subtle">{d.department} · {d.purpose} · iOS {d.ios ?? '-'}</span>
                 {d.status === 'Setup' && d.cfg && <div className="bar"><i style={{ width: `${d.cfg.total ? (d.cfg.done / d.cfg.total) * 100 : 0}%` }} /></div>}
-                  <div className="spread">
-                  {bulkOK && <label className="check"><input type="checkbox" aria-label={'Pilih ' + (d.name ?? d.serial)} checked={sel.includes(d.id)}
+                <div className="spread">
+                  {canPrint && <label className="check"><input type="checkbox" aria-label={'Pilih ' + (d.name ?? d.model)} checked={sel.includes(d.id)}
                     onChange={(e) => setSel(e.target.checked ? [...sel, d.id] : sel.filter((x) => x !== d.id))} /> Pilih</label>}
-                  {rowActions(d)}
+                  {detail(d)}
                 </div>
               </article>
             ))}</div>
           ) : (
-            <div className="tw"><table>
+            <div className="tw" ref={tableScroll}><table className="device-list-table">
               <thead><tr>
-                {bulkOK && <th><input type="checkbox" aria-label="Pilih semua" checked={allOn} onChange={(e) => setSel(e.target.checked ? [...new Set([...sel, ...rows.map((d) => d.id)])] : sel.filter((x) => !rows.some((d) => d.id === x)))} /></th>}
+                {canPrint && <th><input type="checkbox" aria-label="Pilih semua" checked={allOn} onChange={(e) => setSel(e.target.checked ? [...new Set([...sel, ...rows.map((d) => d.id)])] : sel.filter((x) => !rows.some((d) => d.id === x)))} /></th>}
                 <th>{sortable('name', 'iPad')}</th><th>{sortable('ina', 'INA No.')}</th><th>{sortable('loc', 'Lokasi · Section')}</th><th>{sortable('dept', 'Department')}</th><th>Peruntukan</th><th>{sortable('ios', 'iOS')}</th><th>{sortable('status', 'Status')}</th><th>{sortable('lastCheck', 'Terakhir dicek')}</th>
-                {showPrice && <th>{sortable('price', 'Harga')}</th>}<th />
+                {showPrice && <th>{sortable('price', 'Harga')}</th>}<th className="device-list-action" scope="col" aria-label="Aksi" />
               </tr></thead>
               <tbody>{rows.map((d) => (
                 <tr key={d.id}>
-                  {bulkOK && <td><input type="checkbox" aria-label={`Pilih ${d.name}`} checked={sel.includes(d.id)} onChange={(e) => setSel(e.target.checked ? [...sel, d.id] : sel.filter((x) => x !== d.id))} /></td>}
-                  <td><b>{d.name ?? d.serial}</b><span className="sub mono">{d.serial}</span><span className="sub">{d.model} · {d.capacity} · {d.user_name}</span></td>
+                  {canPrint && <td><input type="checkbox" aria-label={`Pilih ${d.name ?? d.model}`} checked={sel.includes(d.id)} onChange={(e) => setSel(e.target.checked ? [...sel, d.id] : sel.filter((x) => x !== d.id))} /></td>}
+                  <td><b>{d.name ?? 'Tanpa nama'}</b><span className="sub device-model">{d.model}</span></td>
                   <td className="mono">{d.ina_no ?? '–'}</td>
                   <td>{d.lokasi}<span className="sub">{d.section}</span></td>
                   <td>{d.department}</td>
                   <td>{d.purpose}</td>
-                  <td className="mono">{d.ios ?? '-'}{d.ios && R && cmpVer(d.ios, R.targetIOS) < 0 ? ' ⚠︎' : ''}</td>
-                  <td><Badge s={d.status} />{d.status === 'Setup' && d.cfg && <span className="sub"><Progress n={d.cfg.done} t={d.cfg.total} /></span>}{d.passcode_default && d.status !== 'Setup' && <span className="sub"><Flag c="b">passcode default</Flag></span>}</td>
+                  <td className="mono device-ios">{d.ios ?? '-'}{d.ios && R && cmpVer(d.ios, R.targetIOS) < 0 ? ' ⚠︎' : ''}</td>
+                  <td><Badge s={d.status} />{d.status === 'Setup' && d.cfg && <span className="sub"><Progress n={d.cfg.done} t={d.cfg.total} /></span>}</td>
                   <td>{!d.last_check ? '-' : stale(d) ? <span className="badge tone-warn">{ageDays(d.last_check)} hari</span> : `${ageDays(d.last_check)} hari lalu`}</td>
-                  {showPrice && <td className="mono">{rp(d.price)}</td>}
-                  <td>{rowActions(d)}</td>
+                  {showPrice && <td className="mono device-price">{rp(d.price)}</td>}
+                  <td className="device-list-action">{detail(d)}</td>
                 </tr>
               ))}</tbody>
             </table></div>
           )}
           <div className="pager"><span>{(page - 1) * per + 1} sampai {Math.min(page * per, data?.total ?? 0)} dari {data?.total} unit</span>
-            <select aria-label="Baris per halaman" value={per} onChange={(e) => { setPer(Number(e.target.value)); setPage(1); }}>{[10, 20, 50, 100].map((n) => <option key={n}>{n}</option>)}</select>
-            <button className="btn btn-sec btn-sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>‹</button><span>{page} / {pages}</span><button className="btn btn-sec btn-sm" disabled={page >= pages} onClick={() => setPage(page + 1)}>›</button></div>
+            <select aria-label="Baris per halaman" value={per} onChange={(e) => { setPer(e.target.value); }}>{PAGE_SIZES.map((n) => <option key={n}>{n}</option>)}</select>
+            <button className="btn btn-sec btn-sm" aria-label="Halaman sebelumnya" disabled={page <= 1} onClick={() => setPage(page - 1)}>‹</button><span>{page} / {pages}</span><button className="btn btn-sec btn-sm" aria-label="Halaman berikutnya" disabled={page >= pages} onClick={() => setPage(page + 1)}>›</button></div>
         </>
       )}
-      {editing && <EditDeviceModal key={editing.id} device={editing} onClose={() => setEditing(null)} />}
     </div>
   );
 }
@@ -228,8 +241,8 @@ function Reconfig() {
 }
 
 function IosTab() {
-  const { meta, can } = useAuth();
-  const run = useRun();
+  const { meta } = useAuth();
+  const nav = useNavigate();
   const { data, loading, error } = useApi<{ total: number; rows: Device[] }>('/devices?status=Available,Repair&per=1000&sort=ios');
   if (loading) return <Loading />;
   if (error || !data) return <ErrorBox error={error} />;
@@ -239,7 +252,7 @@ function IosTab() {
     <div className="card cardt"><h3>Status iOS <small>Target: {target}</small></h3>{data.total > data.rows.length && <p className="note tone-warn">Menampilkan 1.000 dari {data.total} iPad. Gunakan Daftar iPad untuk melihat unit lainnya.</p>}<div className="tw"><table><thead><tr><th>iPad</th><th>Model</th><th>iOS</th><th>Update terakhir</th><th>Status</th><th /></tr></thead><tbody>
       {data.rows.map((d) => { const [s, c] = state(d); return (
         <tr key={d.id}><td><b>{d.name}</b><br /><small className="muted">{d.department}</small></td><td>{d.model}</td><td>{d.ios ?? '-'}</td><td>{fmtDate(d.ios_updated)}</td><td><Flag c={c}>{s}</Flag></td>
-          <td>{can('device.edit') && s === 'Perlu update' && <button className="btn sm" onClick={() => void run(() => post(`/devices/${d.id}/ios-done`), `${d.name} → iOS ${target}`)}>Tandai {target}</button>}</td></tr>); })}
+          <td><button className="btn btn-sm btn-sec" onClick={() => nav(`/devices/${d.id}?tab=teknis`)}>Detail</button></td></tr>); })}
     </tbody></table></div></div>
   );
 }

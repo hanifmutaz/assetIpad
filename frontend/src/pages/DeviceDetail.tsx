@@ -1,14 +1,16 @@
-import { useState } from 'react';
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useEffect, useLayoutEffect, useState } from 'react';
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
-import { api, patch, post, qs } from '../lib/api';
+import { ApiError, patch, post, qs } from '../lib/api';
 import type { Device } from '../lib/types';
-import { INVENTORY_PASSCODE_FIELDS, useEditDeviceCredential } from '../components/useEditDeviceCredential';
+import type { DeviceListNavigationState } from '../lib/deviceListNavigation';
+import { useDeviceEditGuard } from '../components/useDeviceEditGuard';
+import { DeviceInfo } from '../components/DeviceInfo';
+import { credentialReasonFields, useEditDeviceCredential } from '../components/useEditDeviceCredential';
 import { Ic } from '../components/icons';
-import { QrImg } from '../components/Qr';
-import { Badge, Flag, Empty, Loading, ErrorBox, PageHead, Progress, Tabs, Field, RO, useApi, useUi, useRun, rp, fmtDate, fmtDT, ageDays, errMsg } from '../components/ui';
+import { Badge, Flag, Empty, Loading, ErrorBox, PageHead, Progress, Tabs, DetailRow, Field, RO, useApi, useUi, useRun, fmtDate, fmtDT, cmpVer, errMsg } from '../components/ui';
 
-interface CredField { field: string; label: string; sec: boolean; kind: string }
+interface CredField { field: string; label: string; sec: boolean; kind: string; requiresAccessReason?: boolean }
 interface Detail {
   device: Device;
   history: { at: string; by_name: string; action: string }[];
@@ -16,7 +18,7 @@ interface Detail {
   transfers: { id: number; code: string; move_date: string; status: string; from_loc: string; to_loc: string; reset_required: boolean }[];
   config: { id: string; title: string; required: boolean; done: boolean }[];
   configScenario: string | null;
-  credHealth: { appleStatus: string; appleChanged: string | null; appleShared: number; passcodeSet: boolean; passcodeChanged: string | null; passcodeWeak: boolean; passcodeDup: number; unlockSet: boolean; unlockWeak: boolean } | null;
+  credHealth: { appleStatus: string; appleShared: number; passcodeChanged: string | null } | null;
   pendingStatus: { to_status: string; requested_by_name: string; reason: string } | null;
   perms: { credFields: CredField[]; canEdit: boolean; canConfig: boolean; transitions: string[]; directApprove: boolean; canCheck: boolean; canReport: boolean };
 }
@@ -24,6 +26,9 @@ type T = 'info' | 'teknis' | 'cred' | 'setup' | 'tiket' | 'riwayat';
 
 export default function DeviceDetail() {
   const { id } = useParams();
+  const { state } = useLocation();
+  const returnToList = (state as DeviceListNavigationState | null)?.deviceListReturn;
+  useLayoutEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, [id]);
   const [sp, setSp] = useSearchParams();
   const nav = useNavigate();
   const { dialog, toast } = useUi();
@@ -32,7 +37,7 @@ export default function DeviceDetail() {
   if (loading) return <Loading />;
   if (error || !data) return <ErrorBox error={error} onRetry={reload} />;
   const { device: d, perms } = data;
-  const inventoryUrl = '/monitoring' + qs({ q: d.serial });
+  const inventoryUrl = '/monitoring' + (returnToList?.search ?? qs({ q: d.serial }));
   const TB: [T, string][] = [['info', 'Info'], ['teknis', 'Teknis'], ...(perms.credFields.length ? [['cred', 'Credential'] as [T, string]] : []), ['setup', 'Konfigurasi'], ['tiket', 'Tiket'], ['riwayat', 'Riwayat']];
   const tab = (TB.some((t) => t[0] === sp.get('tab')) ? sp.get('tab') : 'info') as T;
   const changeStatus = async () => {
@@ -44,22 +49,20 @@ export default function DeviceDetail() {
   };
   return (
     <>
-      <PageHead title={d.name ?? d.serial} sub={`${d.lokasi} · ${d.section} · ${d.department}`} crumb={<><Link to={inventoryUrl}>Daftar iPad</Link> › {d.name ?? d.serial}</>}>
+      <PageHead title={d.name ?? d.serial} sub={`${d.lokasi} · ${d.section} · ${d.department}`} crumb={<><Link to={inventoryUrl} state={returnToList ? { deviceListPosition: returnToList } : undefined}>Daftar iPad</Link> › {d.name ?? d.serial}</>}>
         <Badge s={d.status} />
-        {perms.canConfig && <button className="btn" onClick={() => nav(`/registrasi/konfigurasi/${d.id}`)}>Lanjutkan konfigurasi</button>}
-        {perms.transitions.length > 0 && <button className="btn btn-sec" onClick={() => void changeStatus()}>Ubah status</button>}
-        {perms.canReport && <button className="btn btn-sec" onClick={() => nav(`/lapor?device=${d.id}`)}><Ic n="alert" /> Lapor masalah</button>}
       </PageHead>
       {data.pendingStatus && <div className="note info">Pengajuan status → <b>{data.pendingStatus.to_status}</b> oleh {data.pendingStatus.requested_by_name} menunggu persetujuan Super Admin ({data.pendingStatus.reason}).</div>}
-      {d.passcode_default && d.status !== 'Setup' && <div className="note bad">
-        Passcode iPad ini masih default. Ganti lewat tombol Passcode di <Link to={inventoryUrl}>Daftar iPad</Link>.
-      </div>}
-      <Tabs items={TB} value={tab} onChange={(t) => setSp(t === 'info' ? {} : { tab: t })} />
-      {tab === 'info' && <InfoTab data={data} />}
-      {tab === 'teknis' && <TeknisTab d={d} canEdit={perms.canEdit} />}
-      {tab === 'cred' && <CredTab data={data} />}
-      {tab === 'setup' && <SetupTab data={data} />}
-      {tab === 'tiket' && <div className="card">{data.tickets.length ? <div className="tw"><table><thead><tr><th>Tiket</th><th>Tanggal</th><th>Masalah</th><th>Status</th></tr></thead><tbody>
+      <Tabs items={TB} value={tab} onChange={(t) => { if (t !== tab) setSp(t === 'info' ? {} : { tab: t }, { state }); }} />
+      {tab === 'info' && <DeviceInfo key={d.id} device={d} canEdit={perms.canEdit} canCheck={perms.canCheck} />}
+      {tab === 'teknis' && <TeknisTab key={d.id} d={d} canEdit={perms.canEdit} />}
+      {tab === 'cred' && <CredTab key={d.id} data={data} />}
+      {tab === 'setup' && <SetupTab key={d.id} data={data} onChangeStatus={() => void changeStatus()} />}
+      {tab === 'tiket' && <div className="card">
+        <div className="card-h"><h2>Tiket</h2>
+          {perms.canReport && <button className="btn btn-sec" onClick={() => nav(`/lapor?device=${d.id}`)}><Ic n="alert" /> Lapor masalah</button>}
+        </div>
+        {data.tickets.length ? <div className="tw"><table><thead><tr><th>Tiket</th><th>Tanggal</th><th>Masalah</th><th>Status</th></tr></thead><tbody>
         {data.tickets.map((t) => <tr key={t.id} className="click" onClick={() => nav(`/lapor?t=${t.id}&f=semua`)}><td className="mono">{t.code}</td><td>{fmtDate(t.created_at)}</td><td>{t.type}</td><td><Badge s={t.status} /></td></tr>)}
       </tbody></table></div> : <Empty msg="Belum ada tiket." />}</div>}
       {tab === 'riwayat' && <div className="g2">
@@ -72,136 +75,183 @@ export default function DeviceDetail() {
   );
 }
 
-function InfoTab({ data }: { data: Detail }) {
-  const { device: d, perms } = data;
-  const { meta, can } = useAuth();
-  const run = useRun();
-  const irep = useApi<{ id: number; kind: string; username: string; lokasi: string; active: boolean; verification: string }[]>(can('irep.view') ? '/irep/by-device/' + d.id : null);
-  const lateCheck = !!meta && ageDays(d.last_check) > meta.rules.staleDays;
-  return (
-    <div className="grid g21">
-      <div className="card">
-        <dl className="dl">
-          <dt>Nama</dt><dd>{d.name ?? '–'}</dd>
-          <dt>Serial number</dt><dd className="mono">{/^TEMP\d{4,}$/.test(d.serial) && <span className="badge tone-warn">Serial belum diisi</span>} {d.serial}</dd>
-          <dt>INA No.</dt><dd className="mono">{d.ina_no ?? "–"}</dd>
-          <dt>Model</dt><dd>{d.model} · {d.capacity} · {d.color}</dd>
-          <dt>Lokasi</dt><dd>{d.lokasi}</dd>
-          <dt>Section</dt><dd>{d.section}</dd>
-          <dt>Department</dt><dd>{d.department}</dd>
-          <dt>Peruntukan</dt><dd>{d.purpose}</dd>
-          <dt>Pengguna</dt><dd>{d.user_name}</dd>
-          {(irep.data?.length ?? 0) > 0 && <><dt>Akun i-Reporter</dt><dd>{irep.data!.map((a) => <span key={a.id} style={{ marginRight: 8 }}><span className="mono">{a.username}</span> <small className="muted">({a.kind}{a.kind === 'lama' && !a.active ? ', tidak aktif' : ''})</small></span>)}</dd></>}
-          <dt>Tgl datang</dt><dd>{fmtDate(d.arrival)}{d.vendor ? ` · ${d.vendor}` : ''}</dd>
-          {'price' in d && <><dt>Harga</dt><dd>{rp(d.price)}</dd></>}
-          <dt>Status</dt><dd><Badge s={d.status} /></dd>
-          <dt>Terakhir dicek</dt><dd>{d.last_check ? `${ageDays(d.last_check)} hari lalu (${fmtDate(d.last_check)})` : '-'} {lateCheck && <span className="badge tone-warn">Lewat batas</span>}</dd>
-        </dl>
-        {d.retire && <div className="note bad" style={{ marginTop: 'var(--sp-4)' }}>Retired {d.retire.date}, diajukan {d.retire.by}, disetujui {d.retire.approver}. Alasan: {d.retire.reason}</div>}
-        {d.photo_id && <div style={{ marginTop: 'var(--sp-4)' }}><label>Foto nota / dus</label><img className="photo" src={`/api/files/${d.photo_id}`} alt="Foto nota" /></div>}
-        {perms.canCheck && <div className="row" style={{ marginTop: 'var(--sp-4)' }}><button className="btn btn-sec" onClick={() => void run(() => post(`/devices/${d.id}/check`), 'Ditandai sudah dicek hari ini')}><Ic n="check" />Tandai sudah dicek</button></div>}
-      </div>
-      <div className="card" style={{ textAlign: 'center' }}>
-        <div className="card-h"><h2>QR iPad</h2></div>
-        <QrImg text={`${location.origin}/d/${encodeURIComponent(d.serial)}`} size={140} alt={`QR ${d.name}`} />
-        <p className="subtle">Pindai untuk membuka halaman ini</p>
-        {perms.canEdit && <button className="btn btn-sec btn-block" onClick={() => window.open(`/cetak/label?ids=${d.id}`, '_blank', 'noopener')}><Ic n="qr" />Cetak label</button>}
-      </div>
-    </div>
-  );
-}
-
 function TeknisTab({ d, canEdit }: { d: Device; canEdit: boolean }) {
   const { meta } = useAuth();
   const run = useRun();
-  const init = { wifi: d.wifi ?? '', ip: d.ip ?? '', conmasId: d.conmas_id ?? '', ireporterUser: d.ireporter_user ?? '', iosUpdated: d.ios_updated ?? '', appleStatus: d.apple_status };
-  const [v, setV] = useState(init);
-  const dirty = JSON.stringify(v) !== JSON.stringify(init);
-  const set = (k: keyof typeof v) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setV({ ...v, [k]: e.target.value });
-  const save = () => {
-    const body: Record<string, unknown> = { version: d.version };
-    for (const k of Object.keys(v) as (keyof typeof v)[]) if (v[k] !== init[k]) body[k] = v[k] === '' ? null : v[k];
-    void run(() => patch(`/devices/${d.id}`, body), 'Tersimpan');
+  const initial = {
+    wifi: d.wifi ?? '', ip: d.ip ?? '', conmasId: d.conmas_id ?? '', ireporterUser: d.ireporter_user ?? '',
+    ios: d.ios ?? '', iosUpdated: d.ios_updated ?? '', appleStatus: d.apple_status,
   };
-  const dis = !canEdit;
+  const [draft, setDraft] = useState<{ initial: typeof initial; values: typeof initial; version: number } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const editing = canEdit && !!draft;
+  const v = editing ? draft.values : initial;
+  const set = (key: keyof typeof v) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const value = e.target.value;
+    setDraft((current) => current && { ...current, values: { ...current.values, [key]: value } });
+  };
+  const original = draft?.initial ?? initial;
+  const changes = (Object.keys(v) as (keyof typeof v)[]).filter((k) => v[k] !== original[k]);
+  useDeviceEditGuard(editing && changes.length > 0, busy);
+  const target = meta?.rules.targetIOS;
+  const canMarkUpdated = canEdit && target && ['Available', 'Repair'].includes(d.status) &&
+    !meta?.master.old_model?.includes(d.model) && cmpVer(d.ios, target) < 0;
+  const save = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!editing || busy || !changes.length) return;
+    setBusy(true);
+    try {
+      const body = Object.fromEntries(changes.map((k) => [k, v[k] === '' ? null : v[k]]));
+      if (await run(() => patch(`/devices/${d.id}`, { ...body, version: draft.version }), 'Data teknis tersimpan')) setDraft(null);
+    } finally { setBusy(false); }
+  };
   return (
-    <div className="card">
-      <div className="grid">
-        <Field label="Wi-Fi SSID" id="t_w"><select id="t_w" disabled={dis} value={v.wifi} onChange={set('wifi')}><option value="">-</option>{[...new Set([...(meta?.master.wifi ?? []), v.wifi].filter(Boolean))].map((w) => <option key={w}>{w}</option>)}</select></Field>
-        <Field label="IP Address" id="t_ip"><input id="t_ip" disabled={dis} value={v.ip} onChange={set('ip')} placeholder="kosongkan bila DHCP" /></Field>
-        <Field label="ConMas Device ID" id="t_cm"><input id="t_cm" disabled={dis} value={v.conmasId} onChange={set('conmasId')} /></Field>
-        <Field label="User i-Reporter" id="t_ir"><input id="t_ir" disabled={dis} value={v.ireporterUser} onChange={set('ireporterUser')} /></Field>
-        <Field label="Versi iOS"><RO>{d.ios ?? '–'}</RO></Field>
-        <Field label="Tgl update iOS" id="t_iu"><input id="t_iu" type="date" disabled={dis} value={v.iosUpdated} onChange={set('iosUpdated')} /></Field>
-        <Field label="Status Apple ID" id="t_as"><select id="t_as" disabled={dis} value={v.appleStatus} onChange={set('appleStatus')}>{['Done', 'Need Verification', 'Wrong Password'].map((s) => <option key={s}>{s}</option>)}</select></Field>
+    <form className="card device-detail-fields" onSubmit={save}>
+      <div className="card-h">
+        <h2>Teknis</h2>
+        {editing ? <div className="row device-edit-actions">
+          <button type="button" className="btn btn-sec" disabled={busy} onClick={() => setDraft(null)}>Batal</button>
+          <button type="submit" className="btn" disabled={busy || !changes.length}>{busy ? 'Menyimpan…' : 'Simpan'}</button>
+        </div> : canEdit && <button type="button" className="btn btn-sec" onClick={() => setDraft({ initial, values: initial, version: d.version })}>Edit teknis</button>}
       </div>
+      <fieldset disabled={busy}>
+        <dl className="dl">
+          <DetailRow label="Wi-Fi SSID" inputId={editing ? 't_w' : undefined}>
+            {editing ? <select id="t_w" value={v.wifi} onChange={set('wifi')}><option value="">–</option>{[...new Set([...(meta?.master.wifi ?? []), original.wifi].filter(Boolean))].map((w) => <option key={w}>{w}</option>)}</select> : d.wifi || '–'}
+          </DetailRow>
+          <DetailRow label="IP Address" inputId={editing ? 't_ip' : undefined}>
+            {editing ? <input id="t_ip" value={v.ip} onChange={set('ip')} placeholder="Kosongkan bila DHCP" /> : d.ip || '–'}
+          </DetailRow>
+          <DetailRow label="ConMas Device ID" inputId={editing ? 't_cm' : undefined}>
+            {editing ? <input id="t_cm" value={v.conmasId} onChange={set('conmasId')} /> : d.conmas_id || '–'}
+          </DetailRow>
+          <DetailRow label="User i-Reporter" inputId={editing ? 't_ir' : undefined}>
+            {editing ? <input id="t_ir" value={v.ireporterUser} onChange={set('ireporterUser')} /> : d.ireporter_user || '–'}
+          </DetailRow>
+          <DetailRow label="Versi iOS" inputId={editing ? 't_ios' : undefined}>
+            {editing ? <input id="t_ios" pattern="[0-9]+([.][0-9]+){0,2}" value={v.ios} onChange={set('ios')} /> : d.ios || '–'}
+          </DetailRow>
+          <DetailRow label="Tgl update iOS" inputId={editing ? 't_iu' : undefined}>
+            {editing ? <input id="t_iu" type="date" value={v.iosUpdated} onChange={set('iosUpdated')} /> : fmtDate(d.ios_updated)}
+          </DetailRow>
+          <DetailRow label="Status Apple ID" inputId={editing ? 't_as' : undefined}>
+            {editing ? <select id="t_as" value={v.appleStatus} onChange={set('appleStatus')}>{['Done', 'Need Verification', 'Wrong Password'].map((s) => <option key={s}>{s}</option>)}</select> : <Badge s={d.apple_status} />}
+          </DetailRow>
+        </dl>
+      </fieldset>
+      {canMarkUpdated && <div className="cfoot"><button type="button" className="btn btn-sec" disabled={editing} onClick={() => void run(() => post(`/devices/${d.id}/ios-done`), `${d.name} → iOS ${target}`)}>Tandai sudah update ke iOS {target}</button></div>}
       {Object.keys(d.config_notes ?? {}).length > 0 && <><div className="st">Catatan dari konfigurasi</div>{Object.values(d.config_notes).map((n, i) => <div className="hist" key={i}>{n}</div>)}</>}
-      {canEdit && <div className="cfoot"><button className="btn btn-sec" disabled={!dirty} onClick={() => setV(init)}>Batal</button><button className="btn" disabled={!dirty} onClick={save}>Simpan</button></div>}
-    </div>
+    </form>
   );
 }
 
 function CredTab({ data }: { data: Detail }) {
   const { device: d, credHealth: h } = data;
-  const { meta } = useAuth();
-  const { toast } = useUi();
+  const { meta, can } = useAuth();
+  const canManage = can('cred.all');
+  const { dialog, toast } = useUi();
   const editCredential = useEditDeviceCredential();
-  const [list, setList] = useState<(CredField & { set: boolean; value: string | null })[] | null>(null);
-  const [reason, setReason] = useState('');
-  const [shown, setShown] = useState<Record<string, string | undefined>>({});
-  const load = () => api<typeof list>(`/devices/${d.id}/credentials`).then(setList).catch((e) => toast(errMsg(e), 'err'));
+  const metadata = useApi<(CredField & { set: boolean })[]>(`/devices/${d.id}/credentials?metadata=1`);
+  const [working, setWorking] = useState(false);
+  const [shown, setShown] = useState<{ field: string; value: string } | null>(null);
+  useEffect(() => {
+    if (!shown) return;
+    const timer = window.setTimeout(() => setShown(null), 10000);
+    return () => window.clearTimeout(timer);
+  }, [shown]);
+
   const reveal = async (f: CredField, mode: 'view' | 'copy') => {
-    if (!reason) return toast('Pilih alasan akses dulu', 'err');
+    if (working) return;
+    setWorking(true);
+    const action = mode === 'view' ? 'Tampilkan' : 'Salin';
     try {
-      const r = await post<{ value: string }>(`/devices/${d.id}/credentials/${f.field}/reveal`, { reason, mode });
-      if (mode === 'copy') { await navigator.clipboard.writeText(r.value); toast('Disalin · tercatat di audit log'); return; }
-      setShown((s) => ({ ...s, [f.field]: r.value }));
-      setTimeout(() => setShown((s) => ({ ...s, [f.field]: undefined })), 10000);
-    } catch (e) { toast(errMsg(e), 'err'); }
+      const input: { mode: typeof mode; reason?: string | boolean; reasonDetail?: string | boolean } = { mode };
+      if (f.requiresAccessReason) {
+        const choice = await dialog({
+          title: `${action} ${f.label}`,
+          fields: credentialReasonFields(meta?.master.reason ?? [], 'Alasan akses'),
+          ok: action,
+        });
+        if (!choice || choice === true) return;
+        input.reason = choice.reason;
+        input.reasonDetail = choice.reasonDetail;
+      }
+      const r = await post<{ value: string }>(`/devices/${d.id}/credentials/${f.field}/reveal`, input);
+      if (mode === 'copy') {
+        await navigator.clipboard.writeText(r.value);
+        toast('Disalin · tercatat di audit log');
+        return;
+      }
+      setShown({ field: f.field, value: r.value });
+    } catch (e) {
+      if (!(e instanceof ApiError && e.code === 'STEP_UP_REQUIRED')) toast(errMsg(e), 'err');
+    } finally { setWorking(false); }
   };
   const edit = async (f: CredField) => {
-    if (await editCredential(d.id, f)) void load();
+    if (working) return;
+    setWorking(true);
+    try {
+      if (await editCredential(d.id, f)) {
+        setShown((current) => current?.field === f.field ? null : current);
+        metadata.reload();
+      }
+    } finally { setWorking(false); }
   };
+  if (metadata.loading) return <Loading />;
+  if (metadata.error) return <ErrorBox error={metadata.error} onRetry={metadata.reload} />;
+
+  const priority = (field: string) => field === 'passcode' ? 0 : field === 'screenTimePasscode' ? 1 : 2;
+  const rows = [...(metadata.data ?? [])].sort((a, b) => priority(a.field) - priority(b.field));
   return (
     <div className="card">
-      {h && <div className="health">
+      <div className="card-h"><h2>Credential</h2></div>
+      {rows.map((f) => {
+        const mayReveal = canManage || f.field === 'passcode';
+        const display = shown?.field === f.field && mayReveal ? shown.value :
+          !f.set ? 'Belum diisi' : mayReveal ? '••••••••' : 'Terisi';
+        return (
+          <div className="cred" key={f.field}>
+            <div><div className="lbl">{f.label}</div><span className="cv">{display}</span></div>
+            {(canManage || (mayReveal && f.set)) && <div className="row credential-actions">
+              {mayReveal && f.set && <>
+                <button className="btn btn-sm btn-soft" disabled={working} onClick={() => void reveal(f, 'view')}><Ic n="eye" />Tampilkan</button>
+                <button className="btn btn-sm btn-sec" disabled={working} onClick={() => void reveal(f, 'copy')}>Salin</button>
+              </>}
+              {canManage && <button className="btn btn-sm btn-sec" disabled={working} onClick={() => void edit(f)}>Ubah</button>}
+            </div>}
+          </div>
+        );
+      })}
+      {canManage && h && <div className="health credential-health">
         <div><label>Status Apple ID</label><Badge s={h.appleStatus} /></div>
         <div><label>Apple ID dipakai bersama</label><b>{h.appleShared}</b> iPad</div>
-        <div><label>Passcode diganti</label>{fmtDate(h.passcodeChanged)}</div>
-        <div><label>Passcode</label>{!h.passcodeSet ? <span className="muted">belum diisi</span> : h.passcodeWeak ? <Flag c="b">Lemah / default</Flag> : <Flag c="g">OK</Flag>} {h.passcodeDup > 0 && <Flag>sama dgn {h.passcodeDup} iPad lain</Flag>}</div>
+        <div><label>Lock Screen diganti</label>{fmtDate(h.passcodeChanged)}</div>
       </div>}
-      {!list ? (
-        <div className="empty"><Ic n="lock" s={22} /><b>Nilai credential terkunci</b>Konfirmasi password akun Anda untuk membuka.<br /><button className="btn" style={{ marginTop: 'var(--sp-3)' }} onClick={() => void load()}>Buka akses credential</button></div>
-      ) : (
-        <>
-          <div className="note info">Akses terkunci otomatis bila tidak aktif. Setiap lihat / salin / ubah tercatat di Audit Log.</div>
-          <div className="field" style={{ maxWidth: 340, marginBottom: 'var(--sp-4)' }}><label htmlFor="cr" className="req">Alasan akses</label>
-            <select id="cr" value={reason} onChange={(e) => setReason(e.target.value)}><option value="">— pilih alasan —</option>{meta?.master.reason?.map((r) => <option key={r}>{r}</option>)}</select></div>
-          {list.map((f) => {
-            const editableHere = !INVENTORY_PASSCODE_FIELDS.some(({ field }) => field === f.field);
-            return <div className="cred" key={f.field}>
-              <div><div className="lbl">{f.label}</div><span className="cv">{f.sec ? (shown[f.field] ?? (f.set ? '••••••••' : '(kosong)')) : (f.value ?? '-')}</span></div>
-              <div className="row" style={{ gap: 'var(--sp-2)' }}>
-                {f.sec && f.set && <><button className="btn btn-sm btn-soft" onClick={() => void reveal(f, 'view')}><Ic n="eye" />Tampilkan</button><button className="btn btn-sm btn-sec" onClick={() => void reveal(f, 'copy')}>Salin</button></>}
-                {editableHere && <button className="btn btn-sm btn-sec" onClick={() => void edit(f)}>Ubah</button>}
-              </div>
-            </div>;
-          })}
-        </>
-      )}
     </div>
   );
 }
 
-function SetupTab({ data }: { data: Detail }) {
+function SetupTab({ data, onChangeStatus }: { data: Detail; onChangeStatus: () => void }) {
   const { device: d, perms, config } = data;
   const { meta } = useAuth();
   const nav = useNavigate();
   const run = useRun();
   const items = meta?.master.reconfig ?? [];
   const init = { done: items.map((_, i) => !!d.reconfig?.done?.[i]), plan: d.reconfig?.plan ?? '', actual: d.reconfig?.actual ?? '' };
-  const [rc, setRc] = useState(init);
-  const dis = !perms.canEdit;
+  const [draft, setDraft] = useState<{ values: typeof init; version: number } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const editing = perms.canEdit && !!draft;
+  const rc = editing ? draft.values : init;
+  const changed = JSON.stringify(rc) !== JSON.stringify(init);
+  const save = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!editing || busy || !changed) return;
+    setBusy(true);
+    try {
+      const body = { version: draft.version, reconfig: { done: rc.done, plan: rc.plan || null, actual: rc.actual || null } };
+      if (await run(() => patch(`/devices/${d.id}`, body), 'Re-config disimpan')) setDraft(null);
+    } finally { setBusy(false); }
+  };
   return (
     <div className="stack">
       <div className="card"><h3>Konfigurasi {data.configScenario ? `(${meta?.scenarios[data.configScenario as 'baru' | 'reset']})` : ''}</h3>
@@ -211,14 +261,34 @@ function SetupTab({ data }: { data: Detail }) {
           {perms.canConfig && <button className="btn btn-sm" style={{ marginTop: 'var(--sp-3)' }} onClick={() => nav(`/registrasi/konfigurasi/${d.id}`)}>Buka panduan ›</button>}
         </> : <p className="muted">Konfigurasi selesai. Riwayat lengkap ada di tab Riwayat.</p>}
       </div>
-      <div className="card"><h3>Re-Config</h3>
-        {items.map((l, i) => <label className="check" key={l}><input type="checkbox" disabled={dis} checked={rc.done[i]} onChange={(e) => { const x = [...rc.done]; x[i] = e.target.checked; setRc({ ...rc, done: x }); }} /> {l}</label>)}
-        <div className="grid" style={{ marginTop: 'var(--sp-3)' }}>
-          <Field label="Plan" id="rp"><input id="rp" type="date" disabled={dis} value={rc.plan} onChange={(e) => setRc({ ...rc, plan: e.target.value })} /></Field>
-          <Field label="Actual" id="ra"><input id="ra" type="date" disabled={dis} value={rc.actual} onChange={(e) => setRc({ ...rc, actual: e.target.value })} /></Field>
+      <div className="card">
+        <div className="card-h"><h2>Re-Config</h2>
+          {perms.canEdit && !editing && <button className="btn btn-sec" onClick={() => setDraft({ values: init, version: d.version })}>Edit re-config</button>}
         </div>
-        {!dis && <div className="cfoot"><button className="btn" disabled={JSON.stringify(rc) === JSON.stringify(init)} onClick={() => void run(() => patch(`/devices/${d.id}`, { version: d.version, reconfig: { done: rc.done, plan: rc.plan || null, actual: rc.actual || null } }), 'Re-config disimpan')}>Simpan</button></div>}
+        <form onSubmit={save}>
+          {items.map((l, i) => <label className="check" key={l}><input type="checkbox" disabled={!editing || busy} checked={rc.done[i]} onChange={(e) => {
+            const done = rc.done.map((checked, index) => index === i ? e.target.checked : checked);
+            if (draft) setDraft({ ...draft, values: { ...rc, done } });
+          }} /> {l}</label>)}
+          <div className="grid" style={{ marginTop: 'var(--sp-3)' }}>
+            {editing ? <>
+              <Field label="Plan" id="rp"><input id="rp" type="date" disabled={busy} value={rc.plan} onChange={(e) => setDraft({ ...draft, values: { ...rc, plan: e.target.value } })} /></Field>
+              <Field label="Actual" id="ra"><input id="ra" type="date" disabled={busy} value={rc.actual} onChange={(e) => setDraft({ ...draft, values: { ...rc, actual: e.target.value } })} /></Field>
+            </> : <>
+              <Field label="Plan"><RO>{fmtDate(rc.plan)}</RO></Field>
+              <Field label="Actual"><RO>{fmtDate(rc.actual)}</RO></Field>
+            </>}
+          </div>
+          {editing && <div className="cfoot">
+            <button type="button" className="btn btn-sec" disabled={busy} onClick={() => setDraft(null)}>Batal</button>
+            <button type="submit" className="btn" disabled={busy || !changed}>Simpan</button>
+          </div>}
+        </form>
       </div>
+      {perms.transitions.length > 0 && <div className="card">
+        <div className="card-h"><h2>Status perangkat</h2><button className="btn btn-sec" onClick={onChangeStatus}>Ubah status</button></div>
+        <Badge s={d.status} />
+      </div>}
     </div>
   );
 }

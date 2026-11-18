@@ -24,6 +24,7 @@ const listQ = z.object({
   lokasiId: optInt, sectionId: optInt, departmentId: optInt,
   status: z.string().max(80).regex(/^[A-Za-z,]*$/).optional(),
   purpose: z.string().max(60).optional(),
+  // Query lama dengan flag pcdefault tetap diterima sebagai daftar biasa.
   flag: z.enum(['', 'stale', 'apple', 'old', 'pcdefault']).optional(),
   sort: z.string().max(20).optional(),
   dir: z.enum(['asc', 'desc']).optional(),
@@ -55,7 +56,6 @@ async function buildFilter(u: AuthUser, f: ListQ, R: Rules) {
   const inUse = "d.status IN ('Available','Repair')";
   if (f.flag === 'stale') w.push(`${inUse} AND (d.last_check IS NULL OR d.last_check < current_date - ${P(R.staleDays)}::int)`);
   if (f.flag === 'apple') w.push(`${inUse} AND d.apple_status <> 'Done'`);
-  if (f.flag === 'pcdefault') w.push(`${inUse} AND d.passcode_default`);
   if (f.flag === 'old') w.push(`${inUse} AND (d.model = ANY(${P(await getMaster('old_model'))}) OR d.arrival < current_date - make_interval(years => ${P(R.maxAgeYears)}))`);
   const dir = f.dir === 'desc' ? 'DESC' : 'ASC';
   const order = (SORT[f.sort ?? ''] ?? SORT.name!).map((e) => `${e} ${dir} NULLS LAST`).concat('d.serial').join(', ');
@@ -91,9 +91,8 @@ router.get('/summary', ah(async (req, res) => {
       count(*) FILTER (WHERE d.status = 'Damaged')::int AS damaged,
       count(*) FILTER (WHERE d.status IN ('Available','Repair') AND (d.last_check IS NULL OR d.last_check < current_date - $1::int))::int AS stale,
       count(*) FILTER (WHERE d.status IN ('Available','Repair') AND d.apple_status <> 'Done')::int AS apple,
-      count(*) FILTER (WHERE d.status IN ('Available','Repair') AND d.passcode_default)::int AS pcdefault,
       count(*) FILTER (WHERE d.status IN ('Available','Repair') AND (
-        d.last_check IS NULL OR d.last_check < current_date - $1::int OR d.apple_status <> 'Done' OR d.passcode_default))::int AS attention,
+        d.last_check IS NULL OR d.last_check < current_date - $1::int OR d.apple_status <> 'Done'))::int AS attention,
       count(*)::int AS total
     FROM device d WHERE ${sc.sql}`, [R.staleDays, ...sc.params]);
   res.json({ ...r, staleDays: R.staleDays });
@@ -246,14 +245,18 @@ router.post('/bulk', requirePerm('device.status'), ah(async (req, res) => {
 
 // ---------------------------------------------------------------- registrasi iPad baru (Admin iPad)
 router.post('/', requirePerm('device.register'), upload.single('photo'), ah(async (req, res) => {
+  const included = z.enum(['true', 'false']).transform((v) => v === 'true').optional();
   const b = z.object({
     serial: z.string().transform(normSerial).refine((s) => SERIAL_RE.test(s), 'Format serial tidak valid (8 sampai 14 huruf/angka)'),
     model: z.string().min(1).max(80), capacity: z.string().max(20).optional(), color: z.string().max(40).optional(),
     sectionId: z.coerce.number().int(), departmentId: z.coerce.number().int(), purpose: z.string().min(1).max(60),
     userName: z.string().trim().min(1).max(120), arrival: z.iso.date(),
     vendor: z.string().max(60).optional(), price: z.preprocess((v) => (v === '' || v == null ? undefined : v), z.coerce.number().min(0).max(1e10).optional()),
+    chargerIncluded: included, cableIncluded: included, boxIncluded: included,
+    hasWarranty: included, warrantyUntil: z.iso.date().optional(),
     note: z.string().max(500).optional(),
   }).parse(req.body);
+  if (b.warrantyUntil && b.hasWarranty !== true) throw bad('Pilih Ada untuk mengisi tanggal akhir garansi');
   if (!(await getMaster('model')).includes(b.model)) throw bad('Model tidak terdaftar di master data');
   if (!(await getMaster('purpose')).includes(b.purpose)) throw bad('Peruntukan tidak terdaftar di master data');
   const id = await txWithImage(req.file, req.user!.id, async (c, savePhoto) => {
@@ -261,9 +264,11 @@ router.post('/', requirePerm('device.register'), upload.single('photo'), ah(asyn
     if (ex) throw conflict(`Serial sudah terdaftar sebagai ${ex.name ?? '(tanpa nama)'}, gunakan menu Pindah Tempat`, 'SERIAL_EXISTS');
     const photo = await savePhoto();
     const name = await nextName(c, b.sectionId, b.arrival);
-    const r = await c.query(`INSERT INTO device(serial,name,section_id,department_id,purpose,model,capacity,color,user_name,arrival,vendor,price,status,photo_id,note)
-      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'Setup',$13,$14) RETURNING id`,
-    [b.serial, name, b.sectionId, b.departmentId, b.purpose, b.model, b.capacity ?? null, b.color ?? null, b.userName, b.arrival, b.vendor ?? null, b.price ?? null, photo, b.note ?? null]);
+    const r = await c.query(`INSERT INTO device(serial,name,section_id,department_id,purpose,model,capacity,color,user_name,arrival,vendor,price,status,photo_id,note,
+      charger_included,cable_included,box_included,has_warranty,warranty_until)
+      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'Setup',$13,$14,$15,$16,$17,$18,$19) RETURNING id`,
+    [b.serial, name, b.sectionId, b.departmentId, b.purpose, b.model, b.capacity ?? null, b.color ?? null, b.userName, b.arrival, b.vendor ?? null, b.price ?? null, photo, b.note ?? null,
+      b.chargerIncluded ?? null, b.cableIncluded ?? null, b.boxIncluded ?? null, b.hasWarranty ?? null, b.warrantyUntil ?? null]);
     const did = r.rows[0].id as string;
     await c.query("INSERT INTO config_run(device_id,scenario,started_by) VALUES($1,'baru',$2)", [did, req.user!.id]);
     await history(c, did, req.user, `Registrasi iPad baru (${name})${b.note ? `, ${b.note}` : ''}`, 'Setup');
@@ -317,6 +322,7 @@ router.get('/:id', ah(async (req, res) => {
 
 router.patch('/:id', requirePerm('device.edit'), ah(async (req, res) => {
   const id = uuid.parse(req.params.id);
+  const included = z.boolean().nullable().optional();
   const nul = (s: z.ZodTypeAny) => s.nullable().optional().or(z.literal('').transform(() => null));
   const b = z.object({
     version: z.number().int(), force: z.boolean().optional(),
@@ -333,14 +339,22 @@ router.patch('/:id', requirePerm('device.edit'), ah(async (req, res) => {
     ios: nul(z.string().regex(/^\d+(\.\d+){0,2}$/)), iosUpdated: nul(z.iso.date()),
     appleStatus: z.enum(APPLE_ST).optional(), note: nul(z.string().max(500)),
     userName: z.string().trim().min(1).max(120).optional(),
+    chargerIncluded: included, cableIncluded: included, boxIncluded: included,
+    hasWarranty: included, warrantyUntil: z.iso.date().nullable().optional(),
     reconfig: z.object({ done: z.array(z.boolean()).max(50), plan: z.string().max(10).nullable().optional(), actual: z.string().max(10).nullable().optional() }).optional(),
   }).parse(req.body);
-  const MAP: Record<string, string> = { name: 'name', purpose: 'purpose', sectionId: 'section_id', departmentId: 'department_id', arrival: 'arrival', price: 'price', inaNo: 'ina_no', serial: 'serial', wifi: 'wifi', ip: 'ip', conmasId: 'conmas_id', ireporterUser: 'ireporter_user', ios: 'ios', iosUpdated: 'ios_updated', appleStatus: 'apple_status', note: 'note', reconfig: 'reconfig', userName: 'user_name' };
+  const MAP: Record<string, string> = { name: 'name', purpose: 'purpose', sectionId: 'section_id', departmentId: 'department_id', arrival: 'arrival', price: 'price', inaNo: 'ina_no', serial: 'serial', wifi: 'wifi', ip: 'ip', conmasId: 'conmas_id', ireporterUser: 'ireporter_user', ios: 'ios', iosUpdated: 'ios_updated', appleStatus: 'apple_status', note: 'note', reconfig: 'reconfig', userName: 'user_name',
+    chargerIncluded: 'charger_included', cableIncluded: 'cable_included', boxIncluded: 'box_included',
+    hasWarranty: 'has_warranty', warrantyUntil: 'warranty_until',
+  };
   const user = req.user!;
   await tx(async (c) => {
     const cur = (await c.query('SELECT d.*, s.lokasi_id, host(d.ip) ip_txt FROM device d JOIN section s ON s.id=d.section_id WHERE d.id=$1 FOR UPDATE OF d', [id])).rows[0];
     if (!cur) throw notFound();
     if (cur.version !== b.version) throw conflict('Data iPad sudah diubah orang lain. Muat ulang halaman.', 'STALE');
+    const hasWarranty = b.hasWarranty === undefined ? cur.has_warranty : b.hasWarranty;
+    if (b.warrantyUntil && hasWarranty !== true) throw bad('Pilih Ada untuk mengisi tanggal akhir garansi');
+    if (b.hasWarranty !== undefined && b.hasWarranty !== true) b.warrantyUntil = null;
     if (b.serial !== undefined && b.serial !== cur.serial) {
       if (!/^TEMP[0-9]{4,}$/.test(cur.serial) && !can(user, 'device.editSerial')) {
         throw forbidden('Hanya Super Admin yang bisa mengoreksi serial resmi');

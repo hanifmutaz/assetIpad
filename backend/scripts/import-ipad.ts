@@ -132,7 +132,7 @@ try {
       const id = ins.rows[0].id as string;
 
       // Kredensial dienkripsi dengan mekanisme aplikasi (AES-256-GCM). enforce:false = data lama diterima apa adanya,
-      // nilai lemah (mis. 123456) ditandai weak sehingga muncul di peringatan "passcode masih default".
+      // hasil pemeriksaan nilai tetap dicatat dalam metadata credential.
       for (const [field, value] of Object.entries(m.creds)) { await setCredential(c, id, field, value, by.id as string, { enforce: false }); count.creds++; }
       await c.query('UPDATE device SET passcode_changed=NULL, apple_changed=$2 WHERE id=$1', [id, d.appleChanged]);
       await c.query("INSERT INTO device_history(device_id,by_user,by_name,action,to_status) VALUES($1,$2,$3,'Diimpor dari Excel lama',$4)", [id, by.id, by.name, d.status]);

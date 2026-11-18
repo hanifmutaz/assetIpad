@@ -19,7 +19,7 @@ export const cmpVer = (a?: string | null, b?: string | null) => {
 export const errMsg = (e: unknown) => (e instanceof Error ? e.message : 'Terjadi kesalahan');
 
 // ------------------------------------------------------------ toast + dialog
-export interface DlgField { k: string; l: string; type?: string; req?: boolean; v?: string | boolean; opts?: (string | { value: string; label: string })[]; area?: boolean; check?: boolean; hint?: string; again?: boolean }
+export interface DlgField { k: string; l: string; type?: string; req?: boolean; v?: string | boolean; opts?: (string | { value: string; label: string })[]; area?: boolean; check?: boolean; hint?: string; again?: boolean; when?: (values: Record<string, string | boolean>) => boolean; maxLength?: number }
 interface DlgOpts { title: string; body?: ReactNode; fields?: DlgField[]; ok?: string; cancel?: string; danger?: boolean }
 type DlgResult = Record<string, string | boolean> | true | null;
 interface UiCtx { toast: (m: string, t?: 'ok' | 'err' | 'warn') => void; dialog: (o: DlgOpts) => Promise<DlgResult>; confirm: (title: string, body: ReactNode, danger?: boolean) => Promise<boolean> }
@@ -58,11 +58,17 @@ function Dialog({ title, body, fields = [], ok = 'OK', cancel = 'Batal', danger,
   const [shown, setShown] = useState<Record<string, boolean>>({});
   const box = useRef<HTMLFormElement>(null);
   useDialogFocus(box, () => onClose(null));
+  const visibleFields = fields.filter((f) => !f.when || f.when(vals));
+  const isMissing = (f: DlgField) => f.req && !String(vals[f.k] ?? '').trim();
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    for (const f of fields) if (f.req && !String(vals[f.k] ?? '').trim()) { setErr(`${f.l} wajib diisi`); return; }
-    for (const f of fields) if (f.again && String(vals[f.k] ?? '') !== String(vals[`${f.k}__2`] ?? '')) { setErr(`${f.l} dan ulangannya belum sama`); return; }
-    onClose(fields.length ? Object.fromEntries(Object.entries(vals).filter(([k]) => !k.endsWith('__2')).map(([k, v]) => [k, typeof v === 'string' && fields.find((f) => f.k === k)?.type !== 'password' ? v.trim() : v])) : true);
+    for (const f of visibleFields) if (isMissing(f)) { setErr(`${f.l} wajib diisi`); return; }
+    for (const f of visibleFields) if (f.again && String(vals[f.k] ?? '') !== String(vals[`${f.k}__2`] ?? '')) { setErr(`${f.l} dan ulangannya belum sama`); return; }
+    const result = visibleFields.map((f) => {
+      const value = vals[f.k] ?? '';
+      return [f.k, typeof value === 'string' && f.type !== 'password' ? value.trim() : value];
+    });
+    onClose(result.length ? Object.fromEntries(result) : true);
   };
   const set = (k: string, v: string | boolean) => setVals((s) => ({ ...s, [k]: v }));
   return (
@@ -70,7 +76,7 @@ function Dialog({ title, body, fields = [], ok = 'OK', cancel = 'Batal', danger,
       <form ref={box} tabIndex={-1} className="dlg" role="alertdialog" aria-modal="true" aria-label={title} onSubmit={submit}>
         <h3>{title}</h3>
         {typeof body === 'string' ? <p>{body}</p> : body}
-        {fields.map((f) => (
+        {visibleFields.map((f) => (
           <div key={f.k} style={{ marginTop: 12 }}>
             {f.check ? (
               <label className="check"><input type="checkbox" checked={!!vals[f.k]} onChange={(e) => set(f.k, e.target.checked)} /> {f.l}</label>
@@ -83,7 +89,7 @@ function Dialog({ title, body, fields = [], ok = 'OK', cancel = 'Batal', danger,
                     {f.opts.map((o) => (typeof o === 'object' ? <option key={o.value} value={o.value}>{o.label}</option> : <option key={o}>{o}</option>))}
                   </select>
                 ) : f.area ? (
-                  <textarea id={`dlg_${f.k}`} rows={3} value={String(vals[f.k])} onChange={(e) => set(f.k, e.target.value)} />
+                  <textarea id={`dlg_${f.k}`} rows={3} maxLength={f.maxLength} aria-required={f.req || undefined} value={String(vals[f.k])} onChange={(e) => set(f.k, e.target.value)} />
                 ) : (
                   f.type === 'password' ? (
                     <div style={{ display: 'flex', gap: 8 }}>
@@ -108,7 +114,7 @@ function Dialog({ title, body, fields = [], ok = 'OK', cancel = 'Batal', danger,
         {err && <div role="alert" className="err" style={{ marginTop: 8 }}>{err}</div>}
         <div className="mfoot">
           <button type="button" className="btn sec" onClick={() => onClose(null)}>{cancel}</button>
-          <button type="submit" className={`btn ${danger ? 'bad' : ''}`}>{ok}</button>
+          <button type="submit" disabled={visibleFields.some((f) => f.when && isMissing(f))} className={`btn ${danger ? 'bad' : ''}`}>{ok}</button>
         </div>
       </form>
     </div>
@@ -205,6 +211,12 @@ export function Modal({ title, onClose, children, footer }: { title: ReactNode; 
       </div>
     </div>
   );
+}
+export function DetailRow({ label, inputId, mono, children }: { label: string; inputId?: string; mono?: boolean; children: ReactNode }) {
+  return <>
+    <dt>{inputId ? <label htmlFor={inputId}>{label}</label> : label}</dt>
+    <dd className={mono ? 'mono' : undefined}>{children}</dd>
+  </>;
 }
 export const Field = ({ label, req, id, children, hint }: { label: string; req?: boolean; id?: string; children: ReactNode; hint?: ReactNode }) => (
   <div className="field"><label htmlFor={id} className={req ? 'req' : ''}>{label}</label>{children}{hint && <span className="hint">{hint}</span>}</div>

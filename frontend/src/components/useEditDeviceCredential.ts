@@ -1,15 +1,21 @@
 import { put } from '../lib/api';
 import { useAuth } from '../lib/auth';
-import { errMsg, useUi } from './ui';
+import { useRun, useUi, type DlgField } from './ui';
 
-export const INVENTORY_PASSCODE_FIELDS = [
-  { field: 'passcode', label: 'Passcode iPad', sec: true, kind: 'passcode' },
-  { field: 'screenTimePasscode', label: 'Passcode Screen Time', sec: true, kind: 'screenTime' },
-];
+export function credentialReasonFields(reasons: string[], label: string): DlgField[] {
+  return [
+    { k: 'reason', l: label, opts: reasons, req: true },
+    {
+      k: 'reasonDetail', l: 'Keterangan', req: true, area: true, maxLength: 500,
+      when: ({ reason }) => typeof reason === 'string' && reason.trim().toLowerCase() === 'lainnya',
+    },
+  ];
+}
 
 export function useEditDeviceCredential() {
   const { meta } = useAuth();
   const { dialog, toast } = useUi();
+  const run = useRun();
   return async (deviceId: string, field: { field: string; label: string; sec: boolean; kind: string }) => {
     const hints: Record<string, string> = {
       passcode: '6 digit angka, unik antar iPad.',
@@ -21,17 +27,13 @@ export function useEditDeviceCredential() {
     const r = await dialog({ title: 'Ubah ' + field.label, body, fields: [
       { k: 'value', l: 'Nilai baru', type: field.sec ? 'password' : 'text', req: true, hint: hints[field.kind] },
       ...(field.sec ? [{ k: 'repeat', l: 'Ulangi nilai baru', type: 'password', req: true }] : []),
-      { k: 'reason', l: 'Alasan', opts: meta?.master.reason ?? [], req: true },
+      ...credentialReasonFields(meta?.master.reason ?? [], 'Alasan'),
     ], ok: 'Simpan' });
     if (!r || r === true) return false;
     if (field.sec && r.value !== r.repeat) { toast('Nilai tidak sama', 'err'); return false; }
-    try {
-      await put('/devices/' + deviceId + '/credentials/' + field.field, { value: r.value, reason: r.reason });
-      toast(field.label + ' tersimpan');
-      return true;
-    } catch (e) {
-      toast(errMsg(e), 'err');
-      return false;
-    }
+    return !!(await run(
+      () => put('/devices/' + deviceId + '/credentials/' + field.field, { value: r.value, reason: r.reason, reasonDetail: r.reasonDetail }),
+      field.label + ' tersimpan', ['/devices', '/dashboard', '/notifications'],
+    ));
   };
 }

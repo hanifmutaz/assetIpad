@@ -101,7 +101,7 @@ router.post('/devices/:id/config/complete', A, ah(async (req, res) => {
       if (f.target === 'passcode') {
         if (!v) { if (f.required) throw bad(`${f.label} wajib diisi`); continue; }
         await setCredential(c, id, 'passcode', v, req.user!.id); // menolak 123456 / lemah / duplikat
-        await audit(req, { action: 'Set passcode (konfigurasi)', deviceId: id, target: 'Passcode iPad', reason: 'Ganti passcode default' }, c);
+        await audit(req, { action: 'Set passcode (konfigurasi)', deviceId: id, target: 'Passcode iPad', reason: 'Selesaikan langkah Ganti passcode Lock Screen' }, c);
         continue;
       }
       if (f.required && !v) throw bad(`${f.label} wajib diisi`);
@@ -156,7 +156,7 @@ router.post('/devices/:id/config/finish', A, ah(async (req, res) => {
     const { d, run, guides } = await ctxOf(c, id);
     const p = progress(guides, run.state);
     if (p.requiredLeft > 0) throw bad(`Masih ada ${p.requiredLeft} item wajib yang belum selesai`);
-    if (d.passcode_default) throw bad('Passcode masih default (123456). Selesaikan langkah "Ganti passcode" dulu.', 'PASSCODE_DEFAULT');
+    if (d.passcode_default) throw bad('Selesaikan langkah "Ganti passcode" sebelum menutup konfigurasi.', 'PASSCODE_DEFAULT');
     await c.query('UPDATE config_run SET finished_at=now(), finished_by=$2 WHERE id=$1', [run.id, req.user!.id]);
     await c.query("UPDATE device SET status='Available', last_check=current_date, updated_at=now(), version=version+1 WHERE id=$1", [id]);
     await history(c, id, req.user, `Konfigurasi selesai (${run.scenario === 'baru' ? 'iPad baru' : 'reset / pindah'}), Setup → Available`, 'Available');

@@ -61,9 +61,10 @@ export default function Users() {
         <thead><tr><th>Fitur</th><th>Super Admin</th><th>Admin iPad</th><th>Admin Department</th></tr></thead><tbody>
           {[['Lihat iPad', 'semua', 'semua', 'department sendiri'], ['Registrasi iPad baru & konfigurasi', '✓', '✓', '✗'], ['Ajukan mutasi / pindah tempat', '✓ (langsung)', '✓ (perlu persetujuan)', '✗'],
             ['Edit identitas iPad', '✓', '✓', '✗'], ['Koreksi INA No., lokasi, section, department, dan serial resmi', '✓', '✗', '✗'],
-            ['Setujui mutasi, Retired, Loss → Available', '✓', '✗', '✗'], ['Ubah status (Repair / Damaged / Loss)', '✓', '✓', '✗'], ['Edit panduan konfigurasi', '✓', '✓', '✗'],
-            ['Variabel (Wi-Fi, Apple ID, server)', 'kelola', 'pakai saat konfigurasi', '✗'], ['Credential passcode / Screen Time / unlock / i-Reporter', '✓', '✓', 'department sendiri'],
-            ['Credential Apple ID & Gmail', '✓', '✓', '✗'], ['Lapor & tangani tiket', '✓ semua', '✓ semua', 'department sendiri'], ['User, master data, aturan, audit log', '✓', '✗', '✗'],
+            ['Setujui mutasi, Retired, Loss → Available', '✓', '✗', '✗'], ['Ubah status (Repair / Damaged / Loss)', '✓', '✓', '✗'], ['Tandai sudah dicek', '✓', '✓', '✗'], ['Edit panduan konfigurasi', '✓', '✓', '✗'],
+            ['Variabel (Wi-Fi, Apple ID, server)', 'kelola', 'pakai saat konfigurasi', '✗'], ['Passcode Lock Screen', 'lihat / ubah', 'lihat / ubah', 'lihat di department sendiri'],
+            ['Passcode Screen Time', 'lihat / ubah', 'lihat / ubah', '✗'], ['Credential unlock / i-Reporter', 'lihat / ubah', 'lihat / ubah', 'status terisi di department sendiri'],
+            ['Apple ID & Password Apple ID', '✓', '✓', '✗'], ['Lapor & tangani tiket', '✓ semua', '✓ semua', 'department sendiri'], ['User, master data, aturan, audit log', '✓', '✗', '✗'],
           ].map((r) => <tr key={r[0]}>{r.map((c, i) => <td key={i}>{c}</td>)}</tr>)}
         </tbody></table></div></div>
     </>

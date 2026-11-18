@@ -7,7 +7,7 @@ React + TypeScript (Vite, TanStack Query) · Node.js + Express (TypeScript) · P
 - **Department** sebagai entitas sendiri (bukan section). Tiap iPad punya Lokasi · Section · Department · **Peruntukan** (i-Reporter / Dashboard).
 - **Panduan bersyarat**: tiap item & langkah bisa dibatasi per *skenario* (iPad baru / reset-pindah), *lokasi*, dan *peruntukan*. Layar Setup Assistant bisa ditandai **"Tidak muncul"**. Lihat `docs/PANDUAN-KONFIGURASI.md`.
 - **Mutasi dengan reset**: setelah disetujui Super Admin, iPad kembali ke *Setup* dengan panduan skenario reset; `{{apple_id:lama}}` otomatis mengambil Apple ID lokasi lama untuk Activation Lock.
-- **Passcode 123456** dipakai saat setup, **wajib diganti** di langkah terakhir, konfigurasi tidak bisa diselesaikan selama passcode masih default.
+- Selesaikan langkah **Ganti passcode** untuk menutup konfigurasi iPad baru atau hasil reset.
 - **Login lokal**: akun dibuat Super Admin (password sementara, wajib diganti), lupa password via email SMTP, kunci 15 menit setelah 5x gagal. Buka data rahasia = konfirmasi ulang password.
 
 ## Jalan di laptop (development)
@@ -31,7 +31,7 @@ npm run dev                                              # buka http://localhost
 
 ## Edit dan penamaan iPad
 
-Di **Monitoring › Daftar iPad**, gunakan **Edit** untuk koreksi data aset dan **Passcode** untuk memperbarui passcode iPad atau Screen Time. Di Detail, identitas dan versi iOS ditampilkan untuk dilihat. Tab Credential di Detail tetap menyediakan tampilan dan salin passcode sesuai hak akses. Akses passcode membutuhkan konfirmasi password akun dan alasan. INA No. bisa dicari dan ikut di laporan serta ekspor. Hak edit menurut role tersedia di [Role & hak akses](docs/ROLES.md).
+Buka **Monitoring › Daftar iPad › Detail** untuk mengelola iPad. Edit identitas di **Info**, versi iOS dan jaringan di **Teknis**, passcode Lock Screen dan Screen Time di **Credential**, serta checklist Re-Config dan status perangkat di **Konfigurasi**. Semua role bisa melihat passcode Lock Screen pada iPad yang boleh diakses. Passcode Screen Time hanya dapat dilihat dan diubah oleh Super Admin dan Admin iPad. Untuk melihat atau menyalin Screen Time, pilih alasan akses dan isi keterangan jika alasannya **Lainnya**. Melihat atau menyalin Screen Time juga meminta konfirmasi password akun jika sesi verifikasi sudah habis. Credential lainnya bisa ditampilkan atau disalin langsung oleh pengguna yang berhak. INA No. bisa dicari dan ikut di laporan serta ekspor. Lihat [Role & hak akses](docs/ROLES.md) untuk izin tiap role.
 
 Untuk registrasi baru, nama memakai format lokasi, dua digit tahun tanggal datang, dan nomor urut. Contoh `HRS-IPAD-26-120`, `SGP-IPAD-26-120`, dan `Systech-IPAD-26-120`. Super Admin dapat menetapkan nomor awal tiap lokasi di **Pengaturan › Lokasi**. Setelan berlaku sebagai batas minimum untuk urutan per lokasi dan tahun. Urutan mengikuti nomor terbesar yang sudah dipakai. Jalankan migrasi `004_device_edit_and_naming.sql` melalui `npm run migrate` sebelum menjalankan backend yang baru.
 

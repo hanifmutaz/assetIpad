@@ -19,7 +19,6 @@ router.get('/', ah(async (req, res) => {
     q(`SELECT
         count(*) FILTER (WHERE d.status IN ('Available','Repair') AND (d.last_check IS NULL OR d.last_check < current_date - $3::int))::int stale,
         count(*) FILTER (WHERE d.status IN ('Available','Repair') AND d.apple_status <> 'Done')::int apple,
-        count(*) FILTER (WHERE d.status IN ('Available','Repair') AND d.passcode_default)::int pcdefault,
         count(*) FILTER (WHERE d.arrival >= date_trunc('month', current_date))::int new_month
       FROM device d WHERE ${S}`, [...P, R.staleDays]),
     q(`SELECT count(*) FILTER (WHERE t.status<>'Closed')::int open,
@@ -74,7 +73,7 @@ router.get('/', ah(async (req, res) => {
     kpi: { active, available: by.Available ?? 0, newMonth: fr.new_month, openTickets: t.open, ticketsThisMonth: t.this_m, ticketsLastMonth: t.last_m,
       cfgDevices: setupDevs.rowCount, cfgPct: tot ? Math.round((done / tot) * 100) : 100 },
     actions: {
-      esk: t.esk, stale: fr.stale, apple: fr.apple, pcdefault: fr.pcdefault,
+      esk: t.esk, stale: fr.stale, apple: fr.apple,
       ...(can(u, 'device.config') ? { cfg: by.Setup ?? 0 } : {}),
       ...(can(u, 'approval.decide') ? { mt: p.mt, sr: p.sr, alerts: p.al } : {}),
     },

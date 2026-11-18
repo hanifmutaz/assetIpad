@@ -20,4 +20,4 @@ Prioritas nilai variabel: **lokasi + peruntukan > lokasi > peruntukan > umum**.
 Siklus:
 - Registrasi iPad baru → status *Setup*, skenario **baru**.
 - Mutasi dengan centang "reset" disetujui → status kembali *Setup*, skenario **reset**, lokasi lama dicatat.
-- Konfigurasi hanya bisa diselesaikan bila semua item wajib selesai **dan** passcode bukan default (langkah "Ganti passcode").
+- Untuk menutup konfigurasi, selesaikan semua item wajib, termasuk langkah **Ganti passcode**.
