@@ -17,6 +17,12 @@ await tx(async (c) => {
     await c.query('UPDATE config_var_value SET enc=$2 WHERE id=$1', [r.id, encrypt(decrypt(r.enc, ctx), ctx)]);
     n++;
   }
+  for (const r of (await c.query('SELECT id, pwd_enc FROM irep_account WHERE pwd_enc IS NOT NULL FOR UPDATE')).rows) {
+    if (keyIdOf(r.pwd_enc) === cfg.activeKeyId) continue;
+    const ctx = 'irep:' + r.id;
+    await c.query('UPDATE irep_account SET pwd_enc=$2 WHERE id=$1', [r.id, encrypt(decrypt(r.pwd_enc, ctx), ctx)]);
+    n++;
+  }
 });
 console.log(`✓ ${n} nilai dienkripsi ulang dengan kunci ${cfg.activeKeyId}`);
 await pool.end();

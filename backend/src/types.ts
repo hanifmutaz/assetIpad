@@ -15,6 +15,7 @@ declare module 'express-session' {
   interface SessionData {
     userId: string;
     loginAt: number;
+    credentialVersion?: number;
     csrf: string;
     stepUpUntil: number;
   }

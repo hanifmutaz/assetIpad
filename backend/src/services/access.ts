@@ -1,4 +1,4 @@
-import { one } from '../db.js';
+import { q, type Db } from '../db.js';
 import { forbidden, notFound } from '../errors.js';
 import type { AuthUser } from '../types.js';
 import { can, CRED_FIELDS } from './policy.js';
@@ -9,8 +9,9 @@ export function deviceScope(u: AuthUser, alias: string, nextParam: number): { sq
   return { sql: `${alias}.department_id = ANY($${nextParam}::int[])`, params: [u.dept_ids] };
 }
 
-export async function assertDeviceVisible(u: AuthUser, deviceId: string): Promise<{ department_id: number }> {
-  const d = await one<{ department_id: number }>('SELECT department_id FROM device WHERE id=$1', [deviceId]);
+export async function assertDeviceVisible(u: AuthUser, deviceId: string, db: Db = { query: q } as unknown as Db, lock = false): Promise<{ department_id: number; status: string }> {
+  const d = (await db.query<{ department_id: number; status: string }>(
+    'SELECT department_id, status FROM device WHERE id=$1' + (lock ? ' FOR UPDATE' : ''), [deviceId])).rows[0];
   if (!d) throw notFound('iPad tidak ditemukan');
   if (!can(u, 'device.viewAll') && !u.dept_ids.includes(d.department_id)) throw notFound('iPad tidak ditemukan');
   return d;
@@ -19,7 +20,7 @@ export async function assertDeviceVisible(u: AuthUser, deviceId: string): Promis
 export async function credFieldsFor(u: AuthUser, deviceId: string): Promise<string[]> {
   if (can(u, 'cred.all')) return Object.keys(CRED_FIELDS);
   if (can(u, 'cred.dept')) {
-    const d = await one<{ department_id: number }>('SELECT department_id FROM device WHERE id=$1', [deviceId]);
+    const d = (await q<{ department_id: number }>('SELECT department_id FROM device WHERE id=$1', [deviceId])).rows[0];
     if (d && u.dept_ids.includes(d.department_id)) return Object.keys(CRED_FIELDS).filter((k) => CRED_FIELDS[k]!.dept);
   }
   return [];

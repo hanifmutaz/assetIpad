@@ -5,6 +5,7 @@ import { q, tx, type Db } from '../db.js';
 import { ah, bad, conflict, notFound } from '../errors.js';
 import { requirePerm } from '../middleware/auth.js';
 import { audit } from '../services/audit.js';
+import { revokeAccountAccess } from '../services/account-sessions.js';
 import { ROLES } from '../services/policy.js';
 import { cfg } from '../config.js';
 import { hashPassword, randomToken } from '../crypto.js';
@@ -14,7 +15,7 @@ import { logger } from '../logger.js';
 export const router = express.Router();
 router.use(requirePerm('users.manage'));
 const uuid = z.string().uuid();
-const tempPassword = () => randomToken(9).replace(/[-_]/g, 'x'); // 12 karakter acak
+const tempPassword = () => randomToken(18);
 
 async function assertSuperRemains(c: Db, exceptId: string) {
   const r = await c.query("SELECT count(*)::int n FROM app_user WHERE role='superadmin' AND active AND id<>$1", [exceptId]);
@@ -56,6 +57,7 @@ router.patch('/:id', ah(async (req, res) => {
   const id = uuid.parse(req.params.id);
   const b = z.object({ role: z.enum(ROLES).optional(), name: z.string().trim().min(1).max(120).optional(), departmentIds: z.array(z.number().int()).max(50).optional() }).parse(req.body);
   await tx(async (c) => {
+    await c.query('SELECT pg_advisory_xact_lock(727003)');
     const u = (await c.query('SELECT role FROM app_user WHERE id=$1 FOR UPDATE', [id])).rows[0];
     if (!u) throw notFound();
     if (b.role && b.role !== 'superadmin' && u.role === 'superadmin') {
@@ -76,13 +78,19 @@ router.patch('/:id', ah(async (req, res) => {
 
 router.post('/:id/reset-password', ah(async (req, res) => {
   const id = uuid.parse(req.params.id);
-  const u = (await q('SELECT email::text email, name FROM app_user WHERE id=$1', [id])).rows[0];
-  if (!u) throw notFound();
   const pw = tempPassword();
-  await q('UPDATE app_user SET pw_hash=$2, must_change_pw=true, failed_count=0, locked_until=NULL WHERE id=$1', [id, await hashPassword(pw)]);
-  await q("DELETE FROM session WHERE (sess->>'userId') = $1", [id]);
+  const hash = await hashPassword(pw);
+  const u = await tx(async (c) => {
+    const result = await c.query<{ email: string; name: string }>(
+      'UPDATE app_user SET pw_hash=$2, must_change_pw=true, pw_changed_at=now(), failed_count=0, locked_until=NULL, credential_version=credential_version+1 WHERE id=$1 RETURNING email::text,name',
+      [id, hash]);
+    const user = result.rows[0];
+    if (!user) throw notFound();
+    await revokeAccountAccess(c, id);
+    await audit(req, { action: 'Reset password user (admin)', target: user.email }, c);
+    return user;
+  });
   await notify(u.email, u.name, pw);
-  await audit(req, { action: 'Reset password user (admin)', target: u.email });
   res.json({ tempPassword: pw, emailed: cfg.smtpReady });
 }));
 
@@ -97,12 +105,13 @@ router.post('/:id/deactivate', ah(async (req, res) => {
   const b = z.object({ reason: z.string().trim().min(1).max(120) }).parse(req.body);
   if (id === req.user!.id) throw bad('Tidak bisa menonaktifkan akun sendiri');
   await tx(async (c) => {
+    await c.query('SELECT pg_advisory_xact_lock(727003)');
     await assertSuperRemains(c, id);
-    const r = await c.query('UPDATE app_user SET active=false, deactivated_at=current_date, deactivated_reason=$2 WHERE id=$1', [id, b.reason]);
+    const r = await c.query('UPDATE app_user SET active=false, credential_version=credential_version+1, deactivated_at=current_date, deactivated_reason=$2 WHERE id=$1', [id, b.reason]);
     if (!r.rowCount) throw notFound();
-    await c.query("DELETE FROM session WHERE (sess->>'userId') = $1", [id]);
+    await revokeAccountAccess(c, id);
+    await audit(req, { action: 'Nonaktifkan user', target: id, reason: b.reason }, c);
   });
-  await audit(req, { action: 'Nonaktifkan user', target: id, reason: b.reason });
   res.json({ ok: true });
 }));
 router.post('/:id/activate', ah(async (req, res) => {

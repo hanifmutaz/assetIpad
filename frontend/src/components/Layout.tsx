@@ -34,8 +34,12 @@ export default function Layout() {
   }, []);
   useEffect(() => {
     if (q.trim().length < 2) { setRes(null); return undefined; }
-    const t = setTimeout(() => { void api<{ rows: Device[] }>(`/devices${qs({ q: q.trim(), per: 8 })}`).then((r) => setRes(r.rows)).catch(() => undefined); }, 250);
-    return () => clearTimeout(t);
+    const controller = new AbortController();
+    const t = setTimeout(() => {
+      void api<{ rows: Device[] }>('/devices' + qs({ q: q.trim(), per: 8 }), { signal: controller.signal })
+        .then((r) => setRes(r.rows)).catch(() => undefined);
+    }, 250);
+    return () => { clearTimeout(t); controller.abort(); };
   }, [q]);
   if (!me) return null;
   const toggleDark = () => { const on = document.body.classList.toggle('dark'); localStorage.setItem('ipadDark', on ? '1' : ''); setDark(on); };
@@ -55,12 +59,12 @@ export default function Layout() {
       <div className="main">
         <header className="top">
           <button className="ibtn nav-toggle" onClick={toggleNav} aria-label={collapsed ? 'Perluas navigasi' : 'Ciutkan navigasi'} aria-expanded={!collapsed} aria-controls="side-nav" title={collapsed ? 'Perluas navigasi' : 'Ciutkan navigasi'}><Ic n="menu" /></button>
-          <div className="gs" role="search">
+          <div className="gs" role="search" onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setRes(null); }}>
             <Ic n="search" />
             <input ref={searchRef} type="search" placeholder="Cari iPad, serial, atau section… (tekan /)" aria-label="Pencarian global" value={q} onChange={(e) => setQ(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter' && res?.[0]) go(`/devices/${res[0].id}`); }} onBlur={() => setTimeout(() => setRes(null), 200)} />
+              onKeyDown={(e) => { if (e.key === 'Enter' && res?.[0]) go(`/devices/${res[0].id}`); }} />
             {res && <div className="pop">{res.length ? res.map((d) => (
-              <button key={d.id} onMouseDown={() => go(`/devices/${d.id}`)}><b>{d.name ?? d.serial}</b> · <span className="mono">{d.serial}</span> <Badge s={d.status} /><br /><span className="subtle">{d.lokasi} · {d.section} · {d.department}</span></button>
+              <Link key={d.id} to={'/devices/' + d.id} onClick={() => { setRes(null); setQ(''); }}><b>{d.name ?? d.serial}</b> · <span className="mono">{d.serial}</span> <Badge s={d.status} /><br /><span className="subtle">{d.lokasi} · {d.section} · {d.department}</span></Link>
             )) : <div className="empty">Tidak ditemukan</div>}</div>}
           </div>
           <div className="top-act">

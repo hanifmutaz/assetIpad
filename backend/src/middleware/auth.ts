@@ -12,14 +12,14 @@ export async function loadUser(req: Request, _res: Response, next: NextFunction)
   try {
     const s = req.session;
     if (!s?.userId) return next();
-    if (Date.now() - (s.loginAt ?? 0) > cfg.SESSION_MAX_HOURS * 3600e3) return s.destroy(() => next());
-    const u = await one<AuthUser & { active: boolean }>(
-      `SELECT u.id, u.email::text email, u.name, u.role, u.must_change_pw, u.phone, u.active,
+    if (Date.now() - (s.loginAt ?? 0) > cfg.SESSION_MAX_HOURS * 3600e3) { s.destroy(() => next()); return; }
+    const u = await one<AuthUser & { active: boolean; credential_version: number }>(
+      `SELECT u.id, u.email::text email, u.name, u.role, u.must_change_pw, u.phone, u.active, u.credential_version,
               COALESCE(array_agg(ud.department_id) FILTER (WHERE ud.department_id IS NOT NULL), '{}') AS dept_ids
        FROM app_user u LEFT JOIN user_department ud ON ud.user_id=u.id WHERE u.id=$1 GROUP BY u.id`,
       [s.userId],
     );
-    if (!u || !u.active) return s.destroy(() => next());
+    if (!u || !u.active || (s.credentialVersion ?? 1) !== u.credential_version) { s.destroy(() => next()); return; }
     req.user = { id: u.id, email: u.email, name: u.name, role: u.role, must_change_pw: u.must_change_pw, phone: u.phone, dept_ids: u.dept_ids };
     next();
   } catch (e) {

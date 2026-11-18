@@ -1,6 +1,6 @@
 import type { AuthUser, Role } from '../types.js';
 
-export const ROLES: Role[] = ['superadmin', 'admin_ipad', 'admin_dept'];
+export const ROLES = ['superadmin', 'admin_ipad', 'admin_dept'] as const satisfies readonly Role[];
 export const ROLE_LABEL: Record<Role, string> = { superadmin: 'Super Admin', admin_ipad: 'Admin iPad', admin_dept: 'Admin Department' };
 
 /** Matriks hak akses, satu sumber kebenaran, dipakai backend & dikirim ke frontend. */
@@ -81,12 +81,14 @@ export function weakReason(v: string, kind: CredMeta['kind']): string {
 }
 
 /** Kebijakan password akun aplikasi: panjang + bukan password umum (tanpa aturan kompleksitas paksa). */
-const MIN_PW = 6;
+const MIN_PW = 15;
 const COMMON_PW = new Set(['123456', '1234567', '12345678', '123456789', '111111', '000000', '654321', 'password', 'qwerty', 'abc123', 'hirose']);
-export function accountPasswordProblem(pw: string, _email: string): string {
+export function accountPasswordProblem(pw: string, email: string): string {
   if (pw.length < MIN_PW) return `Password minimal ${MIN_PW} karakter`;
   if (pw.length > 128) return 'Password maksimal 128 karakter';
-  if (COMMON_PW.has(pw.toLowerCase())) return 'Password terlalu mudah ditebak, coba yang lain';
+  if (COMMON_PW.has(pw.toLowerCase()) || /^(.)\1+$/u.test(pw)) return 'Password terlalu mudah ditebak, coba yang lain';
+  const local = email.split('@')[0]?.toLowerCase();
+  if (local && local.length >= 4 && pw.toLowerCase().includes(local)) return 'Password tidak boleh memuat nama email';
   return '';
 }
 

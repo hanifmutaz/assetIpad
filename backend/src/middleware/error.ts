@@ -8,6 +8,7 @@ export function notFoundApi(_req: Request, res: Response): void {
 }
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function errorHandler(err: unknown, req: Request, res: Response, _next: NextFunction): void {
+  if (res.headersSent) { _next(err); return; }
   if (err instanceof ZodError) {
     const f = err.issues[0];
     res.status(400).json({ error: `${f?.path.join('.') || 'input'}: ${f?.message ?? 'tidak valid'}`, code: 'VALIDATION', field: f?.path.join('.') });
@@ -20,6 +21,7 @@ export function errorHandler(err: unknown, req: Request, res: Response, _next: N
   const e = err as { code?: string; type?: string };
   const map: Record<string, [number, string]> = {
     LIMIT_FILE_SIZE: [400, 'Ukuran file terlalu besar'],
+    '22008': [400, 'Tanggal tidak valid'],
     '23505': [409, 'Data sudah ada (duplikat)'],
     '23503': [409, 'Data masih dipakai / referensi tidak valid'],
     '23514': [400, 'Format data tidak valid'],
@@ -30,6 +32,6 @@ export function errorHandler(err: unknown, req: Request, res: Response, _next: N
     res.status(hit[0]).json({ error: hit[1], code: e.code ?? 'INVALID' });
     return;
   }
-  logger.error({ err, url: req.originalUrl }, 'Unhandled error');
+  logger.error({ err, url: req.path }, 'Unhandled error');
   res.status(500).json({ error: 'Terjadi kesalahan di server', code: 'SERVER' });
 }

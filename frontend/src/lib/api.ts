@@ -14,21 +14,21 @@ export class ApiError extends Error {
   }
 }
 
-interface Opt { method?: string; body?: unknown; form?: FormData; retry?: boolean }
-export async function api<T = unknown>(path: string, { method = 'GET', body, form, retry = true }: Opt = {}): Promise<T> {
+interface Opt { method?: string; body?: unknown; form?: FormData; retry?: boolean; signal?: AbortSignal }
+export async function api<T = unknown>(path: string, { method = 'GET', body, form, retry = true, signal }: Opt = {}): Promise<T> {
   const headers: Record<string, string> = { Accept: 'application/json', 'X-Requested-With': 'fetch' };
   if (method !== 'GET') headers['X-CSRF-Token'] = csrf;
   let payload: BodyInit | undefined;
   if (form) payload = form;
   else if (body !== undefined) { headers['Content-Type'] = 'application/json'; payload = JSON.stringify(body); }
-  const r = await fetch(`/api${path}`, { method, headers, body: payload, credentials: 'same-origin' });
+  const r = await fetch(`/api${path}`, { method, headers, body: payload, signal, credentials: 'same-origin' });
   const data = (r.headers.get('content-type') ?? '').includes('application/json') ? await r.json().catch(() => null) : null;
   if (r.ok) return data as T;
   if (r.status === 401 && !path.startsWith('/auth/') && path !== '/me') {
     location.href = `/login?expired=1&returnTo=${encodeURIComponent(location.pathname + location.search)}`;
   }
   if (r.status === 403 && data?.code === 'PW_CHANGE' && location.pathname !== '/ganti-password') location.href = '/ganti-password';
-  if (r.status === 403 && data?.code === 'STEP_UP_REQUIRED' && retry && stepUpHandler && (await stepUpHandler())) return api<T>(path, { method, body, form, retry: false });
+  if (r.status === 403 && data?.code === 'STEP_UP_REQUIRED' && retry && stepUpHandler && (await stepUpHandler())) return api<T>(path, { method, body, form, retry: false, signal });
   throw new ApiError(r.status, data);
 }
 export const get = <T = unknown>(p: string) => api<T>(p);

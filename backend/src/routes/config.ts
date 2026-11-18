@@ -17,13 +17,18 @@ const uuid = z.string().uuid();
 const limiter = rateLimit({ windowMs: 10 * 60e3, limit: 80, keyGenerator: (req) => req.user?.id ?? req.ip ?? 'x', standardHeaders: 'draft-7', legacyHeaders: false });
 
 async function ctxOf(db: Db, id: string): Promise<{ d: DeviceRow; run: Run; guides: Guide[] }> {
+  await db.query('SELECT id FROM device WHERE id=$1 FOR UPDATE', [id]);
   const d = await getDeviceRow(id, db);
   if (d.status !== 'Setup') throw bad('iPad tidak dalam proses konfigurasi');
   let run = await openRun(db, id);
   if (!run) {
     run = (await db.query("INSERT INTO config_run(device_id,scenario) VALUES($1,'baru') RETURNING *", [id])).rows[0] as Run;
   }
-  const guides = guidesFor(await allGuides(db), { scenario: run.scenario, lokasiId: d.lokasi_id, purpose: d.purpose });
+  if (!run.guide_snapshot) {
+    run.guide_snapshot = guidesFor(await allGuides(db), { scenario: run.scenario, lokasiId: d.lokasi_id, purpose: d.purpose });
+    await db.query('UPDATE config_run SET guide_snapshot=$2::jsonb WHERE id=$1', [run.id, JSON.stringify(run.guide_snapshot)]);
+  }
+  const guides = run.guide_snapshot;
   return { d, run, guides };
 }
 
@@ -80,13 +85,14 @@ router.post('/devices/:id/config/step', A, ah(async (req, res) => {
 
 router.post('/devices/:id/config/complete', A, ah(async (req, res) => {
   const id = uuid.parse(req.params.id);
-  const b = z.object({ guideId: uuid, fields: z.record(z.string().max(200)).default({}) }).parse(req.body);
+  const b = z.object({ guideId: uuid, fields: z.record(z.string(), z.string().max(200)).default({}) }).parse(req.body);
   const wifiOk = await getMaster('wifi');
   await tx(async (c) => {
     const { d, run, guides } = await ctxOf(c, id);
     const g = guides.find((x) => x.id === b.guideId);
     if (!g) throw notFound('Item konfigurasi tidak ditemukan');
     const st = run.state[g.id] ?? {};
+    if (st.done) return;
     if (!g.steps.every((s) => st.steps?.[s.id])) throw bad('Centang semua langkah dulu (Selesai / Tidak muncul)');
     const sets: Record<string, string> = {};
     const notes: Record<string, string> = {};
@@ -154,8 +160,8 @@ router.post('/devices/:id/config/finish', A, ah(async (req, res) => {
     await c.query('UPDATE config_run SET finished_at=now(), finished_by=$2 WHERE id=$1', [run.id, req.user!.id]);
     await c.query("UPDATE device SET status='Available', last_check=current_date, updated_at=now(), version=version+1 WHERE id=$1", [id]);
     await history(c, id, req.user, `Konfigurasi selesai (${run.scenario === 'baru' ? 'iPad baru' : 'reset / pindah'}), Setup → Available`, 'Available');
+    await audit(req, { action: 'Konfigurasi selesai', deviceId: id }, c);
   });
-  await audit(req, { action: 'Konfigurasi selesai', deviceId: id });
   res.json({ ok: true });
 }));
 

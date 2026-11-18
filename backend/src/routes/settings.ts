@@ -136,13 +136,13 @@ router.put('/rules', SA, ah(async (req, res) => {
 
 // ---- panduan konfigurasi (Super Admin & Admin iPad)
 const G = requirePerm('guide.edit');
-const cond = z.object({ scenarios: z.array(z.enum(['baru', 'reset'])).default([]), lokasi_ids: z.array(z.number().int()).default([]), purposes: z.array(z.string().max(60)).default([]) }).default({});
+const cond = z.object({ scenarios: z.array(z.enum(['baru', 'reset'])).default([]), lokasi_ids: z.array(z.number().int()).default([]), purposes: z.array(z.string().max(60)).default([]) }).prefault({});
 const guideSchema = z.object({
   title: z.string().trim().min(1).max(160), descr: z.string().max(2000).default(''), required: z.boolean().default(true), cond,
   steps: z.array(z.object({ id: z.string().max(60).optional(), text: z.string().trim().min(1).max(2000), cond, skippable: z.boolean().default(false) })).min(1).max(80),
   fields: z.array(z.object({ k: z.string().regex(/^[A-Za-z]\w{0,40}$/), label: z.string().trim().min(1).max(80),
     target: z.enum(Object.keys(FIELD_TARGETS) as [string, ...string[]]), required: z.boolean().default(false) })).max(10).default([]),
-  auto: z.record(z.enum(['wifi', 'appleId', 'applePwd']), z.string()).default({}),
+  auto: z.partialRecord(z.enum(['wifi', 'appleId', 'applePwd']), z.string()).default({}),
 });
 async function validateGuide(g: z.infer<typeof guideSchema>) {
   const keys = new Set((await q('SELECT key FROM config_var')).rows.map((r) => r.key as string));

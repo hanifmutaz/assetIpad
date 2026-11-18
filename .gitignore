@@ -8,4 +8,6 @@ uploads/
 *.dump
 import-report-*.csv
 USER-CONMAS*.xlsx
+backend/scripts/*.xlsx
+~$*.xlsx
 import-irep-report-*.csv

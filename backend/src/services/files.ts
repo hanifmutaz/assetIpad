@@ -4,7 +4,8 @@ import crypto from 'node:crypto';
 import multer from 'multer';
 import { cfg } from '../config.js';
 import { bad } from '../errors.js';
-import type { Db } from '../db.js';
+import { one, tx, type Db } from '../db.js';
+import { logger } from '../logger.js';
 
 export const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: cfg.maxUploadBytes, files: 1, fields: 20 } });
 const SIG = [
@@ -15,7 +16,25 @@ const SIG = [
 export const uploadRoot = path.resolve(cfg.UPLOAD_DIR);
 
 /** Simpan foto: cek magic bytes, nama acak, di luar folder web. */
-export async function saveImage(db: Db, file: Express.Multer.File | undefined, userId: string): Promise<string | null> {
+export async function txWithImage<T>(file: Express.Multer.File | undefined, userId: string,
+  run: (db: Db, save: () => Promise<string | null>) => Promise<T>): Promise<T> {
+  let uploaded: { id: string; abs: string } | undefined;
+  try {
+    return await tx((db) => run(db, () => saveImage(db, file, userId, (image) => { uploaded = image; })));
+  } catch (err) {
+    if (uploaded) {
+      const image = uploaded;
+      // Cek hasil transaksi dari koneksi lain sebelum menghapus file bila status COMMIT tidak pasti.
+      await (async () => {
+        if (!(await one('SELECT 1 FROM file_blob WHERE id=$1', [image.id]))) await fs.unlink(image.abs);
+      })().catch((cleanup) => logger.warn({ err: cleanup, fileId: image.id }, 'Pembersihan lampiran tertunda'));
+    }
+    throw err;
+  }
+}
+
+async function saveImage(db: Db, file: Express.Multer.File | undefined, userId: string,
+  track: (image: { id: string; abs: string }) => void): Promise<string | null> {
   if (!file) return null;
   const t = SIG.find((s) => s.test(file.buffer));
   if (!t) throw bad('File harus gambar JPG, PNG, atau WEBP');
@@ -24,7 +43,9 @@ export async function saveImage(db: Db, file: Express.Multer.File | undefined, u
   const rel = path.join(String(d.getFullYear()), String(d.getMonth() + 1).padStart(2, '0'), `${id}.${t.ext}`);
   const abs = path.join(uploadRoot, rel);
   await fs.mkdir(path.dirname(abs), { recursive: true });
-  await fs.writeFile(abs, file.buffer, { flag: 'wx' });
+  const handle = await fs.open(abs, 'wx');
+  track({ id, abs });
+  try { await handle.writeFile(file.buffer); } finally { await handle.close(); }
   const sha = crypto.createHash('sha256').update(file.buffer).digest('hex');
   await db.query('INSERT INTO file_blob(id,stored_name,mime,size,sha256,uploaded_by) VALUES($1,$2,$3,$4,$5,$6)', [id, rel, t.mime, file.size, sha, userId]);
   return id;

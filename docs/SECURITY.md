@@ -1,11 +1,11 @@
 # Catatan keamanan v2
 
 ## Login lokal
-- Password akun di-hash **scrypt** (bawaan Node, N=32768). Kebijakan: min. 10 karakter, bukan password umum, tidak memuat nama email.
+- Password akun di-hash **scrypt** (bawaan Node, N=32768). Kebijakan: min. 15 karakter untuk password baru, menolak password umum, karakter berulang, serta nama email. Password akun lama tetap diterima saat login sampai diganti.
 - Akun dibuat Super Admin dengan password sementara acak → **wajib diganti** saat login pertama (API lain ditolak sampai diganti).
 - 5x salah → akun terkunci 15 menit (Super Admin bisa buka kunci). Rate limit di login, lupa password, reset.
 - Lupa password: link sekali pakai via SMTP, berlaku 30 menit, token disimpan sebagai SHA-256, jawaban sama untuk email terdaftar/tidak.
-- Ganti/reset password, nonaktif user → semua sesi user tersebut diputus.
+- Ganti/reset password dan penonaktifan akun membatalkan token reset lama dan sesi terkait. Perubahan password dari sesi aktif mempertahankan sesi itu dan meminta konfirmasi ulang saat akses rahasia.
 - Sesi di PostgreSQL, cookie `__Host-` HttpOnly + Secure + SameSite=Strict, idle timeout + batas absolut, session ID dibuat ulang saat login.
 - Buka data rahasia (credential, variabel rahasia) = konfirmasi ulang password, terkunci lagi setelah idle.
 - MFA (TOTP) belum ada, disarankan untuk Super Admin di fase berikutnya.
@@ -18,11 +18,17 @@
 - Audit log append-only (trigger + hak DB dicabut). Alert otomatis bila akses data rahasia tidak wajar.
 - Upload: cek magic bytes, maks 5 MB, nama acak, di luar folder web.
 
+## Workbook operasional dan rotasi
+
+Workbook impor berisi data internal dan harus disimpan di luar checkout. Gunakan data sintetis untuk fixture pengujian. Bila pernah tersimpan di repo publik, rotasi atau cabut kredensial yang masih aktif dan koordinasikan pembersihan riwayat Git dengan pemilik repo.
+
+Untuk rotasi DATA_KEYS, siapkan kunci lama dan baru di semua instance, pindahkan DATA_KEY_ACTIVE ke kunci baru, lalu jalankan `npm run rotate-keys`. Pastikan rotasi berhasil untuk credential iPad, variabel konfigurasi, dan password i-Reporter sebelum melepas kunci lama dari service. Simpan kunci yang masih diperlukan untuk memulihkan backup lama di brankas.
+
 ## ⚠ Sebelum go-live
 - [ ] **Ganti semua password Apple ID / Gmail yang pernah tertulis di dokumen SOP**, anggap sudah bocor. Simpan hanya di Pengaturan › Variabel.
 - [ ] Cek ulang Apple ID SGP & Systech (di SOP sama-sama ind61).
 - [ ] `NODE_ENV=production`, `BASE_URL` https, SMTP terisi.
 - [ ] Cadangan `DATA_KEYS` & `HMAC_KEY` di brankas, terpisah dari backup DB.
-- [ ] Backup harian jalan + sudah diuji restore.
+- [ ] Backup harian jalan dan pemulihan database, foto, serta credential sudah diuji.
 - [ ] Minimal 2 Super Admin.
 - [ ] `npm run typecheck` & `npm run audit:deps` bersih.

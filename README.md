@@ -1,6 +1,6 @@
 # iPad Asset Management v2, PT Hirose Electric Indonesia
 
-React + TypeScript (Vite, TanStack Query) · Node.js + Express (TypeScript) · PostgreSQL 13+ · login akun lokal (email + password).
+React + TypeScript (Vite, TanStack Query) · Node.js + Express (TypeScript) · PostgreSQL 16 direkomendasikan · login akun lokal (email + password).
 
 ## Yang baru di v2
 - **3 role**: Super Admin (full), Admin iPad (registrasi, mutasi, konfigurasi, kelola semua aset), Admin Department (iPad di department-nya). Lihat `docs/ROLES.md`.
@@ -29,7 +29,7 @@ npm install
 npm run dev                                              # buka http://localhost:5173
 ```
 
-## Production (Windows Server 2019)
+## Production (Windows Server 2019, Node.js 22 LTS)
 ```powershell
 cd frontend; npm ci; npm run build
 cd ..\backend; npm ci; npm run build; npm run migrate; npm run seed

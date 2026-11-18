@@ -8,7 +8,7 @@ export interface Field { k: string; label: string; target: string; required: boo
 export interface Guide { id: string; sort: number; title: string; descr: string; required: boolean; cond: Cond; steps: Step[]; fields: Field[]; auto: Record<string, string> }
 export interface Ctx { scenario: Scenario; lokasiId: number; purpose: string }
 export interface GuideState { done?: boolean; doneAt?: string; doneBy?: string; steps?: Record<string, 'done' | 'skip'> }
-export interface Run { id: number; device_id: string; scenario: Scenario; from_lokasi_id: number | null; from_purpose: string | null; state: Record<string, GuideState>; finished_at: string | null }
+export interface Run { id: number; device_id: string; scenario: Scenario; from_lokasi_id: number | null; from_purpose: string | null; state: Record<string, GuideState>; guide_snapshot: Guide[] | null; finished_at: string | null }
 
 /** Kondisi kosong = berlaku untuk semua. */
 export function applies(c: Cond | undefined, x: Ctx): boolean {
@@ -41,9 +41,10 @@ export async function progressMap(devs: { id: string; lokasi_id: number; purpose
   if (!setup.length) return m;
   const all = await allGuides();
   const runs = (await q('SELECT DISTINCT ON (device_id) * FROM config_run WHERE device_id = ANY($1) AND finished_at IS NULL ORDER BY device_id, id DESC', [setup.map((d) => d.id)])).rows as Run[];
+  const byDevice = new Map(runs.map((r) => [r.device_id, r]));
   for (const d of setup) {
-    const run = runs.find((r) => r.device_id === d.id);
-    const gs = guidesFor(all, { scenario: run?.scenario ?? 'baru', lokasiId: d.lokasi_id, purpose: d.purpose });
+    const run = byDevice.get(d.id);
+    const gs = run?.guide_snapshot ?? guidesFor(all, { scenario: run?.scenario ?? 'baru', lokasiId: d.lokasi_id, purpose: d.purpose });
     const p = progress(gs, run?.state ?? {});
     m.set(d.id, { total: p.total, done: p.done });
   }

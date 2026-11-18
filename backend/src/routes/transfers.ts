@@ -12,7 +12,7 @@ import type { AuthUser } from '../types.js';
 export const router = express.Router();
 
 router.get('/', requirePerm('transfer.request', 'approval.decide'), ah(async (_req, res) => {
-  const r = await q(`SELECT t.id, 'MT-'||lpad(t.id::text,4,'0') code, t.device_id, COALESCE(d.name,d.serial) device_name, d.serial, t.reason, t.move_date, t.status, t.reset_required,
+  const r = await q(`SELECT t.id, 'MT-'||lpad(t.id::text,GREATEST(4,length(t.id::text)),'0') code, t.device_id, COALESCE(d.name,d.serial) device_name, d.serial, t.reason, t.move_date, t.status, t.reset_required,
       fl.name from_lokasi, fs.name from_section, fd.name from_department, t.from_user_name, t.from_purpose,
       tl.name to_lokasi, ts.name to_section, td.name to_department, t.to_user_name, t.to_purpose,
       t.requested_by, t.requested_by_name, t.decided_by_name, t.decision_note, t.created_at
@@ -43,7 +43,7 @@ async function applyTransfer(c: Db, t: Record<string, any>, u: AuthUser): Promis
 router.post('/', requirePerm('transfer.request'), ah(async (req, res) => {
   const b = z.object({
     deviceId: z.string().uuid(), sectionId: z.number().int(), departmentId: z.number().int(), purpose: z.string().min(1).max(60),
-    userName: z.string().trim().min(1).max(120), moveDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), reason: z.string().trim().min(3).max(500),
+    userName: z.string().trim().min(1).max(120), moveDate: z.iso.date(), reason: z.string().trim().min(3).max(500),
     resetRequired: z.boolean(),
   }).parse(req.body);
   if (!(await getMaster('purpose')).includes(b.purpose)) throw bad('Peruntukan tidak valid');
@@ -62,9 +62,9 @@ router.post('/', requirePerm('transfer.request'), ah(async (req, res) => {
       direct ? 'Approved' : 'Pending', u.id, u.name, direct ? u.id : null, direct ? u.name : null, direct ? new Date() : null])).rows[0];
     if (direct) await applyTransfer(c, ins, u);
     else await history(c, b.deviceId, u, `Pengajuan mutasi MT-${String(ins.id).padStart(4, '0')} ke Super Admin`);
+    await audit(req, { action: direct ? 'Mutasi (langsung, Super Admin)' : 'Ajukan mutasi', deviceId: b.deviceId, target: 'MT-' + String(ins.id).padStart(4, '0') }, c);
     return { id: ins.id, direct };
   });
-  await audit(req, { action: r.direct ? 'Mutasi (langsung, Super Admin)' : 'Ajukan mutasi', deviceId: b.deviceId, target: `MT-${r.id}` });
   res.status(201).json(r);
 }));
 
@@ -75,13 +75,15 @@ router.post('/:id/decide', requirePerm('approval.decide'), ah(async (req, res) =
     const t = (await c.query("SELECT * FROM transfer WHERE id=$1 AND status='Pending' FOR UPDATE", [id])).rows[0];
     if (!t) throw notFound('Pengajuan tidak ditemukan / sudah diproses');
     if (!b.approve && !b.note) throw bad('Isi alasan penolakan');
-    const d = (await c.query('SELECT status FROM device WHERE id=$1 FOR UPDATE', [t.device_id])).rows[0];
+    const d = (await c.query('SELECT status, section_id, department_id, user_name, purpose FROM device WHERE id=$1 FOR UPDATE', [t.device_id])).rows[0];
     if (b.approve && !IN_USE.includes(d.status)) throw conflict(`Status iPad sekarang ${d.status}, mutasi tidak bisa diproses`);
+    if (b.approve && (d.section_id !== t.from_section_id || d.department_id !== t.from_department_id ||
+      d.user_name !== t.from_user_name || d.purpose !== t.from_purpose)) throw conflict('Data asal iPad berubah. Tolak dan ajukan mutasi baru.');
     await c.query('UPDATE transfer SET status=$2, decided_by=$3, decided_by_name=$4, decided_at=now(), decision_note=$5 WHERE id=$1',
       [id, b.approve ? 'Approved' : 'Rejected', req.user!.id, req.user!.name, b.note ?? null]);
     if (b.approve) await applyTransfer(c, t, req.user!);
     else await history(c, t.device_id, req.user, `Mutasi MT-${String(id).padStart(4, '0')} ditolak: ${b.note}`);
+    await audit(req, { action: b.approve ? 'Setujui mutasi' : 'Tolak mutasi', deviceId: t.device_id, target: 'MT-' + String(id).padStart(4, '0') }, c);
   });
-  await audit(req, { action: b.approve ? 'Setujui mutasi' : 'Tolak mutasi', target: `MT-${id}` });
   res.json({ ok: true });
 }));

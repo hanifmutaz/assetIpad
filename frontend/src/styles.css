@@ -3,9 +3,6 @@
 /* ===== FONT (self-host: CSP hanya mengizinkan 'self') ===== */
 @font-face{font-family:"IBM Plex Mono";font-weight:400 500;font-style:normal;font-display:swap;src:local("IBM Plex Mono"),local("IBMPlexMono-Regular"),url("/fonts/IBMPlexMono-Regular.ttf") format("truetype")}
 @font-face{font-family:"IBM Plex Mono";font-weight:600 700;font-style:normal;font-display:swap;src:local("IBM Plex Mono SemiBold"),local("IBMPlexMono-SemiBold"),url("/fonts/IBMPlexMono-Bold.ttf") format("truetype")}
-@font-face{font-family:"IBM Plex Sans";font-weight:400;font-style:normal;font-display:swap;src:local("IBM Plex Sans"),local("IBMPlexSans-Regular"),url("/fonts/IBMPlexSans-Regular.woff2") format("woff2")}
-@font-face{font-family:"IBM Plex Sans";font-weight:500;font-style:normal;font-display:swap;src:local("IBM Plex Sans Medium"),local("IBMPlexSans-Medium"),url("/fonts/IBMPlexSans-Medium.woff2") format("woff2")}
-@font-face{font-family:"IBM Plex Sans";font-weight:600;font-style:normal;font-display:swap;src:local("IBM Plex Sans SemiBold"),local("IBMPlexSans-SemiBold"),url("/fonts/IBMPlexSans-SemiBold.woff2") format("woff2")}
 
 /* ===== PRIMITIVE ===== */
 :root{
@@ -210,6 +207,8 @@ input[type=file]{padding:var(--sp-2)}
 .check{display:flex;align-items:flex-start;gap:var(--sp-3);padding:6px 0;font-size:var(--fs-md);font-weight:500;color:var(--color-text);margin:0;cursor:pointer}.check input{margin-top:3px;flex-shrink:0}
 .ro{min-height:var(--input-h);display:flex;align-items:center;padding:0 var(--sp-3);border-radius:var(--r-md);background:var(--color-surface-muted);border:1px solid var(--color-border);overflow-wrap:anywhere}
 .filters{display:grid;grid-template-columns:2fr repeat(4,1fr);gap:var(--sp-3);margin-bottom:var(--sp-4)}
+.filters-devices{grid-template-columns:minmax(0,2fr) repeat(5,minmax(0,1fr))}
+.filters-devices .field{min-width:0}
 .toolbar{display:flex;gap:var(--sp-3);margin-bottom:var(--sp-3);flex-wrap:wrap;align-items:center}
 .addrow{display:flex;gap:var(--sp-2);align-items:center;margin-top:var(--sp-3);flex-wrap:wrap}.addrow input:not([type=checkbox]){flex:1;min-width:140px}.addrow select{flex:1;min-width:140px}
 
@@ -241,6 +240,8 @@ td .sub,td small{display:block;font-size:var(--fs-xs);color:var(--color-text-sub
 .dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:var(--sp-3);margin-bottom:var(--sp-4)}
 .dcard{border:1px solid var(--color-border);border-radius:var(--r-lg);padding:var(--sp-4);background:var(--color-surface);display:flex;flex-direction:column;gap:var(--sp-2);text-decoration:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
 .dcard:hover{border-color:var(--color-primary)}
+article.dcard{cursor:default}
+article.dcard .btn{min-height:44px}
 .dl{display:grid;grid-template-columns:150px 1fr;gap:var(--sp-3) var(--sp-4);margin:0}
 .dl dt{color:var(--color-text-muted);font-size:var(--fs-sm)}.dl dd{margin:0;font-weight:500}
 
@@ -360,7 +361,7 @@ ol.steps li.ok{background:var(--color-primary-soft)}ol.steps li.skip{opacity:.6}
  .logo{height:22px}
  .nav a{justify-content:center;padding:0}
  .nav-toggle{display:none}
- .g2{grid-template-columns:1fr}.login{grid-template-columns:1fr}.login-hero{display:none}
+ .g4{grid-template-columns:repeat(2,minmax(0,1fr))}.g2{grid-template-columns:1fr}.login{grid-template-columns:1fr}.login-hero{display:none}
 }
 @media (max-width:600px){
  .side{position:fixed;bottom:0;top:auto;left:0;right:0;width:100%;height:auto;flex-direction:row;padding:var(--sp-1);border-right:0;border-top:1px solid var(--color-border)}
@@ -370,7 +371,7 @@ ol.steps li.ok{background:var(--color-primary-soft)}ol.steps li.skip{opacity:.6}
  .nav a.on::before{display:none}
  .page{padding:var(--sp-5) var(--sp-4) 88px}.top{padding:0 var(--sp-4)}
  .g4.mb>.card{border-right:0;border-bottom:1px solid var(--color-border)}
- .filters{grid-template-columns:1fr}.dl{grid-template-columns:1fr}
+ .filters{grid-template-columns:1fr}.g4 .kpi{padding:var(--sp-3)}.dl{grid-template-columns:1fr}
  .hb,.hbar{grid-template-columns:90px 1fr 28px}
  .wsteps,.wiz{flex-direction:column}.ws{border-right:0;border-bottom:1px solid var(--color-border)}
 }

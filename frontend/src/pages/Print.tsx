@@ -4,14 +4,19 @@ import QRCode from 'qrcode';
 import { api, qs } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import type { Device } from '../lib/types';
-import { fmtDate, fmtDT } from '../components/ui';
+import { ErrorBox, fmtDate, fmtDT, useApi } from '../components/ui';
 
 export function PrintReport() {
   const [sp] = useSearchParams();
   const { me } = useAuth();
-  const [rows, setRows] = useState<Device[] | null>(null);
-  useEffect(() => { void api<{ rows: Device[] }>(`/devices${qs({ ...Object.fromEntries(sp), page: 1, per: 1000 })}`).then((r) => setRows(r.rows)); }, [sp]);
-  useEffect(() => { if (rows) setTimeout(() => window.print(), 400); }, [rows]);
+  const { data, error, reload } = useApi<{ rows: Device[] }>('/devices/report'+qs(Object.fromEntries(sp)));
+  const rows = data?.rows;
+  useEffect(() => {
+    if (!rows) return;
+    const timer = window.setTimeout(() => window.print(), 400);
+    return () => window.clearTimeout(timer);
+  }, [rows]);
+  if (error) return <ErrorBox error={error} onRetry={reload} />;
   if (!rows) return <div className="loading">Menyiapkan laporan…</div>;
   return (
     <div className="print-page">
@@ -28,13 +33,31 @@ export function PrintReport() {
 
 export function PrintLabels() {
   const [sp] = useSearchParams();
-  const [items, setItems] = useState<(Device & { qr: string })[] | null>(null);
+  type Label = Pick<Device, 'id' | 'name' | 'serial' | 'lokasi' | 'department'>;
+  const [items, setItems] = useState<(Label & { qr: string })[] | null>(null);
+  const [error, setError] = useState<unknown>(null);
+  const [attempt, setAttempt] = useState(0);
   useEffect(() => {
-    const ids = (sp.get('ids') ?? '').split(',').filter((x) => /^[0-9a-f-]{36}$/.test(x)).slice(0, 200);
-    void Promise.all(ids.map((id) => api<{ device: Device }>(`/devices/${id}`).then((r) => r.device))).then(async (ds) =>
-      setItems(await Promise.all(ds.map(async (d) => ({ ...d, qr: await QRCode.toDataURL(`${location.origin}/d/${encodeURIComponent(d.serial)}`, { margin: 1, width: 300 }) })))));
-  }, [sp]);
-  useEffect(() => { if (items) setTimeout(() => window.print(), 400); }, [items]);
+    const controller = new AbortController();
+    const ids = (sp.get('ids') ?? '').split(',').filter(Boolean);
+    setItems(null);
+    setError(null);
+    void (async () => {
+      if (!ids.length || ids.length > 50) throw new Error('Pilih 1–50 iPad untuk satu cetakan label.');
+      const devices = await api<Label[]>('/devices/labels', { method: 'POST', body: { ids }, signal: controller.signal });
+      const labels = await Promise.all(devices.map(async (d) => ({
+        ...d, qr: await QRCode.toDataURL(location.origin+'/d/'+encodeURIComponent(d.serial), { margin: 1, width: 300 }),
+      })));
+      if (!controller.signal.aborted) setItems(labels);
+    })().catch((err) => { if (!controller.signal.aborted) setError(err); });
+    return () => controller.abort();
+  }, [sp, attempt]);
+  useEffect(() => {
+    if (!items) return;
+    const timer = window.setTimeout(() => window.print(), 400);
+    return () => window.clearTimeout(timer);
+  }, [items]);
+  if (error) return <ErrorBox error={error} onRetry={() => setAttempt((n) => n + 1)} />;
   if (!items) return <div className="loading">Menyiapkan label…</div>;
   return <div className="labels">{items.map((d) => <div className="lb" key={d.id}><img src={d.qr} alt={`QR ${d.name}`} /><h2>{d.name}</h2><p>SN: {d.serial}</p><p>{d.lokasi} · {d.department}</p><p>Aset IT, PT Hirose Electric Indonesia</p></div>)}</div>;
 }

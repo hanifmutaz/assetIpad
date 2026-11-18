@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useId, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api';
 
@@ -56,47 +56,42 @@ function Dialog({ title, body, fields = [], ok = 'OK', cancel = 'Batal', danger,
   const [vals, setVals] = useState<Record<string, string | boolean>>(() => Object.fromEntries(fields.map((f) => [f.k, f.v ?? (f.check ? false : '')])));
   const [err, setErr] = useState('');
   const [shown, setShown] = useState<Record<string, boolean>>({});
-  const first = useRef<HTMLInputElement & HTMLSelectElement & HTMLTextAreaElement & HTMLButtonElement>(null);
-  useEffect(() => {
-    first.current?.focus();
-    const kd = (e: KeyboardEvent) => { if (e.key === 'Escape') { e.stopPropagation(); onClose(null); } };
-    document.addEventListener('keydown', kd, true);
-    return () => document.removeEventListener('keydown', kd, true);
-  }, [onClose]);
+  const box = useRef<HTMLFormElement>(null);
+  useDialogFocus(box, () => onClose(null));
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     for (const f of fields) if (f.req && !String(vals[f.k] ?? '').trim()) { setErr(`${f.l} wajib diisi`); return; }
     for (const f of fields) if (f.again && String(vals[f.k] ?? '') !== String(vals[`${f.k}__2`] ?? '')) { setErr(`${f.l} dan ulangannya belum sama`); return; }
-    onClose(fields.length ? Object.fromEntries(Object.entries(vals).filter(([k]) => !k.endsWith('__2')).map(([k, v]) => [k, typeof v === 'string' ? v.trim() : v])) : true);
+    onClose(fields.length ? Object.fromEntries(Object.entries(vals).filter(([k]) => !k.endsWith('__2')).map(([k, v]) => [k, typeof v === 'string' && fields.find((f) => f.k === k)?.type !== 'password' ? v.trim() : v])) : true);
   };
   const set = (k: string, v: string | boolean) => setVals((s) => ({ ...s, [k]: v }));
   return (
     <div className="overlay dlgbg" onMouseDown={(e) => e.target === e.currentTarget && onClose(null)}>
-      <form className="dlg" role="alertdialog" aria-modal="true" aria-label={title} onSubmit={submit}>
+      <form ref={box} tabIndex={-1} className="dlg" role="alertdialog" aria-modal="true" aria-label={title} onSubmit={submit}>
         <h3>{title}</h3>
         {typeof body === 'string' ? <p>{body}</p> : body}
-        {fields.map((f, i) => (
+        {fields.map((f) => (
           <div key={f.k} style={{ marginTop: 12 }}>
             {f.check ? (
-              <label className="check"><input type="checkbox" ref={i === 0 ? first : undefined} checked={!!vals[f.k]} onChange={(e) => set(f.k, e.target.checked)} /> {f.l}</label>
+              <label className="check"><input type="checkbox" checked={!!vals[f.k]} onChange={(e) => set(f.k, e.target.checked)} /> {f.l}</label>
             ) : (
               <>
                 <label htmlFor={`dlg_${f.k}`} className={f.req ? 'req' : ''}>{f.l}</label>
                 {f.opts ? (
-                  <select id={`dlg_${f.k}`} ref={i === 0 ? first : undefined} value={String(vals[f.k])} onChange={(e) => set(f.k, e.target.value)}>
+                  <select id={`dlg_${f.k}`} value={String(vals[f.k])} onChange={(e) => set(f.k, e.target.value)}>
                     <option value="">Pilih</option>
                     {f.opts.map((o) => (typeof o === 'object' ? <option key={o.value} value={o.value}>{o.label}</option> : <option key={o}>{o}</option>))}
                   </select>
                 ) : f.area ? (
-                  <textarea id={`dlg_${f.k}`} ref={i === 0 ? first : undefined} rows={3} value={String(vals[f.k])} onChange={(e) => set(f.k, e.target.value)} />
+                  <textarea id={`dlg_${f.k}`} rows={3} value={String(vals[f.k])} onChange={(e) => set(f.k, e.target.value)} />
                 ) : (
                   f.type === 'password' ? (
                     <div style={{ display: 'flex', gap: 8 }}>
-                      <input id={`dlg_${f.k}`} ref={i === 0 ? first : undefined} type={shown[f.k] ? 'text' : 'password'} autoComplete="new-password" style={{ flex: 1 }} value={String(vals[f.k])} onChange={(e) => set(f.k, e.target.value)} />
+                      <input id={`dlg_${f.k}`} type={shown[f.k] ? 'text' : 'password'} autoComplete="new-password" style={{ flex: 1 }} value={String(vals[f.k])} onChange={(e) => set(f.k, e.target.value)} />
                       <button type="button" className="btn sec sm" aria-pressed={!!shown[f.k]} onClick={() => setShown((x) => ({ ...x, [f.k]: !x[f.k] }))}>{shown[f.k] ? 'Sembunyikan' : 'Lihat'}</button>
                     </div>
                   ) : (
-                    <input id={`dlg_${f.k}`} ref={i === 0 ? first : undefined} type={f.type ?? 'text'} autoComplete="off" value={String(vals[f.k])} onChange={(e) => set(f.k, e.target.value)} />
+                    <input id={`dlg_${f.k}`} type={f.type ?? 'text'} autoComplete="off" value={String(vals[f.k])} onChange={(e) => set(f.k, e.target.value)} />
                   )
                 )}
                 {f.again && f.type === 'password' && (
@@ -113,7 +108,7 @@ function Dialog({ title, body, fields = [], ok = 'OK', cancel = 'Batal', danger,
         {err && <div role="alert" className="err" style={{ marginTop: 8 }}>{err}</div>}
         <div className="mfoot">
           <button type="button" className="btn sec" onClick={() => onClose(null)}>{cancel}</button>
-          <button type="submit" ref={fields.length ? undefined : first} className={`btn ${danger ? 'bad' : ''}`}>{ok}</button>
+          <button type="submit" className={`btn ${danger ? 'bad' : ''}`}>{ok}</button>
         </div>
       </form>
     </div>
@@ -122,18 +117,21 @@ function Dialog({ title, body, fields = [], ok = 'OK', cancel = 'Batal', danger,
 
 // ------------------------------------------------------------ data (TanStack Query)
 export function useApi<T>(path: string | null) {
-  const r = useQuery<T>({ queryKey: [path], queryFn: () => api<T>(path!), enabled: !!path });
+  const r = useQuery<T>({ queryKey: [path], queryFn: ({ signal }) => api<T>(path!, { signal }), enabled: !!path });
   return { data: r.data, error: r.error, loading: r.isLoading, reload: () => void r.refetch() };
 }
 /** Jalankan aksi; toast otomatis; segarkan semua query bila sukses. */
 export function useRun() {
   const { toast } = useUi();
   const qc = useQueryClient();
-  return useCallback(async <T,>(fn: () => Promise<T>, okMsg?: string): Promise<T | null> => {
+  return useCallback(async <T,>(fn: () => Promise<T>, okMsg?: string, refresh?: string[]): Promise<T | null> => {
     try {
       const r = await fn();
       if (okMsg) toast(okMsg);
-      void qc.invalidateQueries();
+      if (refresh) {
+        void qc.invalidateQueries({ predicate: ({ queryKey: [path] }) => typeof path === 'string' &&
+          refresh.some((p) => path === p || path.startsWith(p + '?') || path.startsWith(p + '/')) });
+      } else void qc.invalidateQueries();
       return r ?? (true as T);
     } catch (e) {
       toast(errMsg(e), 'err');
@@ -163,16 +161,45 @@ export const Progress = ({ n, t, wide }: { n: number; t: number; wide?: boolean 
 export function Tabs<K extends string>({ items, value, onChange }: { items: [K, string][]; value: K; onChange: (k: K) => void }) {
   return <div className="tabs" role="tablist">{items.map(([k, l]) => <button key={k} role="tab" aria-selected={k === value} className={k === value ? 'active' : ''} onClick={() => onChange(k)}>{l}</button>)}</div>;
 }
-export function Modal({ title, onClose, children, footer }: { title: ReactNode; onClose: () => void; children: ReactNode; footer?: ReactNode }) {
+function useDialogFocus(ref: React.RefObject<HTMLElement>, onClose: () => void) {
+  const close = useRef(onClose);
+  close.current = onClose;
   useEffect(() => {
-    const kd = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
-    document.addEventListener('keydown', kd);
-    return () => document.removeEventListener('keydown', kd);
-  }, [onClose]);
+    const dialog = ref.current;
+    if (!dialog) return;
+    const previous = document.activeElement;
+    const focusable = () => Array.from(dialog.querySelectorAll<HTMLElement>('button, a[href], input, select, textarea, [tabindex]'))
+      .filter((el) => el.tabIndex >= 0 && !el.matches(':disabled, [hidden]') && el.getClientRects().length > 0);
+    (focusable()[0] ?? dialog).focus();
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { e.stopPropagation(); close.current(); return; }
+      if (e.key !== 'Tab') return;
+      const items = focusable();
+      const first = items[0];
+      const last = items.at(-1);
+      if (!first || !last) { e.preventDefault(); dialog.focus(); return; }
+      const active = document.activeElement;
+      if (!active || !dialog.contains(active) || (e.shiftKey ? active === first : active === last)) {
+        e.preventDefault();
+        (e.shiftKey ? last : first).focus();
+      }
+    };
+    document.addEventListener('keydown', handleKey, true);
+    return () => {
+      document.removeEventListener('keydown', handleKey, true);
+      if (previous instanceof HTMLElement && previous.isConnected) previous.focus();
+    };
+  }, [ref]);
+}
+
+export function Modal({ title, onClose, children, footer }: { title: ReactNode; onClose: () => void; children: ReactNode; footer?: ReactNode }) {
+  const box = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  useDialogFocus(box, onClose);
   return (
     <div className="overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal" role="dialog" aria-modal="true">
-        <div className="mhead"><h2>{title}</h2><button className="x" aria-label="Tutup" onClick={onClose}>✕</button></div>
+      <div ref={box} tabIndex={-1} className="modal" role="dialog" aria-modal="true" aria-labelledby={titleId}>
+        <div className="mhead"><h2 id={titleId}>{title}</h2><button className="x" aria-label="Tutup" onClick={onClose}>✕</button></div>
         <div className="mbody">{children}</div>
         {footer && <div className="mfoot">{footer}</div>}
       </div>
@@ -191,7 +218,7 @@ export const PageHead = ({ title, sub, crumb, children }: { title: ReactNode; su
 );
 
 export const uid = () =>
-  globalThis.crypto?.randomUUID ? crypto.randomUUID() : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  typeof globalThis.crypto?.randomUUID === 'function' ? crypto.randomUUID() : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 
 export async function copyText(t: string): Promise<void> {
   if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(t);

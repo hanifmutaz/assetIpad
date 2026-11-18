@@ -1,3 +1,5 @@
+import { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
 import express from 'express';
 import { z } from 'zod';
 import ExcelJS from 'exceljs';
@@ -9,7 +11,7 @@ import { audit, history } from '../services/audit.js';
 import { DEV_COLS, DEV_FROM, shapeDevice, getDeviceRow, nextName, type DeviceRow } from '../services/devices.js';
 import { assertDeviceVisible, credFieldsFor, deviceScope } from '../services/access.js';
 import { allGuides, guidesFor, openRun, progressMap } from '../services/guides.js';
-import { saveImage, upload } from '../services/files.js';
+import { txWithImage, upload } from '../services/files.js';
 import { decrypt } from '../crypto.js';
 import { can, TRANS, needReason, needApproval, normSerial, SERIAL_RE, APPLE_ST, IN_USE, CRED_FIELDS, STATUS, type Status } from '../services/policy.js';
 import type { AuthUser } from '../types.js';
@@ -63,12 +65,16 @@ async function buildFilter(u: AuthUser, f: ListQ, R: Rules) {
 router.get('/', ah(async (req, res) => {
   const f = listQ.parse(req.query);
   const { where, order, params, P } = await buildFilter(req.user!, f, await getRules());
+  const countParams = [...params];
   const lim = P(f.per);
   const off = P((f.page - 1) * f.per);
   const r = await q(`SELECT ${DEV_COLS}, count(*) OVER() AS total_count ${DEV_FROM} ${where} ORDER BY ${order} LIMIT ${lim} OFFSET ${off}`, params);
+  const total = r.rows[0]?.total_count ?? (f.page > 1
+    ? (await one<{ n: number }>(`SELECT count(*)::int n ${DEV_FROM} ${where}`, countParams))?.n ?? 0
+    : 0);
   const pm = await progressMap(r.rows);
   res.json({
-    total: r.rows[0]?.total_count ?? 0,
+    total,
     rows: r.rows.map((d) => { delete d.total_count; return { ...shapeDevice(d as DeviceRow, req.user!), cfg: pm.get(d.id) ?? null }; }),
   });
 }));
@@ -116,34 +122,58 @@ const EXPORT_COLS: [string, string, number][] = [
   ['wifi', 'Wi-Fi', 14], ['ip', 'IP', 15], ['ios', 'iOS', 9], ['last_check', 'Terakhir dicek', 13], ['arrival', 'Tgl datang', 12], ['vendor', 'Vendor', 10], ['price', 'Harga', 13], ['status', 'Status', 11],
 ];
 const cell = (v: unknown) => (typeof v === 'string' && /^[=+\-@\t\r]/.test(v) ? `'${v}` : v ?? ''); // anti formula injection
+const MAX_REPORT_ROWS = 10_000;
 async function exportRows(req: express.Request) {
   const f = listQ.parse({ ...req.query, page: 1, per: 1000 });
   const { where, order, params } = await buildFilter(req.user!, f, await getRules());
-  return (await q(`SELECT ${DEV_COLS} ${DEV_FROM} ${where} ORDER BY ${order}`, params)).rows.map((d) => shapeDevice(d as DeviceRow, req.user!));
+  const rows = (await q(`SELECT ${DEV_COLS} ${DEV_FROM} ${where} ORDER BY ${order} LIMIT ${MAX_REPORT_ROWS + 1}`, params)).rows;
+  if (rows.length > MAX_REPORT_ROWS) throw bad('Hasil melebihi 10.000 iPad. Gunakan filter sebelum membuat laporan.', 'EXPORT_LIMIT');
+  return rows.map((d) => shapeDevice(d as DeviceRow, req.user!));
 }
+router.get('/report', requirePerm('export'), ah(async (req, res) => {
+  res.json({ rows: await exportRows(req) });
+}));
+
+router.post('/labels', requirePerm('device.edit'), ah(async (req, res) => {
+  const { ids } = z.object({ ids: z.array(uuid).min(1).max(50) }).parse(req.body);
+  const sc = deviceScope(req.user!, 'd', 2);
+  const rows = (await q(`SELECT d.id, d.name, d.serial, l.name lokasi, dp.name department
+    ${DEV_FROM} WHERE d.id=ANY($1::uuid[]) AND ${sc.sql}`, [ids, ...sc.params])).rows;
+  const byId = new Map(rows.map((d) => [d.id, d]));
+  if (ids.some((id) => !byId.has(id))) throw notFound('Salah satu iPad untuk label tidak ditemukan.');
+  res.json(ids.map((id) => byId.get(id)));
+}));
+
 router.get('/export.xlsx', requirePerm('export'), ah(async (req, res) => {
   const rows = await exportRows(req);
-  const cols = EXPORT_COLS.filter(([k]) => !rows[0] || k in rows[0]);
-  const wb = new ExcelJS.Workbook();
+  const cols = EXPORT_COLS.filter(([k]) => can(req.user, 'device.viewAll') || !['price','vendor'].includes(k));
+  await audit(req, { action: 'Export Excel', target: rows.length+' iPad' });
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', 'attachment; filename="ipad_list_'+new Date().toISOString().slice(0, 10)+'.xlsx"');
+  const wb = new ExcelJS.stream.xlsx.WorkbookWriter({ stream: res, useStyles: true });
   const ws = wb.addWorksheet('Daftar iPad', { views: [{ state: 'frozen', ySplit: 1 }] });
   ws.columns = cols.map(([key, header, width]) => ({ key, header, width }));
-  rows.forEach((d) => ws.addRow(Object.fromEntries(cols.map(([k]) => [k, cell(d[k])]))));
-  ws.getRow(1).eachCell((c) => { c.font = { bold: true, color: { argb: 'FFFFFFFF' } }; c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F4E79' } }; });
+  ws.getRow(1).eachCell((c) => {
+    c.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F4E79' } };
+  });
   ws.autoFilter = { from: 'A1', to: { row: 1, column: cols.length } };
-  await audit(req, { action: 'Export Excel', target: `${rows.length} iPad` });
-  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-  res.setHeader('Content-Disposition', `attachment; filename="ipad_list_${new Date().toISOString().slice(0, 10)}.xlsx"`);
-  await wb.xlsx.write(res);
-  res.end();
+  ws.getRow(1).commit();
+  for (const d of rows) ws.addRow(Object.fromEntries(cols.map(([k]) => [k, cell(d[k])]))).commit();
+  await wb.commit();
 }));
 router.get('/export.csv', requirePerm('export'), ah(async (req, res) => {
   const rows = await exportRows(req);
-  const cols = EXPORT_COLS.filter(([k]) => !rows[0] || k in rows[0]);
+  const cols = EXPORT_COLS.filter(([k]) => can(req.user, 'device.viewAll') || !['price','vendor'].includes(k));
   const esc = (v: unknown) => `"${String(cell(v)).replace(/"/g, '""')}"`;
   await audit(req, { action: 'Export CSV', target: `${rows.length} iPad` });
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader('Content-Disposition', `attachment; filename="ipad_list_${new Date().toISOString().slice(0, 10)}.csv"`);
-  res.send('\ufeff' + [cols.map((c) => c[1]).join(','), ...rows.map((d) => cols.map(([k]) => esc(d[k])).join(','))].join('\r\n'));
+  function* lines() {
+    yield '\ufeff'+cols.map((c) => c[1]).join(',')+'\r\n';
+    for (const d of rows) yield cols.map(([k]) => esc(d[k])).join(',')+'\r\n';
+  }
+  await pipeline(Readable.from(lines()), res);
 }));
 
 router.get('/apple-usage', requirePerm('cred.all'), ah(async (_req, res) => {
@@ -194,7 +224,7 @@ router.post('/bulk', requirePerm('device.status'), ah(async (req, res) => {
   const out = await tx(async (c) => {
     let ok = 0;
     const skip: string[] = [];
-    for (const id of b.ids) {
+    for (const id of [...new Set(b.ids)].sort()) {
       const d = (await c.query('SELECT id,name,serial,status FROM device WHERE id=$1 FOR UPDATE', [id])).rows[0];
       if (!d) continue;
       if (b.action === 'check') {
@@ -217,21 +247,20 @@ router.post('/bulk', requirePerm('device.status'), ah(async (req, res) => {
 // ---------------------------------------------------------------- registrasi iPad baru (Admin iPad)
 router.post('/', requirePerm('device.register'), upload.single('photo'), ah(async (req, res) => {
   const b = z.object({
-    purpose: z.string().min(1).max(60).optional(),
     serial: z.string().transform(normSerial).refine((s) => SERIAL_RE.test(s), 'Format serial tidak valid (8 sampai 14 huruf/angka)'),
     model: z.string().min(1).max(80), capacity: z.string().max(20).optional(), color: z.string().max(40).optional(),
     sectionId: z.coerce.number().int(), departmentId: z.coerce.number().int(), purpose: z.string().min(1).max(60),
-    userName: z.string().trim().min(1).max(120), arrival: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    userName: z.string().trim().min(1).max(120), arrival: z.iso.date(),
     vendor: z.string().max(60).optional(), price: z.preprocess((v) => (v === '' || v == null ? undefined : v), z.coerce.number().min(0).max(1e10).optional()),
     note: z.string().max(500).optional(),
   }).parse(req.body);
   if (!(await getMaster('model')).includes(b.model)) throw bad('Model tidak terdaftar di master data');
   if (!(await getMaster('purpose')).includes(b.purpose)) throw bad('Peruntukan tidak terdaftar di master data');
   const R = await getRules();
-  const id = await tx(async (c) => {
+  const id = await txWithImage(req.file, req.user!.id, async (c, savePhoto) => {
     const ex = (await c.query('SELECT name FROM device WHERE serial=$1', [b.serial])).rows[0];
     if (ex) throw conflict(`Serial sudah terdaftar sebagai ${ex.name ?? '(tanpa nama)'}, gunakan menu Pindah Tempat`, 'SERIAL_EXISTS');
-    const photo = await saveImage(c, req.file, req.user!.id);
+    const photo = await savePhoto();
     const name = await nextName(c, R.prefix);
     const r = await c.query(`INSERT INTO device(serial,name,section_id,department_id,purpose,model,capacity,color,user_name,arrival,vendor,price,status,photo_id,note)
       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'Setup',$13,$14) RETURNING id`,
@@ -239,9 +268,9 @@ router.post('/', requirePerm('device.register'), upload.single('photo'), ah(asyn
     const did = r.rows[0].id as string;
     await c.query("INSERT INTO config_run(device_id,scenario,started_by) VALUES($1,'baru',$2)", [did, req.user!.id]);
     await history(c, did, req.user, `Registrasi iPad baru (${name})${b.note ? `, ${b.note}` : ''}`, 'Setup');
+    await audit(req, { action: 'Registrasi iPad', deviceId: did, target: b.serial }, c);
     return did;
   });
-  await audit(req, { action: 'Registrasi iPad', deviceId: id, target: b.serial });
   res.status(201).json({ id });
 }));
 
@@ -253,15 +282,15 @@ router.get('/:id', ah(async (req, res) => {
   const u = req.user!;
   const [hist, tickets, transfers, creds, sr] = await Promise.all([
     q('SELECT at, by_name, action, to_status FROM device_history WHERE device_id=$1 ORDER BY at DESC LIMIT 300', [id]),
-    q(`SELECT id, 'TK-'||lpad(id::text,4,'0') code, type, status, created_at FROM ticket WHERE device_id=$1 ORDER BY created_at DESC`, [id]),
-    q(`SELECT t.id, 'MT-'||lpad(t.id::text,4,'0') code, t.move_date, t.status, t.reset_required, fl.name||' · '||fs.name AS from_loc, tl.name||' · '||ts.name AS to_loc
+    q(`SELECT id, 'TK-'||lpad(id::text,GREATEST(4,length(id::text)),'0') code, type, status, created_at FROM ticket WHERE device_id=$1 ORDER BY created_at DESC`, [id]),
+    q(`SELECT t.id, 'MT-'||lpad(t.id::text,GREATEST(4,length(t.id::text)),'0') code, t.move_date, t.status, t.reset_required, fl.name||' · '||fs.name AS from_loc, tl.name||' · '||ts.name AS to_loc
        FROM transfer t JOIN section fs ON fs.id=t.from_section_id JOIN lokasi fl ON fl.id=fs.lokasi_id
        JOIN section ts ON ts.id=t.to_section_id JOIN lokasi tl ON tl.id=ts.lokasi_id WHERE t.device_id=$1 ORDER BY t.created_at DESC`, [id]),
     q(`SELECT c.field, c.weak, (SELECT count(*)::int FROM device_credential x WHERE x.field=c.field AND x.hmac=c.hmac) AS same_count FROM device_credential c WHERE c.device_id=$1`, [id]),
     one("SELECT id, to_status, requested_by_name, reason FROM status_request WHERE device_id=$1 AND status='Pending'", [id]),
   ]);
   const run = await openRun({ query: q } as never, id);
-  const cfgGuides = d.status === 'Setup' ? guidesFor(await allGuides(), { scenario: run?.scenario ?? 'baru', lokasiId: d.lokasi_id, purpose: d.purpose }) : [];
+  const cfgGuides = d.status === 'Setup' ? (run?.guide_snapshot ?? guidesFor(await allGuides(), { scenario: run?.scenario ?? 'baru', lokasiId: d.lokasi_id, purpose: d.purpose })) : [];
   const credFields = await credFieldsFor(u, id);
   const cr = Object.fromEntries(creds.rows.map((x) => [x.field, x]));
   res.json({
@@ -293,9 +322,10 @@ router.patch('/:id', requirePerm('device.edit'), ah(async (req, res) => {
   const b = z.object({
     version: z.number().int(), force: z.boolean().optional(),
     name: z.string().trim().min(1).max(40).optional(),
+    purpose: z.string().trim().min(1).max(60).optional(),
     serial: z.string().transform(normSerial).refine((v) => SERIAL_RE.test(v), 'Format serial tidak valid (8 sampai 14 huruf/angka)').optional(),
-    wifi: nul(z.string().max(60)), ip: nul(z.string().ip({ version: 'v4' })), conmasId: nul(z.string().max(64)), ireporterUser: nul(z.string().max(64)),
-    ios: nul(z.string().regex(/^\d+(\.\d+){0,2}$/)), iosUpdated: nul(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)),
+    wifi: nul(z.string().max(60)), ip: nul(z.ipv4()), conmasId: nul(z.string().max(64)), ireporterUser: nul(z.string().max(64)),
+    ios: nul(z.string().regex(/^\d+(\.\d+){0,2}$/)), iosUpdated: nul(z.iso.date()),
     appleStatus: z.enum(APPLE_ST).optional(), note: nul(z.string().max(500)),
     userName: z.string().trim().min(1).max(120).optional(),
     reconfig: z.object({ done: z.array(z.boolean()).max(50), plan: z.string().max(10).nullable().optional(), actual: z.string().max(10).nullable().optional() }).optional(),
@@ -310,7 +340,14 @@ router.patch('/:id', requirePerm('device.edit'), ah(async (req, res) => {
       if (!/^TEMP[0-9]{4,}$/.test(cur.serial)) throw conflict('Serial hanya bisa diubah untuk iPad dengan serial sementara (TEMPxxxx)');
       if ((await c.query('SELECT 1 FROM device WHERE serial=$1 AND id<>$2', [b.serial, id])).rowCount) throw conflict('Serial sudah terdaftar di iPad lain', 'SERIAL_DUP');
     }
-    if (b.purpose !== undefined && b.purpose !== cur.purpose && !(await getMaster('purpose')).includes(b.purpose)) throw bad('Peruntukan tidak terdaftar di master data');
+    if (b.purpose !== undefined && b.purpose !== cur.purpose) {
+      if (!(await getMaster('purpose')).includes(b.purpose)) throw bad('Peruntukan tidak terdaftar di master data');
+      const run = await openRun(c, id);
+      if (run && Object.values(run.state).some((g) => g.done || Object.keys(g.steps ?? {}).length)) {
+        throw conflict('Konfigurasi sudah berjalan. Selesaikan konfigurasi sebelum mengubah peruntukan.');
+      }
+      if (run?.guide_snapshot) await c.query('UPDATE config_run SET guide_snapshot=NULL WHERE id=$1', [run.id]);
+    }
     if (b.name && b.name !== cur.name && !b.force) {
       const dup = await c.query("SELECT 1 FROM device WHERE name=$1 AND id<>$2 AND status IN ('Setup','Available','Repair')", [b.name, id]);
       if (dup.rowCount) throw conflict(`Nama ${b.name} sudah dipakai iPad aktif lain`, 'NAME_DUP');
@@ -366,8 +403,8 @@ router.post('/:id/status', requirePerm('device.status'), ah(async (req, res) => 
 
 router.post('/:id/check', requirePerm('device.check'), ah(async (req, res) => {
   const id = uuid.parse(req.params.id);
-  await assertDeviceVisible(req.user!, id);
   await tx(async (c) => {
+    await assertDeviceVisible(req.user!, id, c, true);
     await c.query('UPDATE device SET last_check=current_date, updated_at=now(), version=version+1 WHERE id=$1', [id]);
     await history(c, id, req.user, 'Dicek fisik / fungsi');
   });

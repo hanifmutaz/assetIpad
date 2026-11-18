@@ -51,7 +51,10 @@ if (!dataKeys[e.DATA_KEY_ACTIVE]) {
 }
 const isProd = e.NODE_ENV === 'production';
 const useHttps = e.BASE_URL.startsWith('https://');
-if (isProd && !useHttps) console.warn('PERINGATAN: BASE_URL bukan https, login dikirim tanpa enkripsi. Pakai hanya di jaringan internal.');
+if (isProd && !useHttps) {
+  console.error('BASE_URL wajib memakai HTTPS di production.');
+  process.exit(1);
+}
 
 export const cfg = {
   ...e,

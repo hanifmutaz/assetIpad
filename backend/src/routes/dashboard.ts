@@ -27,17 +27,29 @@ router.get('/', ah(async (req, res) => {
         count(*) FILTER (WHERE t.created_at >= date_trunc('month', now()))::int this_m,
         count(*) FILTER (WHERE t.created_at >= date_trunc('month', now()) - interval '1 month' AND t.created_at < date_trunc('month', now()))::int last_m
       FROM ticket t JOIN device d ON d.id=t.device_id WHERE ${S}`, [...P, R.escalateDays]),
-    q(`WITH m AS (SELECT generate_series(date_trunc('month', now()) - interval '5 months', date_trunc('month', now()), interval '1 month') AS m)
-       SELECT to_char(m.m,'YYYY-MM') AS month,
-         (SELECT count(*)::int FROM ticket t JOIN device d ON d.id=t.device_id WHERE ${S} AND date_trunc('month', t.created_at)=m.m) AS tickets,
-         (SELECT count(*)::int FROM device_history h JOIN device d ON d.id=h.device_id WHERE ${S} AND h.to_status IN ('Repair','Damaged','Loss') AND date_trunc('month', h.at)=m.m) AS damaged
-       FROM m ORDER BY m.m`, P),
+    q(`WITH bounds AS (
+         SELECT date_trunc('month', now()) AS last, date_trunc('month', now()) - interval '5 months' AS first
+       ), months AS (
+         SELECT generate_series(first, last, interval '1 month') AS month FROM bounds
+       ), ticket_totals AS (
+         SELECT date_trunc('month', t.created_at) AS month, count(*)::int AS n
+         FROM ticket t JOIN device d ON d.id=t.device_id CROSS JOIN bounds b
+         WHERE ${S} AND t.created_at >= b.first AND t.created_at < b.last + interval '1 month'
+         GROUP BY 1
+       ), damage_totals AS (
+         SELECT date_trunc('month', h.at) AS month, count(*)::int AS n
+         FROM device_history h JOIN device d ON d.id=h.device_id CROSS JOIN bounds b
+         WHERE ${S} AND h.to_status IN ('Repair','Damaged','Loss') AND h.at >= b.first AND h.at < b.last + interval '1 month'
+         GROUP BY 1
+       )
+       SELECT to_char(m.month,'YYYY-MM') AS month, COALESCE(t.n,0) AS tickets, COALESCE(h.n,0) AS damaged
+       FROM months m LEFT JOIN ticket_totals t USING (month) LEFT JOIN damage_totals h USING (month) ORDER BY m.month`, P),
     q(`SELECT dp.name, count(d.id)::int n FROM department dp LEFT JOIN device d ON d.department_id=dp.id AND d.status IN ('Setup','Available','Repair')
        WHERE ($1::boolean OR dp.id = ANY($2::int[])) GROUP BY dp.id ORDER BY n DESC, dp.name`, P),
     q(`SELECT dp.name, d.purpose, count(d.id)::int n FROM department dp JOIN device d ON d.department_id=dp.id AND d.status IN ('Setup','Available','Repair')
        WHERE ($1::boolean OR dp.id = ANY($2::int[])) GROUP BY dp.id, d.purpose ORDER BY dp.name, d.purpose`, P),
     q(`SELECT d.id, d.name, d.serial, d.model, d.arrival, d.status FROM device d WHERE ${S} ORDER BY d.arrival DESC NULLS LAST, d.created_at DESC LIMIT 5`, P),
-    q(`SELECT t.id, 'TK-'||lpad(t.id::text,4,'0') code, COALESCE(d.name,d.serial) device_name, t.type, t.created_at,
+    q(`SELECT t.id, 'TK-'||lpad(t.id::text,GREATEST(4,length(t.id::text)),'0') code, COALESCE(d.name,d.serial) device_name, t.type, t.created_at,
         CASE WHEN t.status='Closed' THEN 'Closed' WHEN t.status='Eskalasi' OR t.created_at < now() - make_interval(days => $3) THEN 'Eskalasi' ELSE t.status END state
        FROM ticket t JOIN device d ON d.id=t.device_id WHERE ${S} ORDER BY t.created_at DESC LIMIT 6`, [...P, R.escalateDays]),
     q(`SELECT d.id, d.name, d.model, d.arrival, (d.model = ANY($3)) AS old_model, (d.arrival < current_date - make_interval(years => $4)) AS too_old

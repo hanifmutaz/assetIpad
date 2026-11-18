@@ -86,7 +86,7 @@ function NewPasswordFields({ v, setV }: { v: { password: string; confirm: string
   return (
     <>
       <div className="field"><label htmlFor="np">Password baru</label>
-        <input id="np" type="password" autoComplete="new-password" required minLength={6} value={v.password} onChange={(e) => setV({ ...v, password: e.target.value })} />
+        <input id="np" type="password" autoComplete="new-password" required minLength={15} maxLength={128} value={v.password} onChange={(e) => setV({ ...v, password: e.target.value })} />
         <span className="hint">Minimal 6 karakter. Boleh huruf atau angka saja.</span></div>
       <div className="field"><label htmlFor="cp">Ulangi password baru</label>
         <input id="cp" type="password" autoComplete="new-password" required value={v.confirm} onChange={(e) => setV({ ...v, confirm: e.target.value })} /></div>

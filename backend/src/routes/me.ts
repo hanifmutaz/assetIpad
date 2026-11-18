@@ -1,5 +1,4 @@
 import express from 'express';
-import fs from 'node:fs';
 import { z } from 'zod';
 import { q, one } from '../db.js';
 import { ah, notFound } from '../errors.js';
@@ -52,14 +51,21 @@ router.get('/meta', ah(async (req, res) => {
 }));
 
 router.get('/files/:id', ah(async (req, res) => {
-  const f = await one<{ stored_name: string; mime: string }>('SELECT stored_name, mime FROM file_blob WHERE id=$1', [z.string().uuid().parse(req.params.id)]);
+  const u = req.user!;
+  const f = await one<{ stored_name: string; mime: string }>(`SELECT f.stored_name, f.mime FROM file_blob f WHERE f.id=$1 AND (
+    EXISTS (SELECT 1 FROM device d WHERE d.photo_id=f.id AND ($2::boolean OR d.department_id=ANY($3::int[]))) OR
+    EXISTS (SELECT 1 FROM ticket t JOIN device d ON d.id=t.device_id WHERE t.photo_id=f.id AND ($2::boolean OR d.department_id=ANY($3::int[])))
+  )`, [z.string().uuid().parse(req.params.id), can(u, 'device.viewAll'), u.dept_ids]);
   if (!f) throw notFound('File tidak ditemukan');
-  const abs = resolveStored(f.stored_name);
-  if (!fs.existsSync(abs)) throw notFound('File tidak ditemukan');
   res.setHeader('Content-Type', f.mime);
-  res.setHeader('Cache-Control', 'private, max-age=3600');
+  res.setHeader('Cache-Control', 'private, no-store');
   res.setHeader('Content-Security-Policy', "default-src 'none'; img-src 'self'");
-  fs.createReadStream(abs).pipe(res);
+  await new Promise<void>((resolve, reject) => {
+    res.sendFile(resolveStored(f.stored_name), { cacheControl: false }, (err) => {
+      if (!err) resolve();
+      else reject((err as { code?: string }).code === 'ENOENT' ? notFound('File tidak ditemukan') : err);
+    });
+  });
 }));
 
 router.get('/audit', requirePerm('audit.view'), ah(async (req, res) => {

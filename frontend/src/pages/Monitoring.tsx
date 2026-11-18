@@ -64,17 +64,35 @@ function DeviceList() {
   const f = Object.fromEntries(FKEYS.map((k) => [k, sp.get(k) ?? ''])) as Record<(typeof FKEYS)[number], string>;
   const [page, setPage] = useState(1);
   const [per, setPer] = useState(20);
-  const [view, setView] = useState(localStorage.getItem('ipadView') ?? 'table');
+  const [viewPref, setView] = useState(() => localStorage.getItem('ipadView'));
+  const [narrow, setNarrow] = useState(() => window.matchMedia('(max-width: 900px)').matches);
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 900px)');
+    const change = () => setNarrow(media.matches);
+    media.addEventListener('change', change);
+    return () => media.removeEventListener('change', change);
+  }, []);
+  const view = viewPref ?? (narrow ? 'grid' : 'table');
   const [sel, setSel] = useState<string[]>([]);
   const [q, setQ] = useState(f.q);
   const { data, loading, error, reload } = useApi<{ total: number; rows: Device[] }>(`/devices${qs({ ...f, page, per })}`);
   const R = meta?.rules;
   useEffect(() => { setPage(1); setSel([]); }, [sp]);
   const setF = (o: Partial<typeof f>) => setSp(Object.fromEntries(Object.entries({ ...f, ...o }).filter(([, v]) => v)) as Record<string, string>);
-  useEffect(() => { const t = setTimeout(() => { if (q !== f.q) setF({ q }); }, 300); return () => clearTimeout(t); });
+  useEffect(() => setQ(f.q), [f.q]);
+  useEffect(() => {
+    if (q === f.q) return;
+    const timer = window.setTimeout(() => {
+      const next = new URLSearchParams(sp);
+      if (q.trim()) next.set('q', q.trim()); else next.delete('q');
+      setSp(next, { replace: true });
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [q, f.q, sp, setSp]);
   const secs = useMemo(() => (meta?.lokasi ?? []).filter((l) => !f.lokasiId || String(l.id) === f.lokasiId).flatMap((l) => l.sections.map((s) => ({ ...s, l: l.name }))), [meta, f.lokasiId]);
   const rows = data?.rows ?? [];
   const pages = Math.max(1, Math.ceil((data?.total ?? 0) / per));
+  useEffect(() => { if (data && page > pages) setPage(pages); }, [data, pages, page]);
   const sortBy = (k: string) => setF({ sort: k, dir: f.sort === k && f.dir !== 'desc' ? 'desc' : 'asc' });
   const open = (d: Device) => nav(d.status === 'Setup' && can('device.config') ? `/registrasi/konfigurasi/${d.id}` : `/devices/${d.id}`);
   const showPrice = can('device.viewAll');
@@ -95,7 +113,7 @@ function DeviceList() {
   const stale = (d: Device) => !!R && ageDays(d.last_check) > R.staleDays;
   return (
     <div className="card">
-      <div className="filters" style={{ gridTemplateColumns: '2fr repeat(5,1fr)' }}>
+      <div className="filters filters-devices">
         <div className="field"><label htmlFor="fq">Cari</label><input id="fq" type="search" placeholder="Nama, serial, section…" value={q} onChange={(e) => setQ(e.target.value)} /></div>
         <div className="field"><label htmlFor="fl">Lokasi</label><select id="fl" value={f.lokasiId} onChange={(e) => setF({ lokasiId: e.target.value, sectionId: '' })}><option value="">Semua lokasi</option>{meta?.lokasi.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}</select></div>
         <div className="field"><label htmlFor="fsec">Section</label><select id="fsec" value={f.sectionId} onChange={(e) => setF({ sectionId: e.target.value })}><option value="">Semua section</option>{secs.map((s) => <option key={s.id} value={s.id}>{f.lokasiId ? s.name : `${s.l} · ${s.name}`}</option>)}</select></div>
@@ -112,7 +130,10 @@ function DeviceList() {
             <div className="bulk"><b>{sel.length} iPad dipilih</b>
               <button className="btn btn-sm" onClick={() => void bulk('status')}>Ubah status</button>
               <button className="btn btn-sm btn-sec" onClick={() => void bulk('check')}><Ic n="check" />Tandai sudah dicek</button>
-              <button className="btn btn-sm btn-sec" onClick={() => window.open(`/cetak/label?ids=${sel.join(',')}`, '_blank', 'noopener')}><Ic n="qr" />Cetak label QR</button>
+              <button className="btn btn-sm btn-sec" onClick={() => {
+                if (sel.length > 50) { toast('Pilih maksimal 50 iPad per cetakan label.', 'warn'); return; }
+                window.open('/cetak/label?ids='+sel.join(','), '_blank', 'noopener');
+              }}><Ic n="qr" />Cetak label QR</button>
               <button className="btn btn-sm btn-link" onClick={() => setSel([])}>Batal</button></div>
           )}
           <div className="spread" style={{ marginBottom: 'var(--sp-3)' }}>
@@ -124,13 +145,18 @@ function DeviceList() {
           </div>
           {view === 'grid' ? (
             <div className="dgrid">{rows.map((d) => (
-              <button key={d.id} className="dcard" onClick={() => open(d)}>
+              <article key={d.id} className="dcard">
                 <div className="spread"><b style={{ fontSize: 'var(--fs-lg)' }}>{d.name ?? d.serial}</b><Badge s={d.status} /></div>
                 <span className="mono subtle">{d.serial}</span>
                 <span>{d.lokasi} · {d.section}</span>
                 <span className="subtle">{d.department} · {d.purpose} · iOS {d.ios ?? '-'}</span>
                 {d.status === 'Setup' && d.cfg && <div className="bar"><i style={{ width: `${d.cfg.total ? (d.cfg.done / d.cfg.total) * 100 : 0}%` }} /></div>}
-              </button>
+                  <div className="spread">
+                  {bulkOK && <label className="check"><input type="checkbox" aria-label={'Pilih ' + (d.name ?? d.serial)} checked={sel.includes(d.id)}
+                    onChange={(e) => setSel(e.target.checked ? [...sel, d.id] : sel.filter((x) => x !== d.id))} /> Pilih</label>}
+                  <button className="btn btn-sm btn-sec" onClick={() => open(d)}>{d.status === 'Setup' && can('device.config') ? 'Konfigurasi' : 'Detail'}</button>
+                </div>
+              </article>
             ))}</div>
           ) : (
             <div className="tw"><table>
@@ -167,13 +193,13 @@ function DeviceList() {
 function Reconfig() {
   const { meta } = useAuth();
   const nav = useNavigate();
-  const { data, loading, error } = useApi<{ rows: Device[] }>('/devices?status=Available,Repair&per=1000');
+  const { data, loading, error } = useApi<{ total: number; rows: Device[] }>('/devices?status=Available,Repair&per=1000');
   if (loading) return <Loading />;
   if (error || !data) return <ErrorBox error={error} />;
   const items = meta?.master.reconfig ?? [];
   const st = (d: Device) => (items.length && items.every((_, i) => d.reconfig?.done?.[i]) ? 'Closed' : d.reconfig?.plan && d.reconfig.plan < today() ? 'Delay' : 'Open');
   return (
-    <div className="card cardt"><h3>Re-Config <small>Item: {items.join(' · ')}</small></h3><div className="tw"><table><thead><tr><th>iPad</th><th>Department</th><th>Item</th><th>Plan</th><th>Actual</th><th>Status</th><th /></tr></thead><tbody>
+    <div className="card cardt"><h3>Re-Config <small>Item: {items.join(' · ')}</small></h3>{data.total > data.rows.length && <p className="note tone-warn">Menampilkan 1.000 dari {data.total} iPad. Gunakan Daftar iPad untuk melihat unit lainnya.</p>}<div className="tw"><table><thead><tr><th>iPad</th><th>Department</th><th>Item</th><th>Plan</th><th>Actual</th><th>Status</th><th /></tr></thead><tbody>
       {data.rows.map((d) => <tr key={d.id}><td><b>{d.name}</b></td><td>{d.department}</td><td>{items.filter((_, i) => d.reconfig?.done?.[i]).length}/{items.length}</td><td>{d.reconfig?.plan ?? '-'}</td><td>{d.reconfig?.actual ?? '-'}</td><td><Badge s={st(d)} /></td>
         <td><button className="btn sec sm" onClick={() => nav(`/devices/${d.id}?tab=setup`)}>Buka</button></td></tr>)}
     </tbody></table></div></div>
@@ -183,13 +209,13 @@ function Reconfig() {
 function IosTab() {
   const { meta, can } = useAuth();
   const run = useRun();
-  const { data, loading, error } = useApi<{ rows: Device[] }>('/devices?status=Available,Repair&per=1000&sort=ios');
+  const { data, loading, error } = useApi<{ total: number; rows: Device[] }>('/devices?status=Available,Repair&per=1000&sort=ios');
   if (loading) return <Loading />;
   if (error || !data) return <ErrorBox error={error} />;
   const target = meta?.rules.targetIOS ?? '';
   const state = (d: Device): [string, 'b' | 'w' | 'g'] => (meta?.master.old_model?.includes(d.model) && cmpVer(d.ios, target) < 0 ? ['Model tidak support', 'b'] : cmpVer(d.ios, target) < 0 ? ['Perlu update', 'w'] : ['Terbaru', 'g']);
   return (
-    <div className="card cardt"><h3>Status iOS <small>Target: {target}</small></h3><div className="tw"><table><thead><tr><th>iPad</th><th>Model</th><th>iOS</th><th>Update terakhir</th><th>Status</th><th /></tr></thead><tbody>
+    <div className="card cardt"><h3>Status iOS <small>Target: {target}</small></h3>{data.total > data.rows.length && <p className="note tone-warn">Menampilkan 1.000 dari {data.total} iPad. Gunakan Daftar iPad untuk melihat unit lainnya.</p>}<div className="tw"><table><thead><tr><th>iPad</th><th>Model</th><th>iOS</th><th>Update terakhir</th><th>Status</th><th /></tr></thead><tbody>
       {data.rows.map((d) => { const [s, c] = state(d); return (
         <tr key={d.id}><td><b>{d.name}</b><br /><small className="muted">{d.department}</small></td><td>{d.model}</td><td>{d.ios ?? '-'}</td><td>{fmtDate(d.ios_updated)}</td><td><Flag c={c}>{s}</Flag></td>
           <td>{can('device.edit') && s === 'Perlu update' && <button className="btn sm" onClick={() => void run(() => post(`/devices/${d.id}/ios-done`), `${d.name} → iOS ${target}`)}>Tandai {target}</button>}</td></tr>); })}
@@ -198,7 +224,7 @@ function IosTab() {
 }
 
 function AppleTab() {
-  const list = useApi<{ rows: Device[] }>('/devices?status=Available,Repair&per=1000');
+  const list = useApi<{ total: number; rows: Device[] }>('/devices?status=Available,Repair&per=1000');
   const usage = useApi<{ label: string; count: number }[]>('/devices/apple-usage');
   const nav = useNavigate();
   if (list.loading || usage.loading) return <Loading />;

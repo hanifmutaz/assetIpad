@@ -95,8 +95,9 @@ const put = (m: Map<string, Acc>, kind: Acc['kind'], username: string, p: Partia
     if (a.replacedBy && !hrs.baru.has(a.replacedBy.toLowerCase())) { put(hrs.baru, 'baru', a.replacedBy, { dept: newDept.get(a.replacedBy.toLowerCase()) ?? a.dept, pwd: pwdAfter.get(normName(a.replacedBy)) }); notes.push(`Akun baru ${a.replacedBy} (pengganti ${a.username}) tidak ada di Rencana Akun, dibuat`); }
   }
   for (const r of table('iPad HRS', 'iPad')) {
-    if (!/^ipad/i.test(r[1])) continue;                 // baris ringkasan di atas tabel
-    links.push({ device: r[1], lama: r[2] || null, baru: r[3] || null, status: r[4] });
+    const device = r[1];
+    if (!device || !/^ipad/i.test(device)) continue; // baris ringkasan di atas tabel
+    links.push({ device, lama: r[2] || null, baru: r[3] || null, status: r[4] ?? '' });
     if (r[2] && !hrs.lama.has(r[2].toLowerCase())) { put(hrs.lama, 'lama', r[2], {}); notes.push(`Akun lama ${r[2]} hanya ada di sheet iPad HRS (dibuat tanpa department)`); }
     if (r[3] && !hrs.baru.has(r[3].toLowerCase())) { put(hrs.baru, 'baru', r[3], { pwd: pwdAfter.get(normName(r[3])) }); notes.push(`Akun baru ${r[3]} tidak ada di Rencana Akun (dibuat dari sheet iPad HRS)`); }
   }
@@ -175,7 +176,7 @@ try {
         // satu iPad hanya satu akun per jenis; kalau sudah terhubung ke akun lain biarkan
         const taken = await c.query('SELECT 1 FROM irep_account_device x JOIN irep_account a ON a.id=x.account_id WHERE x.device_id=$1 AND a.kind=$2 AND a.id<>$3', [dev, kind, aid]);
         if (taken.rowCount) { cnt.tautanDilewati++; report.push([opt('lokasi-hrs', 'Hirose'), 'iPad', l.device, 'DILEWATI', `sudah terhubung ke akun ${kind} lain`]); continue; }
-        const r = await c.query('INSERT INTO irep_account_device(account_id,device_id) VALUES($1,$2) ON CONFLICT DO NOTHING', [aid, dev]);
+        const r = await c.query('INSERT INTO irep_account_device(account_id,device_id,kind) VALUES($1,$2,$3) ON CONFLICT (account_id,device_id) DO NOTHING', [aid, dev, kind]);
         if (r.rowCount) cnt.tautan++;
       }
       if (SET_DASH && /dashboard/i.test(l.status)) {
