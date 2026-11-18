@@ -29,6 +29,12 @@ npm install
 npm run dev                                              # buka http://localhost:5173
 ```
 
+## Edit dan penamaan iPad
+
+Di **Monitoring › Daftar iPad**, gunakan **Edit** untuk koreksi data aset dan **Passcode** untuk memperbarui passcode iPad atau Screen Time. Di Detail, identitas dan versi iOS ditampilkan untuk dilihat. Tab Credential di Detail tetap menyediakan tampilan dan salin passcode sesuai hak akses. Akses passcode membutuhkan konfirmasi password akun dan alasan. INA No. bisa dicari dan ikut di laporan serta ekspor. Hak edit menurut role tersedia di [Role & hak akses](docs/ROLES.md).
+
+Untuk registrasi baru, nama memakai format lokasi, dua digit tahun tanggal datang, dan nomor urut. Contoh `HRS-IPAD-26-120`, `SGP-IPAD-26-120`, dan `Systech-IPAD-26-120`. Super Admin dapat menetapkan nomor awal tiap lokasi di **Pengaturan › Lokasi**. Setelan berlaku sebagai batas minimum untuk urutan per lokasi dan tahun. Urutan mengikuti nomor terbesar yang sudah dipakai. Jalankan migrasi `004_device_edit_and_naming.sql` melalui `npm run migrate` sebelum menjalankan backend yang baru.
+
 ## Production (Windows Server 2019, Node.js 22 LTS)
 ```powershell
 cd frontend; npm ci; npm run build

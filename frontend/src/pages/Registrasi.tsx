@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
 import { post, postForm, qs } from '../lib/api';
 import type { Device } from '../lib/types';
+import { DevicePlaceFields } from '../components/DevicePlaceFields';
 import { Ic } from '../components/icons';
 import { Badge, Empty, Loading, ErrorBox, PageHead, Progress, Tabs, Field, RO, useApi, useUi, useRun, fmtDate, today, errMsg } from '../components/ui';
 
@@ -22,23 +23,8 @@ export default function Registrasi() {
       <PageHead title="Registrasi iPad" sub="Daftarkan iPad baru, pindahkan lokasi, dan kelola persetujuan." />
       <Tabs items={T} value={tab} onChange={(t) => setSp({ tab: t })} />
       {tab === 'baru' && <NewForm />}
-      {tab === 'pindah' && <MoveForm onDone={() => setSp({ tab: 'status' })} />}
+      {tab === 'pindah' && <MoveForm deviceId={sp.get('deviceId')} onDone={() => setSp({ tab: 'status' })} />}
       {tab === 'status' && <StatusTab />}
-    </>
-  );
-}
-
-interface Place { lokasiId: string; sectionId: string; departmentId: string; purpose: string }
-function PlaceFields({ v, set, p }: { v: Place; set: (x: Partial<Place>) => void; p: string }) {
-  const { meta } = useAuth();
-  const lok = meta?.lokasi ?? [];
-  const cur = lok.find((l) => String(l.id) === v.lokasiId);
-  return (
-    <>
-      <Field label="Lokasi" req id={`${p}l`}><select id={`${p}l`} required value={v.lokasiId} onChange={(e) => set({ lokasiId: e.target.value, sectionId: '' })}><option value="">Pilih</option>{lok.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}</select></Field>
-      <Field label="Section" req id={`${p}s`}><select id={`${p}s`} required value={v.sectionId} onChange={(e) => set({ sectionId: e.target.value })}><option value="">Pilih</option>{cur?.sections.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</select></Field>
-      <Field label="Department" req id={`${p}d`} hint="Menentukan Admin Department yang bertanggung jawab"><select id={`${p}d`} required value={v.departmentId} onChange={(e) => set({ departmentId: e.target.value })}><option value="">Pilih</option>{meta?.allDepartments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select></Field>
-      <Field label="Peruntukan" req id={`${p}p`} hint="Menentukan Apple ID & langkah konfigurasi"><select id={`${p}p`} required value={v.purpose} onChange={(e) => set({ purpose: e.target.value })}><option value="">Pilih</option>{meta?.master.purpose?.map((x) => <option key={x}>{x}</option>)}</select></Field>
     </>
   );
 }
@@ -49,6 +35,7 @@ function NewForm() {
   const { toast } = useUi();
   const m = meta?.master ?? {};
   const [v, setV] = useState({ serial: '', model: m.model?.[0] ?? '', capacity: '128GB', color: '', lokasiId: '', sectionId: '', departmentId: '', purpose: m.purpose?.[0] ?? '', userName: '', arrival: today(), vendor: m.vendor?.[0] ?? '', price: '', note: '' });
+  const site = meta?.lokasi.find((l) => String(l.id) === v.lokasiId);
   const [photo, setPhoto] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const set = (k: keyof typeof v) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setV({ ...v, [k]: e.target.value });
@@ -73,13 +60,13 @@ function NewForm() {
           <Field label="Model" req id="n_md"><select id="n_md" value={v.model} onChange={set('model')}>{m.model?.map((x) => <option key={x}>{x}</option>)}</select></Field>
           <Field label="Kapasitas" req id="n_cp"><select id="n_cp" value={v.capacity} onChange={set('capacity')}>{m.capacity?.map((x) => <option key={x}>{x}</option>)}</select></Field>
           <Field label="Warna" id="n_cl"><input id="n_cl" value={v.color} onChange={set('color')} maxLength={40} /></Field>
-          <PlaceFields v={v} set={(x) => setV({ ...v, ...x })} p="n_" />
+          <DevicePlaceFields v={v} set={(x) => setV({ ...v, ...x })} p="n_" />
           <Field label="Pengguna / penerima" req id="n_u"><input id="n_u" required value={v.userName} onChange={set('userName')} maxLength={120} /></Field>
           <Field label="Tanggal datang" req id="n_a"><input id="n_a" type="date" required value={v.arrival} onChange={set('arrival')} /></Field>
           <Field label="Vendor" id="n_v"><select id="n_v" value={v.vendor} onChange={set('vendor')}>{m.vendor?.map((x) => <option key={x}>{x}</option>)}</select></Field>
           <Field label="Harga (Rp)" id="n_p"><input id="n_p" type="number" min="0" value={v.price} onChange={set('price')} /></Field>
           <Field label="Foto nota / dus" id="n_f" hint="JPG / PNG / WEBP, maks 5 MB"><input id="n_f" type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => setPhoto(e.target.files?.[0] ?? null)} /></Field>
-          <Field label="Nama iPad"><RO>{meta?.rules.prefix ?? 'iPad'}… (otomatis)</RO></Field>
+          <Field label="Nama iPad"><RO>{site && v.arrival ? site.ipad_prefix+'-IPAD-'+v.arrival.slice(2, 4)+'-…' : 'Pilih lokasi dan tanggal datang'}</RO></Field>
         </div>
         <div style={{ marginTop: 'var(--sp-4)' }}><Field label="Catatan" id="n_n"><textarea id="n_n" rows={2} value={v.note} onChange={set('note')} maxLength={500} /></Field></div>
         <div className="cfoot" style={{ justifyContent: 'space-between' }}><span /><button className="btn" disabled={busy}>{busy ? 'Menyimpan…' : <>Simpan & lanjut ke konfigurasi <Ic n="arrow" /></>}</button></div>
@@ -88,15 +75,17 @@ function NewForm() {
   );
 }
 
-function MoveForm({ onDone }: { onDone: () => void }) {
+function MoveForm({ deviceId, onDone }: { deviceId: string | null; onDone: () => void }) {
   const { can, meta } = useAuth();
   const { data: devs } = useApi<(Device & { lokasi: string })[]>('/devices/picker?status=Available,Repair');
   const run = useRun();
-  const [pick, setPick] = useState('');
+  const [pick, setPick] = useState<string>();
   const [v, setV] = useState({ lokasiId: '', sectionId: '', departmentId: '', purpose: '', userName: '', moveDate: today(), reason: '' });
   const [reset, setReset] = useState<boolean | null>(null);
   const label = (x: Device) => `${x.name ?? x.serial} | ${x.serial}`;
-  const d = useMemo(() => devs?.find((x) => label(x) === pick), [devs, pick]);
+  const preselected = devs?.find((x) => x.id === deviceId);
+  const selected = pick ?? (preselected ? label(preselected) : '');
+  const d = useMemo(() => devs?.find((x) => label(x) === selected), [devs, selected]);
   const lokName = meta?.lokasi.find((l) => String(l.id) === v.lokasiId)?.name;
   const autoReset = !!d && ((!!lokName && lokName !== d.lokasi) || (!!v.purpose && v.purpose !== d.purpose));
   const resetVal = reset ?? autoReset;
@@ -113,9 +102,9 @@ function MoveForm({ onDone }: { onDone: () => void }) {
     <form className="grid g12" onSubmit={submit}>
       <div className="card stack">
         <div className="card-h"><div><h2>Tujuan baru</h2><p>{can('approval.decide') ? 'Perubahan langsung diterapkan.' : 'Perlu persetujuan Super Admin.'}</p></div></div>
-        <Field label="iPad (nama / serial)" req id="mv"><input id="mv" list="mvList" required value={pick} onChange={(e) => setPick(e.target.value)} placeholder="Ketik nama atau serial…" />
+        <Field label="iPad (nama / serial)" req id="mv"><input id="mv" list="mvList" required value={selected} onChange={(e) => setPick(e.target.value)} placeholder="Ketik nama atau serial…" />
           <datalist id="mvList">{devs?.map((x) => <option key={x.id} value={label(x)} />)}</datalist></Field>
-        <PlaceFields v={v} set={(x) => setV({ ...v, ...x })} p="m_" />
+        <DevicePlaceFields v={v} set={(x) => setV({ ...v, ...x })} p="m_" />
         <Field label="Pengguna baru" req id="m_u"><input id="m_u" required value={v.userName} onChange={(e) => setV({ ...v, userName: e.target.value })} /></Field>
         <Field label="Tanggal pindah" req id="m_d"><input id="m_d" type="date" required value={v.moveDate} onChange={(e) => setV({ ...v, moveDate: e.target.value })} /></Field>
         <Field label="Alasan pindah" req id="m_r"><textarea id="m_r" rows={2} required minLength={3} value={v.reason} onChange={(e) => setV({ ...v, reason: e.target.value })} /></Field>

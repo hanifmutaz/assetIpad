@@ -8,6 +8,9 @@ export const PERMS = {
   'device.viewAll': ['superadmin', 'admin_ipad'],
   'device.register': ['superadmin', 'admin_ipad'],
   'device.edit': ['superadmin', 'admin_ipad'],
+  'device.editPlacement': ['superadmin'],
+  'device.editSerial': ['superadmin'],
+  'device.editIna': ['superadmin'],
   'device.config': ['superadmin', 'admin_ipad'],
   'device.status': ['superadmin', 'admin_ipad'],
   'device.check': ['superadmin', 'admin_ipad', 'admin_dept'],
@@ -52,11 +55,12 @@ export const SCENARIOS = { baru: 'iPad baru', reset: 'Reset / pindah tempat' } a
 export type Scenario = keyof typeof SCENARIOS;
 
 // ---------------------------------------------------------------- credential
-export interface CredMeta { label: string; dept: boolean; sec: boolean; kind: 'email' | 'pwd' | 'passcode' | 'basic'; unique?: boolean }
+export interface CredMeta { label: string; dept: boolean; sec: boolean; kind: 'email' | 'pwd' | 'passcode' | 'screenTime' | 'basic'; unique?: boolean }
 export const CRED_FIELDS: Record<string, CredMeta> = {
   appleId: { label: 'Apple ID', dept: false, sec: false, kind: 'email' },
   applePwd: { label: 'Password Apple ID', dept: false, sec: true, kind: 'pwd' },
   passcode: { label: 'Passcode iPad', dept: true, sec: true, kind: 'passcode', unique: true },
+  screenTimePasscode: { label: 'Passcode Screen Time', dept: true, sec: true, kind: 'screenTime' },
   unlockPwd: { label: 'Unlock Password', dept: true, sec: true, kind: 'pwd', unique: true },
   irepPwd: { label: 'Password i-Reporter', dept: true, sec: true, kind: 'basic' },
   gmail: { label: 'Gmail', dept: false, sec: false, kind: 'email' },
@@ -67,6 +71,12 @@ const WEAK = new Set(['123456', '000000', '111111', '654321', '121212', '112233'
 export function weakReason(v: string, kind: CredMeta['kind']): string {
   if (!v) return '';
   if (WEAK.has(v.toLowerCase())) return 'nilai default / umum';
+  if (kind === 'screenTime') {
+    if (!/^\d{4}$/.test(v)) return 'harus 4 digit angka';
+    if (/^(\d)\1+$/.test(v)) return 'angka berulang';
+    if ('01234567890'.includes(v) || '09876543210'.includes(v)) return 'angka berurutan';
+    return '';
+  }
   if (kind === 'passcode') {
     if (!/^\d{6}$/.test(v)) return 'harus 6 digit angka';
     if (/^(\d)\1+$/.test(v)) return 'angka berulang';

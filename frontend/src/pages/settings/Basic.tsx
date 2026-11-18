@@ -4,7 +4,7 @@ import { del, patch, post, put } from '../../lib/api';
 import { Field, Loading, ErrorBox, useApi, useUi, useRun } from '../../components/ui';
 
 interface S {
-  lokasi: { id: number; name: string; devices: number; sections: { id: number; name: string; devices: number }[] }[];
+  lokasi: { id: number; name: string; devices: number; ipad_prefix: string; ipad_number_start: number; sections: { id: number; name: string; devices: number }[] }[];
   departments: { id: number; name: string; devices: number }[];
   master: Record<string, { id: number; value: string }[]>;
   rules: Record<string, number | string>;
@@ -41,7 +41,7 @@ export function Departments() {
 
 export function Lokasi() {
   const { data, loading, error, act } = useSettings();
-  const { confirm } = useUi();
+  const { confirm, dialog, toast } = useUi();
   if (loading) return <Loading />;
   if (error || !data) return <ErrorBox error={error} />;
   return (
@@ -50,6 +50,17 @@ export function Lokasi() {
       {data.lokasi.map((l) => (
         <div className="card" key={l.id}>
           <div className="toolbar"><h3 style={{ margin: 0, flex: 1 }}>{l.name} <small style={{ display: 'inline' }}>({l.devices} iPad)</small></h3>
+            <button className="btn sec sm" onClick={async () => {
+              const r = await dialog({
+                title: 'Nomor awal iPad '+l.name,
+                body: 'Nomor minimum tiap tahun. Jika sudah ada nama dengan nomor lebih tinggi, pendaftaran lanjut dari nomor terakhir.',
+                fields: [{ k: 'start', l: 'Nomor awal', v: String(l.ipad_number_start), type: 'number', req: true }], ok: 'Simpan',
+              });
+              if (!r || r === true) return;
+              const start = Number(r.start);
+              if (!Number.isInteger(start) || start < 1 || start > 999999999) return toast('Masukkan nomor awal antara 1 dan 999999999', 'err');
+              await act(() => patch('/settings/lokasi/'+l.id+'/ipad-number', { start }), 'Nomor awal disimpan');
+            }}>Nomor awal {l.ipad_prefix} · {String(l.ipad_number_start).padStart(3, '0')}</button>
             <button className="btn bad sm" onClick={async () => { if (await confirm('Hapus lokasi', `Hapus ${l.name} beserta section-nya?`, true)) await act(() => del(`/settings/lokasi/${l.id}`)); }}>Hapus lokasi</button></div>
           <div className="chips">{l.sections.map((s) => <span key={s.id} className="chip">{s.name} <small className="muted">({s.devices})</small><button aria-label={`Hapus ${s.name}`} onClick={() => void act(() => del(`/settings/sections/${s.id}`))}>✕</button></span>)}</div>
           <AddRow placeholder={`Section baru untuk ${l.name}`} onAdd={(name) => act(() => post('/settings/sections', { lokasiId: l.id, name }))} />
@@ -87,7 +98,6 @@ export function Rules() {
         {num('escalateDays', 'Eskalasi tiket (hari)')}{num('staleDays', 'Batas belum dicek (hari)')}{num('maxAgeYears', 'Umur maksimal iPad (tahun)')}
         <Field label="Target versi iOS" id="r_ios"><input id="r_ios" value={v.targetIOS} onChange={(e) => setV({ ...v, targetIOS: e.target.value })} /></Field>
         {num('lockMin', 'Kunci data rahasia setelah idle (menit)')}{num('burstCount', 'Alert jika buka data rahasia ≥ (kali)')}{num('burstMin', '…dalam (menit)')}
-        <Field label="Prefix nama iPad" id="r_pf"><input id="r_pf" value={v.prefix} onChange={(e) => setV({ ...v, prefix: e.target.value })} /></Field>
       </div>
       <div className="cfoot" style={{ marginTop: 24 }}><button className="btn" onClick={() => void act(() => put('/settings/rules', v), 'Aturan disimpan')}>Simpan</button></div>
     </div>

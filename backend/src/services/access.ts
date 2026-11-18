@@ -17,17 +17,17 @@ export async function assertDeviceVisible(u: AuthUser, deviceId: string, db: Db 
   return d;
 }
 
-export async function credFieldsFor(u: AuthUser, deviceId: string): Promise<string[]> {
+export async function credFieldsFor(u: AuthUser, deviceId: string, db: Db = { query: q } as unknown as Db): Promise<string[]> {
   if (can(u, 'cred.all')) return Object.keys(CRED_FIELDS);
   if (can(u, 'cred.dept')) {
-    const d = (await q<{ department_id: number }>('SELECT department_id FROM device WHERE id=$1', [deviceId])).rows[0];
+    const d = (await db.query<{ department_id: number }>('SELECT department_id FROM device WHERE id=$1', [deviceId])).rows[0];
     if (d && u.dept_ids.includes(d.department_id)) return Object.keys(CRED_FIELDS).filter((k) => CRED_FIELDS[k]!.dept);
   }
   return [];
 }
-export async function assertCredField(u: AuthUser, deviceId: string, field: string): Promise<void> {
+export async function assertCredField(u: AuthUser, deviceId: string, field: string, db?: Db): Promise<void> {
   if (!CRED_FIELDS[field]) throw forbidden('Field tidak dikenal');
-  if (!(await credFieldsFor(u, deviceId)).includes(field)) throw forbidden('Anda tidak berhak mengakses credential ini');
+  if (!(await credFieldsFor(u, deviceId, db)).includes(field)) throw forbidden('Anda tidak berhak mengakses credential ini');
 }
 export function canHandleTicket(u: AuthUser, deptId: number): boolean {
   return can(u, 'ticket.handleAll') || (can(u, 'ticket.handleDept') && u.dept_ids.includes(deptId));

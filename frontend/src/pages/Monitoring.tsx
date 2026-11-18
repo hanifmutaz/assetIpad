@@ -3,6 +3,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
 import { post, qs } from '../lib/api';
 import type { Device } from '../lib/types';
+import { EditDeviceModal } from '../components/EditDeviceModal';
+import { INVENTORY_PASSCODE_FIELDS, useEditDeviceCredential } from '../components/useEditDeviceCredential';
 import { Ic } from '../components/icons';
 import { Badge, Flag, Empty, Loading, ErrorBox, PageHead, Progress, Tabs, useApi, useRun, useUi, rp, fmtDate, ageDays, cmpVer, today } from '../components/ui';
 
@@ -61,6 +63,8 @@ function DeviceList() {
   const [sp, setSp] = useSearchParams();
   const { dialog, toast } = useUi();
   const run = useRun();
+  const editCredential = useEditDeviceCredential();
+  const [editing, setEditing] = useState<Device | null>(null);
   const f = Object.fromEntries(FKEYS.map((k) => [k, sp.get(k) ?? ''])) as Record<(typeof FKEYS)[number], string>;
   const [page, setPage] = useState(1);
   const [per, setPer] = useState(20);
@@ -96,6 +100,21 @@ function DeviceList() {
   const sortBy = (k: string) => setF({ sort: k, dir: f.sort === k && f.dir !== 'desc' ? 'desc' : 'asc' });
   const open = (d: Device) => nav(d.status === 'Setup' && can('device.config') ? `/registrasi/konfigurasi/${d.id}` : `/devices/${d.id}`);
   const showPrice = can('device.viewAll');
+  const editPasscode = async (d: Device) => {
+    const choice = await dialog({
+      title: 'Edit passcode ' + (d.name ?? d.serial),
+      fields: [{ k: 'field', l: 'Jenis passcode', req: true, opts: INVENTORY_PASSCODE_FIELDS.map((f) => ({ value: f.field, label: f.label })) }],
+      ok: 'Lanjut',
+    });
+    if (!choice || choice === true) return;
+    const field = INVENTORY_PASSCODE_FIELDS.find((f) => f.field === choice.field);
+    if (field && await editCredential(d.id, field)) reload();
+  };
+  const rowActions = (d: Device) => <div className="row">
+    {can('device.edit') && <button className="btn btn-sm btn-sec" onClick={() => setEditing(d)}>Edit</button>}
+    {(can('cred.all') || can('cred.dept')) && <button className="btn btn-sm btn-sec" onClick={() => void editPasscode(d)}>Passcode</button>}
+    <button className="btn btn-sm btn-sec" onClick={() => open(d)}>{d.status === 'Setup' && can('device.config') ? 'Konfigurasi' : 'Detail'}</button>
+  </div>;
   const bulk = async (action: 'status' | 'check') => {
     let body: Record<string, unknown> = {};
     if (action === 'status') {
@@ -114,7 +133,7 @@ function DeviceList() {
   return (
     <div className="card">
       <div className="filters filters-devices">
-        <div className="field"><label htmlFor="fq">Cari</label><input id="fq" type="search" placeholder="Nama, serial, section…" value={q} onChange={(e) => setQ(e.target.value)} /></div>
+        <div className="field"><label htmlFor="fq">Cari</label><input id="fq" type="search" placeholder="Nama, serial, INA No., section…" value={q} onChange={(e) => setQ(e.target.value)} /></div>
         <div className="field"><label htmlFor="fl">Lokasi</label><select id="fl" value={f.lokasiId} onChange={(e) => setF({ lokasiId: e.target.value, sectionId: '' })}><option value="">Semua lokasi</option>{meta?.lokasi.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}</select></div>
         <div className="field"><label htmlFor="fsec">Section</label><select id="fsec" value={f.sectionId} onChange={(e) => setF({ sectionId: e.target.value })}><option value="">Semua section</option>{secs.map((s) => <option key={s.id} value={s.id}>{f.lokasiId ? s.name : `${s.l} · ${s.name}`}</option>)}</select></div>
         <div className="field"><label htmlFor="fd">Department</label><select id="fd" value={f.departmentId} onChange={(e) => setF({ departmentId: e.target.value })}><option value="">Semua department</option>{meta?.departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select></div>
@@ -147,14 +166,14 @@ function DeviceList() {
             <div className="dgrid">{rows.map((d) => (
               <article key={d.id} className="dcard">
                 <div className="spread"><b style={{ fontSize: 'var(--fs-lg)' }}>{d.name ?? d.serial}</b><Badge s={d.status} /></div>
-                <span className="mono subtle">{d.serial}</span>
+                <span className="mono subtle">{d.serial} · INA No. {d.ina_no ?? "–"}</span>
                 <span>{d.lokasi} · {d.section}</span>
                 <span className="subtle">{d.department} · {d.purpose} · iOS {d.ios ?? '-'}</span>
                 {d.status === 'Setup' && d.cfg && <div className="bar"><i style={{ width: `${d.cfg.total ? (d.cfg.done / d.cfg.total) * 100 : 0}%` }} /></div>}
                   <div className="spread">
                   {bulkOK && <label className="check"><input type="checkbox" aria-label={'Pilih ' + (d.name ?? d.serial)} checked={sel.includes(d.id)}
                     onChange={(e) => setSel(e.target.checked ? [...sel, d.id] : sel.filter((x) => x !== d.id))} /> Pilih</label>}
-                  <button className="btn btn-sm btn-sec" onClick={() => open(d)}>{d.status === 'Setup' && can('device.config') ? 'Konfigurasi' : 'Detail'}</button>
+                  {rowActions(d)}
                 </div>
               </article>
             ))}</div>
@@ -162,13 +181,14 @@ function DeviceList() {
             <div className="tw"><table>
               <thead><tr>
                 {bulkOK && <th><input type="checkbox" aria-label="Pilih semua" checked={allOn} onChange={(e) => setSel(e.target.checked ? [...new Set([...sel, ...rows.map((d) => d.id)])] : sel.filter((x) => !rows.some((d) => d.id === x)))} /></th>}
-                <th>{sortable('name', 'iPad')}</th><th>{sortable('loc', 'Lokasi · Section')}</th><th>{sortable('dept', 'Department')}</th><th>Peruntukan</th><th>{sortable('ios', 'iOS')}</th><th>{sortable('status', 'Status')}</th><th>{sortable('lastCheck', 'Terakhir dicek')}</th>
+                <th>{sortable('name', 'iPad')}</th><th>{sortable('ina', 'INA No.')}</th><th>{sortable('loc', 'Lokasi · Section')}</th><th>{sortable('dept', 'Department')}</th><th>Peruntukan</th><th>{sortable('ios', 'iOS')}</th><th>{sortable('status', 'Status')}</th><th>{sortable('lastCheck', 'Terakhir dicek')}</th>
                 {showPrice && <th>{sortable('price', 'Harga')}</th>}<th />
               </tr></thead>
               <tbody>{rows.map((d) => (
                 <tr key={d.id}>
                   {bulkOK && <td><input type="checkbox" aria-label={`Pilih ${d.name}`} checked={sel.includes(d.id)} onChange={(e) => setSel(e.target.checked ? [...sel, d.id] : sel.filter((x) => x !== d.id))} /></td>}
                   <td><b>{d.name ?? d.serial}</b><span className="sub mono">{d.serial}</span><span className="sub">{d.model} · {d.capacity} · {d.user_name}</span></td>
+                  <td className="mono">{d.ina_no ?? '–'}</td>
                   <td>{d.lokasi}<span className="sub">{d.section}</span></td>
                   <td>{d.department}</td>
                   <td>{d.purpose}</td>
@@ -176,7 +196,7 @@ function DeviceList() {
                   <td><Badge s={d.status} />{d.status === 'Setup' && d.cfg && <span className="sub"><Progress n={d.cfg.done} t={d.cfg.total} /></span>}{d.passcode_default && d.status !== 'Setup' && <span className="sub"><Flag c="b">passcode default</Flag></span>}</td>
                   <td>{!d.last_check ? '-' : stale(d) ? <span className="badge tone-warn">{ageDays(d.last_check)} hari</span> : `${ageDays(d.last_check)} hari lalu`}</td>
                   {showPrice && <td className="mono">{rp(d.price)}</td>}
-                  <td><button className={`btn btn-sm ${d.status === 'Setup' && can('device.config') ? '' : 'btn-sec'}`} onClick={() => open(d)}>{d.status === 'Setup' && can('device.config') ? 'Konfigurasi' : 'Detail'}</button></td>
+                  <td>{rowActions(d)}</td>
                 </tr>
               ))}</tbody>
             </table></div>
@@ -186,6 +206,7 @@ function DeviceList() {
             <button className="btn btn-sec btn-sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>‹</button><span>{page} / {pages}</span><button className="btn btn-sec btn-sm" disabled={page >= pages} onClick={() => setPage(page + 1)}>›</button></div>
         </>
       )}
+      {editing && <EditDeviceModal key={editing.id} device={editing} onClose={() => setEditing(null)} />}
     </div>
   );
 }

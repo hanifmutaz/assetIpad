@@ -45,7 +45,7 @@ try {
     console.log('✓ master data');
   }
   await c.query(`INSERT INTO app_setting(key,value) VALUES('rules',$1) ON CONFLICT (key) DO NOTHING`,
-    [JSON.stringify({ escalateDays: 3, staleDays: 90, maxAgeYears: 6, targetIOS: '18.7.9', lockMin: 5, burstCount: 5, burstMin: 10, prefix: 'iPad' })]);
+    [JSON.stringify({ escalateDays: 3, staleDays: 90, maxAgeYears: 6, targetIOS: '18.7.9', lockMin: 5, burstCount: 5, burstMin: 10 })]);
 
   if (await empty('config_var')) {
     // [key, label, type, qr, nilai: [lokasi|null, peruntukan|null, value]]

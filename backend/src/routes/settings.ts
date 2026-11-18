@@ -9,6 +9,7 @@ import { getRules, clearRules } from '../services/rules.js';
 import { encrypt } from '../crypto.js';
 import { varCtx } from '../services/guides.js';
 import { FIELD_TARGETS, SYSVARS, VAR_TOKEN_RE, SCENARIOS } from '../services/policy.js';
+import { deviceNamePrefix } from '../services/devices.js';
 
 export const router = express.Router();
 const SA = requirePerm('settings.master');
@@ -18,14 +19,14 @@ const name = z.object({ name: z.string().trim().min(1).max(60) });
 
 router.get('/', SA, ah(async (_req, res) => {
   const [lok, sec, dept, master, rules] = await Promise.all([
-    q('SELECT l.id, l.name, (SELECT count(*)::int FROM device d JOIN section s ON s.id=d.section_id WHERE s.lokasi_id=l.id) devices FROM lokasi l ORDER BY l.sort, l.name'),
+    q('SELECT l.id, l.name, l.ipad_number_start, (SELECT count(*)::int FROM device d JOIN section s ON s.id=d.section_id WHERE s.lokasi_id=l.id) devices FROM lokasi l ORDER BY l.sort, l.name'),
     q('SELECT s.id, s.lokasi_id, s.name, (SELECT count(*)::int FROM device d WHERE d.section_id=s.id) devices FROM section s ORDER BY s.name'),
     q('SELECT dp.id, dp.name, (SELECT count(*)::int FROM device d WHERE d.department_id=dp.id) devices FROM department dp ORDER BY dp.name'),
     q('SELECT id, kind, value FROM master_item ORDER BY kind, sort, value'),
     getRules(),
   ]);
   res.json({
-    lokasi: lok.rows.map((l) => ({ ...l, sections: sec.rows.filter((s) => s.lokasi_id === l.id) })),
+    lokasi: lok.rows.map((l) => ({ ...l, ipad_prefix: deviceNamePrefix(l.name, l.id), sections: sec.rows.filter((s) => s.lokasi_id === l.id) })),
     departments: dept.rows,
     master: Object.fromEntries(KINDS.map((k) => [k, master.rows.filter((m) => m.kind === k)])),
     rules,
@@ -38,6 +39,16 @@ router.post('/lokasi', SA, ah(async (req, res) => {
   await q('INSERT INTO lokasi(name,sort) VALUES($1,(SELECT COALESCE(max(sort),0)+1 FROM lokasi))', [b.name]);
   await audit(req, { action: 'Tambah lokasi', target: b.name });
   res.status(201).json({ ok: true });
+}));
+router.patch('/lokasi/:id/ipad-number', SA, ah(async (req, res) => {
+  const lid = id.parse(req.params.id);
+  const { start } = z.object({ start: z.number().int().min(1).max(999999999) }).parse(req.body);
+  await tx(async (c) => {
+    const r = await c.query('UPDATE lokasi SET ipad_number_start=$2 WHERE id=$1 RETURNING name', [lid, start]);
+    if (!r.rowCount) throw notFound('Lokasi tidak ditemukan');
+    await audit(req, { action: 'Ubah nomor awal iPad', target: r.rows[0].name, reason: String(start) }, c);
+  });
+  res.json({ ok: true });
 }));
 router.delete('/lokasi/:id', SA, ah(async (req, res) => {
   const lid = id.parse(req.params.id);
@@ -127,7 +138,7 @@ router.delete('/master/:id', SA, ah(async (req, res) => {
 router.put('/rules', SA, ah(async (req, res) => {
   const n = (a: number, b: number) => z.number().int().min(a).max(b);
   const b = z.object({ escalateDays: n(1, 90), staleDays: n(1, 730), maxAgeYears: n(1, 20), lockMin: n(1, 60), burstCount: n(2, 100), burstMin: n(1, 120),
-    targetIOS: z.string().regex(/^\d+(\.\d+){0,2}$/), prefix: z.string().regex(/^[A-Za-z][A-Za-z-]{0,15}$/) }).parse(req.body);
+    targetIOS: z.string().regex(/^\d+(\.\d+){0,2}$/) }).parse(req.body);
   await q("INSERT INTO app_setting(key,value,updated_by) VALUES('rules',$1,$2) ON CONFLICT (key) DO UPDATE SET value=$1, updated_at=now(), updated_by=$2", [JSON.stringify(b), req.user!.id]);
   clearRules();
   await audit(req, { action: 'Ubah aturan sistem' });

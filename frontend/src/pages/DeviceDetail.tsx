@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
-import { api, patch, post, put } from '../lib/api';
+import { api, patch, post, qs } from '../lib/api';
 import type { Device } from '../lib/types';
+import { INVENTORY_PASSCODE_FIELDS, useEditDeviceCredential } from '../components/useEditDeviceCredential';
 import { Ic } from '../components/icons';
 import { QrImg } from '../components/Qr';
 import { Badge, Flag, Empty, Loading, ErrorBox, PageHead, Progress, Tabs, Field, RO, useApi, useUi, useRun, rp, fmtDate, fmtDT, ageDays, errMsg } from '../components/ui';
@@ -31,6 +32,7 @@ export default function DeviceDetail() {
   if (loading) return <Loading />;
   if (error || !data) return <ErrorBox error={error} onRetry={reload} />;
   const { device: d, perms } = data;
+  const inventoryUrl = '/monitoring' + qs({ q: d.serial });
   const TB: [T, string][] = [['info', 'Info'], ['teknis', 'Teknis'], ...(perms.credFields.length ? [['cred', 'Credential'] as [T, string]] : []), ['setup', 'Konfigurasi'], ['tiket', 'Tiket'], ['riwayat', 'Riwayat']];
   const tab = (TB.some((t) => t[0] === sp.get('tab')) ? sp.get('tab') : 'info') as T;
   const changeStatus = async () => {
@@ -42,14 +44,16 @@ export default function DeviceDetail() {
   };
   return (
     <>
-      <PageHead title={d.name ?? d.serial} sub={`${d.lokasi} · ${d.section} · ${d.department}`} crumb={<><Link to="/monitoring">Monitoring</Link> › {d.name ?? d.serial}</>}>
+      <PageHead title={d.name ?? d.serial} sub={`${d.lokasi} · ${d.section} · ${d.department}`} crumb={<><Link to={inventoryUrl}>Daftar iPad</Link> › {d.name ?? d.serial}</>}>
         <Badge s={d.status} />
         {perms.canConfig && <button className="btn" onClick={() => nav(`/registrasi/konfigurasi/${d.id}`)}>Lanjutkan konfigurasi</button>}
         {perms.transitions.length > 0 && <button className="btn btn-sec" onClick={() => void changeStatus()}>Ubah status</button>}
         {perms.canReport && <button className="btn btn-sec" onClick={() => nav(`/lapor?device=${d.id}`)}><Ic n="alert" /> Lapor masalah</button>}
       </PageHead>
       {data.pendingStatus && <div className="note info">Pengajuan status → <b>{data.pendingStatus.to_status}</b> oleh {data.pendingStatus.requested_by_name} menunggu persetujuan Super Admin ({data.pendingStatus.reason}).</div>}
-      {d.passcode_default && d.status !== 'Setup' && <div className="note bad">Passcode iPad ini masih default (123456). Ganti segera di tab Credential.</div>}
+      {d.passcode_default && d.status !== 'Setup' && <div className="note bad">
+        Passcode iPad ini masih default. Ganti lewat tombol Passcode di <Link to={inventoryUrl}>Daftar iPad</Link>.
+      </div>}
       <Tabs items={TB} value={tab} onChange={(t) => setSp(t === 'info' ? {} : { tab: t })} />
       {tab === 'info' && <InfoTab data={data} />}
       {tab === 'teknis' && <TeknisTab d={d} canEdit={perms.canEdit} />}
@@ -70,39 +74,22 @@ export default function DeviceDetail() {
 
 function InfoTab({ data }: { data: Detail }) {
   const { device: d, perms } = data;
-  const { dialog, toast } = useUi();
   const { meta, can } = useAuth();
   const run = useRun();
-  const [name, setName] = useState(d.name ?? '');
-  const saveName = async (force = false): Promise<void> => {
-    try { await patch(`/devices/${d.id}`, { version: d.version, name: name.trim(), force }); toast('Nama disimpan'); void run(async () => undefined); }
-    catch (e) {
-      if ((e as { code?: string }).code === 'NAME_DUP' && (await dialog({ title: 'Nama sudah dipakai', body: `${errMsg(e)}. Tetap simpan?`, ok: 'Tetap simpan', danger: true }))) return saveName(true);
-      toast(errMsg(e), 'err');
-    }
-  };
-  const irep = useApi<{ id: number; kind: string; username: string; lokasi: string; active: boolean; verification: string }[]>(can('irep.view') ? `/irep/by-device/${d.id}` : null);
-  const [serial, setSerial] = useState('');
-  const saveSerial = async () => {
-    try { await patch(`/devices/${d.id}`, { version: d.version, serial: serial.trim() }); toast('Serial disimpan'); void run(async () => undefined); } catch (e) { toast(errMsg(e), 'err'); }
-  };
-  const changePurpose = async (to: string) => {
-    if (to === d.purpose) return;
-    if (!(await dialog({ title: 'Ubah peruntukan?', body: `${d.purpose} → ${to}. Peruntukan menentukan Apple ID dan langkah konfigurasi, pastikan iPad sudah disesuaikan.`, ok: 'Ubah' }))) return;
-    try { await patch(`/devices/${d.id}`, { version: d.version, purpose: to }); toast('Peruntukan diubah'); void run(async () => undefined); } catch (e) { toast(errMsg(e), 'err'); }
-  };
+  const irep = useApi<{ id: number; kind: string; username: string; lokasi: string; active: boolean; verification: string }[]>(can('irep.view') ? '/irep/by-device/' + d.id : null);
   const lateCheck = !!meta && ageDays(d.last_check) > meta.rules.staleDays;
   return (
     <div className="grid g21">
       <div className="card">
         <dl className="dl">
-          <dt>Nama</dt><dd>{perms.canEdit ? <span className="addrow" style={{ marginTop: 0 }}><input id="f_name" aria-label="Nama iPad" value={name} onChange={(e) => setName(e.target.value)} />{name.trim() && name !== (d.name ?? '') && <button className="btn btn-sm" onClick={() => void saveName()}>Simpan</button>}</span> : d.name}</dd>
-          <dt>Serial number</dt><dd className="mono">{/^TEMP\d{4,}$/.test(d.serial) ? <><span className="badge tone-warn">Serial belum diisi</span> {d.serial}{perms.canEdit && <span className="addrow" style={{ marginTop: 6 }}><input id="f_serial" aria-label="Serial asli" placeholder="Serial asli (8-14 huruf/angka)" value={serial} onChange={(e) => setSerial(e.target.value.toUpperCase())} />{serial.trim() && <button className="btn btn-sm" onClick={() => void saveSerial()}>Simpan</button>}</span>}</> : d.serial}</dd>
+          <dt>Nama</dt><dd>{d.name ?? '–'}</dd>
+          <dt>Serial number</dt><dd className="mono">{/^TEMP\d{4,}$/.test(d.serial) && <span className="badge tone-warn">Serial belum diisi</span>} {d.serial}</dd>
+          <dt>INA No.</dt><dd className="mono">{d.ina_no ?? "–"}</dd>
           <dt>Model</dt><dd>{d.model} · {d.capacity} · {d.color}</dd>
           <dt>Lokasi</dt><dd>{d.lokasi}</dd>
           <dt>Section</dt><dd>{d.section}</dd>
           <dt>Department</dt><dd>{d.department}</dd>
-          <dt>Peruntukan</dt><dd>{perms.canEdit ? <select aria-label="Peruntukan" value={d.purpose} onChange={(e) => void changePurpose(e.target.value)}>{(meta?.master.purpose ?? [d.purpose]).map((x) => <option key={x}>{x}</option>)}</select> : d.purpose}</dd>
+          <dt>Peruntukan</dt><dd>{d.purpose}</dd>
           <dt>Pengguna</dt><dd>{d.user_name}</dd>
           {(irep.data?.length ?? 0) > 0 && <><dt>Akun i-Reporter</dt><dd>{irep.data!.map((a) => <span key={a.id} style={{ marginRight: 8 }}><span className="mono">{a.username}</span> <small className="muted">({a.kind}{a.kind === 'lama' && !a.active ? ', tidak aktif' : ''})</small></span>)}</dd></>}
           <dt>Tgl datang</dt><dd>{fmtDate(d.arrival)}{d.vendor ? ` · ${d.vendor}` : ''}</dd>
@@ -127,7 +114,7 @@ function InfoTab({ data }: { data: Detail }) {
 function TeknisTab({ d, canEdit }: { d: Device; canEdit: boolean }) {
   const { meta } = useAuth();
   const run = useRun();
-  const init = { wifi: d.wifi ?? '', ip: d.ip ?? '', conmasId: d.conmas_id ?? '', ireporterUser: d.ireporter_user ?? '', ios: d.ios ?? '', iosUpdated: d.ios_updated ?? '', appleStatus: d.apple_status, userName: d.user_name };
+  const init = { wifi: d.wifi ?? '', ip: d.ip ?? '', conmasId: d.conmas_id ?? '', ireporterUser: d.ireporter_user ?? '', iosUpdated: d.ios_updated ?? '', appleStatus: d.apple_status };
   const [v, setV] = useState(init);
   const dirty = JSON.stringify(v) !== JSON.stringify(init);
   const set = (k: keyof typeof v) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setV({ ...v, [k]: e.target.value });
@@ -140,12 +127,11 @@ function TeknisTab({ d, canEdit }: { d: Device; canEdit: boolean }) {
   return (
     <div className="card">
       <div className="grid">
-        <Field label="Pengguna" id="t_u"><input id="t_u" disabled={dis} value={v.userName} onChange={set('userName')} /></Field>
         <Field label="Wi-Fi SSID" id="t_w"><select id="t_w" disabled={dis} value={v.wifi} onChange={set('wifi')}><option value="">-</option>{[...new Set([...(meta?.master.wifi ?? []), v.wifi].filter(Boolean))].map((w) => <option key={w}>{w}</option>)}</select></Field>
         <Field label="IP Address" id="t_ip"><input id="t_ip" disabled={dis} value={v.ip} onChange={set('ip')} placeholder="kosongkan bila DHCP" /></Field>
         <Field label="ConMas Device ID" id="t_cm"><input id="t_cm" disabled={dis} value={v.conmasId} onChange={set('conmasId')} /></Field>
         <Field label="User i-Reporter" id="t_ir"><input id="t_ir" disabled={dis} value={v.ireporterUser} onChange={set('ireporterUser')} /></Field>
-        <Field label="Versi iOS" id="t_ios"><input id="t_ios" disabled={dis} value={v.ios} onChange={set('ios')} /></Field>
+        <Field label="Versi iOS"><RO>{d.ios ?? '–'}</RO></Field>
         <Field label="Tgl update iOS" id="t_iu"><input id="t_iu" type="date" disabled={dis} value={v.iosUpdated} onChange={set('iosUpdated')} /></Field>
         <Field label="Status Apple ID" id="t_as"><select id="t_as" disabled={dis} value={v.appleStatus} onChange={set('appleStatus')}>{['Done', 'Need Verification', 'Wrong Password'].map((s) => <option key={s}>{s}</option>)}</select></Field>
       </div>
@@ -156,9 +142,10 @@ function TeknisTab({ d, canEdit }: { d: Device; canEdit: boolean }) {
 }
 
 function CredTab({ data }: { data: Detail }) {
-  const { device: d, credHealth: h, perms } = data;
+  const { device: d, credHealth: h } = data;
   const { meta } = useAuth();
-  const { dialog, toast } = useUi();
+  const { toast } = useUi();
+  const editCredential = useEditDeviceCredential();
   const [list, setList] = useState<(CredField & { set: boolean; value: string | null })[] | null>(null);
   const [reason, setReason] = useState('');
   const [shown, setShown] = useState<Record<string, string | undefined>>({});
@@ -173,13 +160,7 @@ function CredTab({ data }: { data: Detail }) {
     } catch (e) { toast(errMsg(e), 'err'); }
   };
   const edit = async (f: CredField) => {
-    const hint = f.kind === 'passcode' ? '6 digit, bukan 123456 / berulang / berurutan, tidak sama dengan iPad lain.' : f.kind === 'pwd' ? 'Min. 10 karakter, kombinasi huruf besar, kecil, angka & simbol.' : '';
-    const r = await dialog({ title: `Ubah ${f.label}`, body: <p className="muted">{hint}</p>, fields: [
-      { k: 'v', l: 'Nilai baru', type: f.sec ? 'password' : 'text', req: true }, ...(f.sec ? [{ k: 'v2', l: 'Ulangi', type: 'password', req: true }] : []),
-      { k: 'reason', l: 'Alasan', opts: meta?.master.reason ?? [], req: true }], ok: 'Simpan' });
-    if (!r || r === true) return;
-    if (f.sec && r.v !== r.v2) return toast('Nilai tidak sama', 'err');
-    try { await put(`/devices/${d.id}/credentials/${f.field}`, { value: r.v, reason: r.reason }); toast('Tersimpan · tercatat di audit log'); void load(); } catch (e) { toast(errMsg(e), 'err'); }
+    if (await editCredential(d.id, f)) void load();
   };
   return (
     <div className="card">
@@ -197,12 +178,12 @@ function CredTab({ data }: { data: Detail }) {
           <div className="field" style={{ maxWidth: 340, marginBottom: 'var(--sp-4)' }}><label htmlFor="cr" className="req">Alasan akses</label>
             <select id="cr" value={reason} onChange={(e) => setReason(e.target.value)}><option value="">— pilih alasan —</option>{meta?.master.reason?.map((r) => <option key={r}>{r}</option>)}</select></div>
           {list.map((f) => {
-            const m = perms.credFields.find((x) => x.field === f.field) ?? f;
+            const editableHere = !INVENTORY_PASSCODE_FIELDS.some(({ field }) => field === f.field);
             return <div className="cred" key={f.field}>
               <div><div className="lbl">{f.label}</div><span className="cv">{f.sec ? (shown[f.field] ?? (f.set ? '••••••••' : '(kosong)')) : (f.value ?? '-')}</span></div>
               <div className="row" style={{ gap: 'var(--sp-2)' }}>
                 {f.sec && f.set && <><button className="btn btn-sm btn-soft" onClick={() => void reveal(f, 'view')}><Ic n="eye" />Tampilkan</button><button className="btn btn-sm btn-sec" onClick={() => void reveal(f, 'copy')}>Salin</button></>}
-                <button className="btn btn-sm btn-sec" onClick={() => void edit({ ...f, kind: m.kind })}>Ubah</button>
+                {editableHere && <button className="btn btn-sm btn-sec" onClick={() => void edit(f)}>Ubah</button>}
               </div>
             </div>;
           })}

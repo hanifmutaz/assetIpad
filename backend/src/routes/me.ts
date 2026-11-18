@@ -8,6 +8,7 @@ import { resolveStored } from '../services/files.js';
 import { randomToken } from '../crypto.js';
 import { audit } from '../services/audit.js';
 import { can, permsOf, ROLE_LABEL, SCENARIOS } from '../services/policy.js';
+import { deviceNamePrefix } from '../services/devices.js';
 
 export const router = express.Router();
 
@@ -32,7 +33,7 @@ router.put('/me', ah(async (req, res) => {
 router.get('/meta', ah(async (req, res) => {
   const R = await getRules();
   const [lok, sec, dept, master] = await Promise.all([
-    q('SELECT id, name FROM lokasi ORDER BY sort, name'),
+    q<{ id: number; name: string; ipad_number_start: number }>('SELECT id, name, ipad_number_start FROM lokasi ORDER BY sort, name'),
     q('SELECT id, lokasi_id, name FROM section ORDER BY name'),
     q('SELECT id, name FROM department ORDER BY name'),
     q<{ kind: string; value: string }>('SELECT kind, value FROM master_item ORDER BY sort, value'),
@@ -41,12 +42,12 @@ router.get('/meta', ah(async (req, res) => {
   for (const r of master.rows) (m[r.kind] ??= []).push(r.value);
   const u = req.user!;
   res.json({
-    lokasi: lok.rows.map((l) => ({ ...l, sections: sec.rows.filter((s) => s.lokasi_id === l.id) })),
+    lokasi: lok.rows.map((l) => ({ ...l, ipad_prefix: deviceNamePrefix(l.name, l.id), sections: sec.rows.filter((s) => s.lokasi_id === l.id) })),
     departments: can(u, 'device.viewAll') ? dept.rows : dept.rows.filter((d) => u.dept_ids.includes(d.id)),
     allDepartments: dept.rows,
     master: m,
     scenarios: SCENARIOS,
-    rules: { escalateDays: R.escalateDays, staleDays: R.staleDays, maxAgeYears: R.maxAgeYears, targetIOS: R.targetIOS, lockMin: R.lockMin, prefix: R.prefix },
+    rules: { escalateDays: R.escalateDays, staleDays: R.staleDays, maxAgeYears: R.maxAgeYears, targetIOS: R.targetIOS, lockMin: R.lockMin },
   });
 }));
 

@@ -24,8 +24,8 @@ export function PrintReport() {
       <button className="btn noprint" style={{ float: 'right' }} onClick={() => window.print()}>Cetak / Simpan PDF</button>
       <h1 style={{ fontSize: 18, margin: 0 }}>Laporan Inventaris iPad, PT Hirose Electric Indonesia</h1>
       <div>Dicetak {fmtDT(new Date().toISOString())} oleh {me?.name} · {rows.length} unit</div>
-      <table><thead><tr><th>Nama</th><th>Serial</th><th>Lokasi · Section</th><th>Department</th><th>Peruntukan</th><th>Model</th><th>Pengguna</th><th>iOS</th><th>Dicek</th><th>Status</th></tr></thead><tbody>
-        {rows.map((d) => <tr key={d.id}><td>{d.name}</td><td>{d.serial}</td><td>{d.lokasi} · {d.section}</td><td>{d.department}</td><td>{d.purpose}</td><td>{d.model}</td><td>{d.user_name}</td><td>{d.ios ?? '-'}</td><td>{fmtDate(d.last_check)}</td><td>{d.status}</td></tr>)}
+      <table><thead><tr><th>Nama</th><th>Serial</th><th>INA No.</th><th>Lokasi · Section</th><th>Department</th><th>Peruntukan</th><th>Model</th><th>Pengguna</th><th>iOS</th><th>Dicek</th><th>Status</th></tr></thead><tbody>
+        {rows.map((d) => <tr key={d.id}><td>{d.name}</td><td>{d.serial}</td><td>{d.ina_no ?? '-'}</td><td>{d.lokasi} · {d.section}</td><td>{d.department}</td><td>{d.purpose}</td><td>{d.model}</td><td>{d.user_name}</td><td>{d.ios ?? '-'}</td><td>{fmtDate(d.last_check)}</td><td>{d.status}</td></tr>)}
       </tbody></table>
     </div>
   );

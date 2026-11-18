@@ -2,9 +2,9 @@ import { q } from '../db.js';
 
 export interface Rules {
   escalateDays: number; staleDays: number; maxAgeYears: number; targetIOS: string;
-  lockMin: number; burstCount: number; burstMin: number; prefix: string;
+  lockMin: number; burstCount: number; burstMin: number;
 }
-export const DEFAULT_RULES: Rules = { escalateDays: 3, staleDays: 90, maxAgeYears: 6, targetIOS: '18.7.9', lockMin: 5, burstCount: 5, burstMin: 10, prefix: 'iPad' };
+export const DEFAULT_RULES: Rules = { escalateDays: 3, staleDays: 90, maxAgeYears: 6, targetIOS: '18.7.9', lockMin: 5, burstCount: 5, burstMin: 10 };
 let cache: Rules | null = null;
 let at = 0;
 export async function getRules(): Promise<Rules> {

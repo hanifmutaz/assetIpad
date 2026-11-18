@@ -4,11 +4,11 @@ import express from 'express';
 import { z } from 'zod';
 import ExcelJS from 'exceljs';
 import { q, one, tx } from '../db.js';
-import { ah, bad, conflict, notFound } from '../errors.js';
+import { ah, bad, conflict, forbidden, notFound } from '../errors.js';
 import { requirePerm } from '../middleware/auth.js';
 import { getRules, getMaster, type Rules } from '../services/rules.js';
 import { audit, history } from '../services/audit.js';
-import { DEV_COLS, DEV_FROM, shapeDevice, getDeviceRow, nextName, type DeviceRow } from '../services/devices.js';
+import { DEV_COLS, DEV_FROM, shapeDevice, getDeviceRow, nextName, lockDeviceNames, GENERATED_NAME, type DeviceRow } from '../services/devices.js';
 import { assertDeviceVisible, credFieldsFor, deviceScope } from '../services/access.js';
 import { allGuides, guidesFor, openRun, progressMap } from '../services/guides.js';
 import { txWithImage, upload } from '../services/files.js';
@@ -32,7 +32,7 @@ const listQ = z.object({
 });
 type ListQ = z.infer<typeof listQ>;
 const SORT: Record<string, string[]> = {
-  name: ["(substring(d.name from '(\\d+)'))::int", 'd.name'], serial: ['d.serial'], loc: ['l.name', 's.name'], dept: ['dp.name'],
+  name: ["lower(regexp_replace(d.name, '[0-9]+$', ''))", "(substring(d.name from '([0-9]+)$'))::numeric", 'd.name'], ina: ['d.ina_no'], serial: ['d.serial'], loc: ['l.name', 's.name'], dept: ['dp.name'],
   model: ['d.model'], user: ['d.user_name'], ios: ['d.ios'], lastCheck: ['d.last_check'], arrival: ['d.arrival'], price: ['d.price'],
   status: ["array_position(ARRAY['Setup','Available','Repair','Damaged','Loss','Retired'], d.status)"],
 };
@@ -45,7 +45,7 @@ async function buildFilter(u: AuthUser, f: ListQ, R: Rules) {
   p.push(...sc.params);
   if (f.q) {
     const x = P(`%${f.q.replace(/[\\%_]/g, (m) => '\\' + m)}%`);
-    w.push(`(d.name ILIKE ${x} OR d.serial ILIKE ${x} OR s.name ILIKE ${x} OR dp.name ILIKE ${x} OR d.user_name ILIKE ${x} OR d.model ILIKE ${x} OR d.ireporter_user ILIKE ${x})`);
+    w.push(`(d.name ILIKE ${x} OR d.serial ILIKE ${x} OR d.ina_no ILIKE ${x} OR s.name ILIKE ${x} OR dp.name ILIKE ${x} OR d.user_name ILIKE ${x} OR d.model ILIKE ${x} OR d.ireporter_user ILIKE ${x})`);
   }
   if (f.lokasiId) w.push(`l.id = ${P(f.lokasiId)}`);
   if (f.sectionId) w.push(`s.id = ${P(f.sectionId)}`);
@@ -104,7 +104,7 @@ router.get('/picker', ah(async (req, res) => {
   const sc = deviceScope(req.user!, 'd', 2);
   const r = await q(`SELECT d.id, d.name, d.serial, d.status, l.name lokasi, s.name section, dp.name department, d.user_name, d.purpose
     ${DEV_FROM} WHERE ($1::text[] = '{}' OR d.status = ANY($1)) AND ${sc.sql}
-    ORDER BY (substring(d.name from '(\\d+)'))::int NULLS FIRST, d.serial`, [st, ...sc.params]);
+    ORDER BY ${SORT.name!.join(', ')}, d.serial`, [st, ...sc.params]);
   res.json(r.rows);
 }));
 
@@ -117,7 +117,7 @@ router.get('/by-serial/:serial', ah(async (req, res) => {
 
 // ---------------------------------------------------------------- export (selalu dibatasi scope user)
 const EXPORT_COLS: [string, string, number][] = [
-  ['name', 'Nama', 12], ['serial', 'Serial', 16], ['lokasi', 'Lokasi', 10], ['section', 'Section', 16], ['department', 'Department', 16],
+  ['name', 'Nama', 12], ['serial', 'Serial', 16], ['ina_no', 'INA No.', 18], ['lokasi', 'Lokasi', 10], ['section', 'Section', 16], ['department', 'Department', 16],
   ['purpose', 'Peruntukan', 12], ['model', 'Model', 22], ['capacity', 'Kapasitas', 10], ['user_name', 'Pengguna', 16], ['ireporter_user', 'User i-Reporter', 14],
   ['wifi', 'Wi-Fi', 14], ['ip', 'IP', 15], ['ios', 'iOS', 9], ['last_check', 'Terakhir dicek', 13], ['arrival', 'Tgl datang', 12], ['vendor', 'Vendor', 10], ['price', 'Harga', 13], ['status', 'Status', 11],
 ];
@@ -256,12 +256,11 @@ router.post('/', requirePerm('device.register'), upload.single('photo'), ah(asyn
   }).parse(req.body);
   if (!(await getMaster('model')).includes(b.model)) throw bad('Model tidak terdaftar di master data');
   if (!(await getMaster('purpose')).includes(b.purpose)) throw bad('Peruntukan tidak terdaftar di master data');
-  const R = await getRules();
   const id = await txWithImage(req.file, req.user!.id, async (c, savePhoto) => {
     const ex = (await c.query('SELECT name FROM device WHERE serial=$1', [b.serial])).rows[0];
     if (ex) throw conflict(`Serial sudah terdaftar sebagai ${ex.name ?? '(tanpa nama)'}, gunakan menu Pindah Tempat`, 'SERIAL_EXISTS');
     const photo = await savePhoto();
-    const name = await nextName(c, R.prefix);
+    const name = await nextName(c, b.sectionId, b.arrival);
     const r = await c.query(`INSERT INTO device(serial,name,section_id,department_id,purpose,model,capacity,color,user_name,arrival,vendor,price,status,photo_id,note)
       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'Setup',$13,$14) RETURNING id`,
     [b.serial, name, b.sectionId, b.departmentId, b.purpose, b.model, b.capacity ?? null, b.color ?? null, b.userName, b.arrival, b.vendor ?? null, b.price ?? null, photo, b.note ?? null]);
@@ -322,6 +321,12 @@ router.patch('/:id', requirePerm('device.edit'), ah(async (req, res) => {
   const b = z.object({
     version: z.number().int(), force: z.boolean().optional(),
     name: z.string().trim().min(1).max(40).optional(),
+    lokasiId: z.number().int().positive().optional(),
+    sectionId: z.number().int().positive().optional(),
+    departmentId: z.number().int().positive().optional(),
+    inaNo: z.string().trim().max(64).nullable().optional().transform((v) => v === '' ? null : v),
+    arrival: z.iso.date().nullable().optional(),
+    price: z.number().int().min(0).max(99_999_999_999_999).nullable().optional(),
     purpose: z.string().trim().min(1).max(60).optional(),
     serial: z.string().transform(normSerial).refine((v) => SERIAL_RE.test(v), 'Format serial tidak valid (8 sampai 14 huruf/angka)').optional(),
     wifi: nul(z.string().max(60)), ip: nul(z.ipv4()), conmasId: nul(z.string().max(64)), ireporterUser: nul(z.string().max(64)),
@@ -330,33 +335,60 @@ router.patch('/:id', requirePerm('device.edit'), ah(async (req, res) => {
     userName: z.string().trim().min(1).max(120).optional(),
     reconfig: z.object({ done: z.array(z.boolean()).max(50), plan: z.string().max(10).nullable().optional(), actual: z.string().max(10).nullable().optional() }).optional(),
   }).parse(req.body);
-  const MAP: Record<string, string> = { name: 'name', purpose: 'purpose', serial: 'serial', wifi: 'wifi', ip: 'ip', conmasId: 'conmas_id', ireporterUser: 'ireporter_user', ios: 'ios', iosUpdated: 'ios_updated', appleStatus: 'apple_status', note: 'note', reconfig: 'reconfig', userName: 'user_name' };
+  const MAP: Record<string, string> = { name: 'name', purpose: 'purpose', sectionId: 'section_id', departmentId: 'department_id', arrival: 'arrival', price: 'price', inaNo: 'ina_no', serial: 'serial', wifi: 'wifi', ip: 'ip', conmasId: 'conmas_id', ireporterUser: 'ireporter_user', ios: 'ios', iosUpdated: 'ios_updated', appleStatus: 'apple_status', note: 'note', reconfig: 'reconfig', userName: 'user_name' };
+  const user = req.user!;
   await tx(async (c) => {
-    const cur = (await c.query('SELECT *, host(ip) ip_txt FROM device WHERE id=$1 FOR UPDATE', [id])).rows[0];
+    const cur = (await c.query('SELECT d.*, s.lokasi_id, host(d.ip) ip_txt FROM device d JOIN section s ON s.id=d.section_id WHERE d.id=$1 FOR UPDATE OF d', [id])).rows[0];
     if (!cur) throw notFound();
     if (cur.version !== b.version) throw conflict('Data iPad sudah diubah orang lain. Muat ulang halaman.', 'STALE');
     if (b.serial !== undefined && b.serial !== cur.serial) {
-      // Serial hanya boleh diganti kalau masih serial sementara hasil import (TEMPxxxx).
-      if (!/^TEMP[0-9]{4,}$/.test(cur.serial)) throw conflict('Serial hanya bisa diubah untuk iPad dengan serial sementara (TEMPxxxx)');
+      if (!/^TEMP[0-9]{4,}$/.test(cur.serial) && !can(user, 'device.editSerial')) {
+        throw forbidden('Hanya Super Admin yang bisa mengoreksi serial resmi');
+      }
       if ((await c.query('SELECT 1 FROM device WHERE serial=$1 AND id<>$2', [b.serial, id])).rowCount) throw conflict('Serial sudah terdaftar di iPad lain', 'SERIAL_DUP');
     }
-    if (b.purpose !== undefined && b.purpose !== cur.purpose) {
-      if (!(await getMaster('purpose')).includes(b.purpose)) throw bad('Peruntukan tidak terdaftar di master data');
+    if (b.inaNo !== undefined && b.inaNo !== cur.ina_no && !can(user, 'device.editIna')) {
+      throw forbidden('Hanya Super Admin yang bisa mengubah INA No.');
+    }
+    const placementChanged = (b.sectionId !== undefined && b.sectionId !== cur.section_id) ||
+      (b.lokasiId !== undefined && b.lokasiId !== cur.lokasi_id) ||
+      (b.departmentId !== undefined && b.departmentId !== cur.department_id);
+    if (placementChanged && !can(user, 'device.editPlacement')) {
+      throw forbidden('Gunakan pengajuan mutasi untuk mengubah lokasi, section, atau department');
+    }
+    let nextLocation = cur.lokasi_id;
+    if (b.sectionId !== undefined && b.sectionId !== cur.section_id) {
+      const section = (await c.query<{ lokasi_id: number }>('SELECT lokasi_id FROM section WHERE id=$1', [b.sectionId])).rows[0];
+      if (!section) throw bad('Section tidak valid');
+      nextLocation = section.lokasi_id;
+    }
+    if (b.lokasiId !== undefined && b.lokasiId !== nextLocation) throw bad('Pilih section di lokasi yang dipilih');
+    if (b.departmentId !== undefined && b.departmentId !== cur.department_id &&
+      !(await c.query('SELECT 1 FROM department WHERE id=$1', [b.departmentId])).rowCount) throw bad('Department tidak valid');
+    const purposeChanged = b.purpose !== undefined && b.purpose !== cur.purpose;
+    if (purposeChanged && !(await getMaster('purpose')).includes(b.purpose!)) throw bad('Peruntukan tidak terdaftar di master data');
+    if (purposeChanged || nextLocation !== cur.lokasi_id) {
       const run = await openRun(c, id);
       if (run && Object.values(run.state).some((g) => g.done || Object.keys(g.steps ?? {}).length)) {
-        throw conflict('Konfigurasi sudah berjalan. Selesaikan konfigurasi sebelum mengubah peruntukan.');
+        throw conflict('Konfigurasi sudah berjalan. Selesaikan konfigurasi sebelum mengubah lokasi atau peruntukan.');
       }
       if (run?.guide_snapshot) await c.query('UPDATE config_run SET guide_snapshot=NULL WHERE id=$1', [run.id]);
     }
-    if (b.name && b.name !== cur.name && !b.force) {
-      const dup = await c.query("SELECT 1 FROM device WHERE name=$1 AND id<>$2 AND status IN ('Setup','Available','Repair')", [b.name, id]);
-      if (dup.rowCount) throw conflict(`Nama ${b.name} sudah dipakai iPad aktif lain`, 'NAME_DUP');
+    if (b.name && b.name !== cur.name) {
+      await lockDeviceNames(c);
+      const generated = GENERATED_NAME.test(b.name);
+      if (generated || !b.force) {
+        const dup = await c.query(
+          "SELECT 1 FROM device WHERE upper(name)=upper($1) AND id<>$2 AND ($3::boolean OR status IN ('Setup','Available','Repair'))",
+          [b.name, id, generated]);
+        if (dup.rowCount) throw conflict('Nama ' + b.name + ' sudah dipakai iPad lain', 'NAME_DUP');
+      }
     }
     const sets: string[] = [];
     const vals: unknown[] = [id];
     const changes: string[] = [];
     for (const [k, col] of Object.entries(MAP)) {
-      if (!(k in b)) continue;
+      if (!(k in b) || (b as Record<string, unknown>)[k] === undefined) continue;
       let v = (b as Record<string, unknown>)[k];
       if (k === 'reconfig') {
         const rc = v as { done: boolean[]; plan?: string | null; actual?: string | null };
@@ -373,7 +405,8 @@ router.patch('/:id', requirePerm('device.edit'), ah(async (req, res) => {
     }
     if (!sets.length) return;
     await c.query(`UPDATE device SET ${sets.join(', ')}, updated_at=now(), version=version+1 WHERE id=$1`, vals);
-    await history(c, id, req.user, `Update: ${changes.join('; ')}`);
+    await audit(req, { action: 'Ubah data iPad', deviceId: id }, c);
+    await history(c, id, user, `Update: ${changes.join('; ')}`);
   });
   res.json({ ok: true });
 }));

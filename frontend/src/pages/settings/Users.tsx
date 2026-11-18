@@ -60,8 +60,9 @@ export default function Users() {
       <div className="card cardt"><h3>Hak akses per role</h3><div className="tw"><table>
         <thead><tr><th>Fitur</th><th>Super Admin</th><th>Admin iPad</th><th>Admin Department</th></tr></thead><tbody>
           {[['Lihat iPad', 'semua', 'semua', 'department sendiri'], ['Registrasi iPad baru & konfigurasi', '✓', '✓', '✗'], ['Ajukan mutasi / pindah tempat', '✓ (langsung)', '✓ (perlu persetujuan)', '✗'],
+            ['Edit identitas iPad', '✓', '✓', '✗'], ['Koreksi INA No., lokasi, section, department, dan serial resmi', '✓', '✗', '✗'],
             ['Setujui mutasi, Retired, Loss → Available', '✓', '✗', '✗'], ['Ubah status (Repair / Damaged / Loss)', '✓', '✓', '✗'], ['Edit panduan konfigurasi', '✓', '✓', '✗'],
-            ['Variabel (Wi-Fi, Apple ID, server)', 'kelola', 'pakai saat konfigurasi', '✗'], ['Credential passcode / unlock / i-Reporter', '✓', '✓', 'department sendiri'],
+            ['Variabel (Wi-Fi, Apple ID, server)', 'kelola', 'pakai saat konfigurasi', '✗'], ['Credential passcode / Screen Time / unlock / i-Reporter', '✓', '✓', 'department sendiri'],
             ['Credential Apple ID & Gmail', '✓', '✓', '✗'], ['Lapor & tangani tiket', '✓ semua', '✓ semua', 'department sendiri'], ['User, master data, aturan, audit log', '✓', '✗', '✗'],
           ].map((r) => <tr key={r[0]}>{r.map((c, i) => <td key={i}>{c}</td>)}</tr>)}
         </tbody></table></div></div>

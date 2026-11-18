@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { q, tx } from '../db.js';
 import { ah, notFound } from '../errors.js';
 import { requireStepUp } from '../middleware/auth.js';
-import { assertCredField, credFieldsFor } from '../services/access.js';
+import { assertCredField, assertDeviceVisible, credFieldsFor } from '../services/access.js';
 import { audit, history } from '../services/audit.js';
 import { readCredential, setCredential } from '../services/devices.js';
 import { getMaster } from '../services/rules.js';
@@ -46,12 +46,13 @@ router.post('/:id/credentials/:field/reveal', requireStepUp, limiter, ah(async (
 router.put('/:id/credentials/:field', requireStepUp, limiter, ah(async (req, res) => {
   const id = uuid.parse(req.params.id);
   const field = String(req.params.field);
-  await assertCredField(req.user!, id, field);
   const b = await z.object({ value: z.string().min(1).max(200), reason }).parseAsync(req.body);
   await tx(async (c) => {
+    await assertDeviceVisible(req.user!, id, c, true);
+    await assertCredField(req.user!, id, field, c);
     await setCredential(c, id, field, b.value, req.user!.id);
     await history(c, id, req.user, `Credential diubah: ${CRED_FIELDS[field]!.label}`);
+    await audit(req, { action: 'Ubah', deviceId: id, target: CRED_FIELDS[field]!.label, reason: b.reason }, c);
   });
-  await audit(req, { action: 'Ubah', deviceId: id, target: CRED_FIELDS[field]!.label, reason: b.reason });
   res.json({ ok: true });
 }));
