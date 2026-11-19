@@ -28,19 +28,70 @@ router.get('/', ah(async (req, res) => {
   const manage = can(u, 'irep.manage');
   const P = [all, u.dept_ids];
   const accounts = await q(
-    `SELECT a.id, a.lokasi_id, l.name lokasi, a.kind, a.username, a.department_id, dp.name department, a.active, rb.id replaced_by, rb.username replaced_by_name,
-            a.verification, a.login_test, a.note, (a.pwd_enc IS NOT NULL) has_pwd,
-            COALESCE((SELECT json_agg(json_build_object('id', d.id, 'name', COALESCE(d.name, d.serial)) ORDER BY d.name)
-                      FROM irep_account_device x JOIN device d ON d.id = x.device_id WHERE x.account_id = a.id AND ($1::boolean OR d.department_id = ANY($2::int[]))), '[]'::json) devices,
-            (SELECT count(*)::int FROM irep_account_device x JOIN device d ON d.id=x.device_id WHERE x.account_id = a.id AND a.kind = 'lama'
-               AND ($1::boolean OR d.department_id = ANY($2::int[]))
-               AND NOT EXISTS (SELECT 1 FROM irep_account_device y JOIN irep_account b ON b.id = y.account_id AND b.kind = 'baru' WHERE y.device_id = x.device_id AND ($1::boolean OR b.department_id=ANY($2::int[])))) pending
-       FROM irep_account a
-       JOIN lokasi l ON l.id = a.lokasi_id
-       LEFT JOIN department dp ON dp.id = a.department_id
-       LEFT JOIN irep_account rb ON rb.id = a.replaced_by AND ($1::boolean OR rb.department_id = ANY($2::int[]))
-      WHERE ($1::boolean OR a.department_id = ANY($2::int[]))
-      ORDER BY l.name, a.kind, a.username`, P);
+  `SELECT
+      a.id,
+      a.lokasi_id,
+      l.name lokasi,
+      a.kind,
+      a.username,
+      a.department_id,
+      dp.name department,
+      a.active,
+      rb.id replaced_by,
+      rb.username replaced_by_name,
+      a.verification,
+      a.login_test,
+      a.note,
+      (a.pwd_enc IS NOT NULL) has_pwd,
+
+      COALESCE((
+        SELECT json_agg(
+          json_build_object(
+            'id', d.id,
+            'name', COALESCE(d.name, d.serial),
+            'department_id', d.department_id,
+            'department', dd.name,
+            'section', ss.name
+          )
+          ORDER BY d.name
+        )
+        FROM irep_account_device x
+        JOIN device d ON d.id = x.device_id
+        LEFT JOIN department dd ON dd.id = d.department_id
+        LEFT JOIN section ss ON ss.id = d.section_id
+        WHERE x.account_id = a.id
+          AND ($1::boolean OR d.department_id = ANY($2::int[]))
+      ), '[]'::json) devices,
+
+      (
+        SELECT count(*)::int
+        FROM irep_account_device x
+        JOIN device d ON d.id = x.device_id
+        WHERE x.account_id = a.id
+          AND a.kind = 'lama'
+          AND ($1::boolean OR d.department_id = ANY($2::int[]))
+          AND NOT EXISTS (
+            SELECT 1
+            FROM irep_account_device y
+            JOIN irep_account b
+              ON b.id = y.account_id
+             AND b.kind = 'baru'
+            WHERE y.device_id = x.device_id
+              AND ($1::boolean OR b.department_id = ANY($2::int[]))
+          )
+      ) pending
+
+    FROM irep_account a
+    JOIN lokasi l ON l.id = a.lokasi_id
+    LEFT JOIN department dp ON dp.id = a.department_id
+    LEFT JOIN irep_account rb
+      ON rb.id = a.replaced_by
+     AND ($1::boolean OR rb.department_id = ANY($2::int[]))
+
+    WHERE ($1::boolean OR a.department_id = ANY($2::int[]))
+    ORDER BY l.name, a.kind, a.username`,
+  P
+);
   const deviceOptions = manage
     ? (await q(`SELECT d.id, COALESCE(d.name, d.serial) name, s.lokasi_id FROM device d JOIN section s ON s.id = d.section_id
                  WHERE d.status IN ('Setup','Available','Repair') ORDER BY d.name`)).rows

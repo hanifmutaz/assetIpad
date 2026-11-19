@@ -4,11 +4,12 @@ import { useAuth } from '../lib/auth';
 import { del, patch, post, put } from '../lib/api';
 import { Ic } from '../components/icons';
 import { Empty, ErrorBox, Field, Loading, Modal, PageHead, Tabs, useApi, useUi, errMsg } from '../components/ui';
+import { buildSuggestions, type Suggestion } from '../lib/irepSuggest';
 
 interface Acc {
   id: number; lokasi_id: number; lokasi: string; kind: 'lama' | 'baru'; username: string; department_id: number | null; department: string | null;
   active: boolean; replaced_by: number | null; replaced_by_name: string | null; verification: string; login_test: string; note: string | null; has_pwd: boolean;
-  devices: { id: string; name: string }[]; pending: number;
+  devices: { id: string; name: string; department_id: number; department: string; section: string }[]; pending: number;
 }
 interface Resp { accounts: Acc[]; deviceOptions: { id: string; name: string; lokasi_id: number }[]; canManage: boolean; max: number }
 const VERIF = ['Belum Diverifikasi', 'Terverifikasi', 'Bermasalah'];
@@ -22,7 +23,7 @@ export default function IReporter() {
   const { data, error, loading, reload } = useApi<Resp>('/irep');
   const { dialog, toast } = useUi();
   const [lok, setLok] = useState<string>('');
-  const [kind, setKind] = useState<'lama' | 'baru'>('lama');
+  const [kind, setKind] = useState<'lama' | 'baru' | 'usul'>('lama');
   const [q, setQ] = useState('');
   const [dept, setDept] = useState('');
   const [edit, setEdit] = useState<Acc | null>(null);
@@ -37,6 +38,7 @@ export default function IReporter() {
   const lama = inLok.filter((a) => a.kind === 'lama');
   const baru = inLok.filter((a) => a.kind === 'baru');
   const chosen = useMemo(() => new Map(baru.map((b) => [b.id, lama.filter((l) => l.replaced_by === b.id).map((l) => l.username)])), [baru, lama]);
+  const suggestions = useMemo(() => buildSuggestions(inLok, max), [inLok, max]);
   const baruStatus = (b: Acc): [string, 'ok' | 'warn' | 'bad' | 'info' | 'neu'] => {
     const n = b.devices.length;
     if (n > max) return ['Melebihi batas', 'bad'];
@@ -78,7 +80,8 @@ export default function IReporter() {
       </PageHead>
       {!accounts.length ? <Empty msg="Belum ada akun i-Reporter. Impor dari Excel dengan npm run import-irep." btn={data.canManage ? 'Tambah akun' : null} onClick={() => void add()} /> : <>
         {lokasi.length > 1 && <Tabs items={lokasi.map((l) => [l, l] as [string, string])} value={curLok} onChange={setLok} />}
-        <Tabs items={[['lama', `Akun lama (${lama.length})`], ['baru', `Akun baru (${baru.length})`]]} value={kind} onChange={setKind} />
+        <Tabs items={[['lama', `Akun lama (${lama.length})`], ['baru', `Akun baru (${baru.length})`], ...(data.canManage ? [['usul', `Usulan pasangan (${suggestions.length})`] as [string, string]] : [])]} value={kind} onChange={(k) => setKind(k as typeof kind)} />
+        {kind === 'usul' ? <SuggestPanel lokasi={curLok} lokasiId={inLok[0]?.lokasi_id ?? 0} items={suggestions} max={max} reload={reload} /> : <>
         <div className="kpis" style={{ display: 'flex', gap: 'var(--sp-4)', flexWrap: 'wrap', margin: 'var(--sp-3) 0' }}>
           {sum.map(([l, n]) => <span key={String(l)} className="muted">{l} <b className="mono">{n}</b></span>)}
         </div>
@@ -120,9 +123,67 @@ export default function IReporter() {
             })();
           })}</tbody>
         </table></div>{!rows.length && <Empty msg="Tidak ada akun yang cocok." />}</div>
+        </>}
       </>}
       {move && <MoveModal lokasi={curLok} accounts={inLok} max={max} onClose={() => setMove(false)} onDone={() => { setMove(false); reload(); }} />}
       {edit && data && <EditModal acc={edit} data={data} accounts={accounts} onClose={() => setEdit(null)} onSaved={() => { setEdit(null); reload(); }} />}
+    </>
+  );
+}
+
+/**
+ * Usulan pasangan: iPad yang belum punya akun baru dipasangkan (maks `max`, satu department, section berdekatan).
+ * Slot akun baru yang sudah ada diisi dulu; sisanya jadi akun baru dengan nama yang mengikuti pola akun yang sudah ada (bisa diubah).
+ * "Terapkan" hanya mencatat di aplikasi (buat akun bila perlu + pindahkan iPad); akun di server ConMas tetap dibuat manual.
+ */
+function SuggestPanel({ lokasi, lokasiId, items, max, reload }: { lokasi: string; lokasiId: number; items: Suggestion[]; max: number; reload: () => void }) {
+  const { toast, confirm } = useUi();
+  const [names, setNames] = useState<Record<string, string>>({});
+  const [pwd, setPwd] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState('');
+  const apply = async (s: Suggestion) => {
+    const username = (s.target?.username ?? names[s.key] ?? s.suggested).trim();
+    if (!username) return;
+    const ok = await confirm('Terapkan usulan?', (
+      <>
+        <p>{s.devices.map((d) => d.name).join(' dan ')} → akun <b className="mono">{username}</b>{s.target ? ' (sudah ada)' : ' (akun baru dibuat di aplikasi)'}.</p>
+        {!s.target && <p className="muted">Pastikan akun ini sudah dibuat di ConMas dan {s.devices.length > 1 ? 'kedua iPad' : 'iPad-nya'} sudah ditautkan. Aplikasi hanya mencatat.</p>}
+        {s.frees.length > 0 && <p>Akun lama yang jadi tuntas: <b>{s.frees.join(', ')}</b></p>}
+      </>
+    ));
+    if (!ok) return;
+    setBusy(s.key);
+    try {
+      let to = s.target?.id;
+      if (!to) {
+        const x = await post<{ id: number }>('/irep', { lokasiId, kind: 'baru', username, departmentId: s.departmentId, password: pwd[s.key]?.trim() || undefined });
+        to = x.id;
+      }
+      const r = await post<{ readyToDelete: string[] }>('/irep/move', { toAccountId: to, deviceIds: s.devices.map((d) => d.id) });
+      toast(r.readyToDelete.length ? `${username} tercatat. Siap dihapus di ConMas: ${r.readyToDelete.join(', ')}` : `${username} tercatat`);
+    } catch (e) { toast(errMsg(e), 'err'); } finally { setBusy(''); reload(); }
+  };
+  if (!items.length) return <div className="card cardt"><Empty msg={`Semua iPad di ${lokasi} sudah punya akun baru.`} /></div>;
+  return (
+    <>
+      <p className="muted" style={{ margin: 'var(--sp-3) 0' }}>
+        Dikerjakan dari atas: baris di atas paling cepat menuntaskan akun lama. Satu akun baru maksimal {max} iPad dan satu department. Daftar ini dihitung ulang setiap selesai menerapkan satu baris.
+      </p>
+      <div className="card cardt"><div className="tw"><table>
+        <thead><tr><th>iPad</th><th>Akun lama</th><th>Akun baru</th><th>Password (opsional)</th><th>Akun lama tuntas</th><th /></tr></thead>
+        <tbody>{items.map((s) => (
+          <tr key={s.key}>
+            <td>{s.devices.map((d) => <div key={d.id}><b>{d.name}</b> <span className="muted">{d.department} · {d.section}</span></div>)}</td>
+            <td>{s.from.map((f) => <div key={f} className="mono">{f}</div>)}</td>
+            <td>{s.target
+              ? <><b className="mono">{s.target.username}</b> <Tag t="sudah ada" tone="info" /></>
+              : <input aria-label={`Nama akun baru untuk ${s.devices.map((d) => d.name).join(' dan ')}`} className="mono" value={names[s.key] ?? s.suggested} onChange={(e) => setNames({ ...names, [s.key]: e.target.value })} style={{ minWidth: 130 }} />}</td>
+            <td>{s.target ? <span className="muted">-</span> : <input aria-label="Password akun baru" value={pwd[s.key] ?? ''} onChange={(e) => setPwd({ ...pwd, [s.key]: e.target.value })} placeholder="kosongkan bila tidak dicatat" style={{ minWidth: 160 }} />}</td>
+            <td>{s.frees.length ? s.frees.map((f) => <Tag key={f} t={f} tone="ok" />) : <span className="muted">-</span>}</td>
+            <td><button className="btn btn-sm" disabled={!!busy || !(s.target ? true : (names[s.key] ?? s.suggested).trim())} onClick={() => void apply(s)}>{busy === s.key ? 'Menyimpan…' : 'Terapkan'}</button></td>
+          </tr>
+        ))}</tbody>
+      </table></div></div>
     </>
   );
 }
